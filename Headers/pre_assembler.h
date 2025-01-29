@@ -1,0 +1,2 @@
+
+int macro_scan();
