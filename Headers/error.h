@@ -3,6 +3,4 @@ typedef struct{
   char *msg; /* The description of the error */
 } error;
 
-void print_error(int error_code){
-
-}
+void print_error(int error_code);

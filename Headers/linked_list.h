@@ -1,3 +1,5 @@
+#ifndef LINKED_LIST_H
+#define LINKED_LIST_H
 
 typedef struct node{
   char *name;
@@ -6,14 +8,14 @@ typedef struct node{
   struct node *next;
 } node;
 
-node *make_node(char *name, char *data, int line){
-  node *new_node = malloc(sizeof(node));
-  check_malloc(new_node);
+node *make_node(char *data);
 
-  new_node->name = name;
-  new_node->data = data;
-  new_node->line = line;
-  new_node->next = NULL;
+void add_node(node **head, char *data);
 
-  return node;
-}
+void print_list(node *head);
+
+int write_list_to_file(node *head, char *filename);
+
+void free_list(node *head);
+
+#endif

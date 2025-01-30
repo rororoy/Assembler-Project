@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include "../Headers/pre_assembler.h"
 #include "../Headers/errors.h"
+#include "../Headers/hash_table.h"
+#include "../Headers/linked_list.h"
 
 int check_for_macro(char *line){
 
@@ -25,14 +27,18 @@ int pre_assembler(char *filename){
     return 0;
   }
 
+  hashTable *macro_table = make_hash_table(HASH_TABLE_INITIAL_SIZE);
+
   /* Scan and handle macros line by line*/
   while (fgets(line,sizeof(line), file) != NULL){
-    if(!valid_length_line(line)){
-      print_error(); /* ERROR: LINE LENGTH */
-    }
+    if(!empty_line(line)){ /* Skip empty lines */
+      if(!valid_length_line(line)){
+        print_error(); /* ERROR: LINE LENGTH */
+      }
 
-    if(check_for_macro(line)){
+      if(check_for_macro(line)){
 
+      }
     }
   }
 
