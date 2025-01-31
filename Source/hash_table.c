@@ -3,6 +3,7 @@
 #include <string.h>
 #include "../Headers/hash_table.h"
 #include "../Headers/linked_list.h"
+#include "../Headers/utils.h"
 
 hashTable *make_hash_table(int size){
   int i;
@@ -19,7 +20,7 @@ hashTable *make_hash_table(int size){
     ht->bucket[i].macro_name = NULL;
     ht->bucket[i].code_nodes = NULL;
     ht->bucket[i].length = 0;
-    ht->bucket[i].is_occupied = 0;
+    ht->bucket[i].is_taken = 0;
   }
 
   return ht;
@@ -37,14 +38,16 @@ unsigned int hash_function(char *name){
 }
 
 hashBucket *insert_entry(hashTable *ht, char *name){
-  if(ht == NULL || name == NULL || code_lines == NULL){ /* If one of the params is empty */
+  double load_factor;
+  int index;
+  int original_index;
+  if(ht == NULL || name == NULL){ /* If one of the params is empty */
     fprintf(stderr, "Error invalid arguments for macro:%s\n", name);
     return NULL;
   }
 
-  double load_factor = (double)(ht->count + 1) / ht->size;
+  load_factor = (double)(ht->count + 1) / ht->size;
   if(load_factor > LOAD_FACTOR_THERSHOLD){
-    int new_size = ht->size * 2;
     hashTable *new_ht = resize_table(ht);
 
     if(new_ht == NULL){ /* If got new table as NULL */
@@ -58,14 +61,13 @@ hashBucket *insert_entry(hashTable *ht, char *name){
 
     free(new_ht);
   }
-
-  int index = hash_function(name);
-  int original_index = index;
+  index = hash_function(name);
+  original_index = index;
 
   /* Linear probing to find next empty bucket */
   while(ht->bucket[index].is_taken){
-    if(strcmp(ht->bucket[index].macro_name, macro_name) == 0){ /* Macro exists */
-      return ht->bucket[index]; /* Macro already exists return it*/
+    if(strcmp(ht->bucket[index].macro_name, name) == 0){ /* Macro exists */
+      return &(ht->bucket[index]); /* Macro already exists return it*/
     }
     index = (index+1)%ht->size;
     if(index == original_index){
@@ -75,7 +77,7 @@ hashBucket *insert_entry(hashTable *ht, char *name){
   }
 
   /* Macro isn't logged and found empty bucket */
-  ht->bucket[index].macro_name = stdup(name);
+  ht->bucket[index].macro_name = strdup(name);
   if(ht->bucket[index].macro_name == NULL){
     /* Failed to copy macro name */
     return NULL;
@@ -84,25 +86,27 @@ hashBucket *insert_entry(hashTable *ht, char *name){
   ht->bucket[index].code_nodes = NULL;
   ht->bucket[index].is_taken = 1;
   ht->bucket[index].length = 1;
-  ht->cont++;
+  ht->count++;
 
-  return ht->bucket[index];
+  return &(ht->bucket[index]);
 }
 
 
 
 hashTable *resize_table(hashTable *old_ht){
+  int i;
+  int new_size = old_ht->size * 2;
+  hashBucket *new_bucket;
+  hashTable *new_ht;
+
   if(old_ht == NULL){
     return NULL;
   }
 
-  int i;
-  hashBucket *new_bucket;
-  int new_size = old_ht->size * 2;
-  hashTable *new_ht = make_hash_table(new_size);
+  new_ht = make_hash_table(new_size);
 
   if(new_ht == NULL){
-    fprintf("ERROR WHEN CREATING NEW RESIZED HASH TABLE");
+    fprintf(stderr, "ERROR WHEN CREATING NEW RESIZED HASH TABLE\n");
     return NULL;
   }
 
@@ -131,18 +135,20 @@ hashTable *resize_table(hashTable *old_ht){
 }
 
 hashBucket *get_entry(hashTable *ht, char *name){
+  int index;
+  int original_index;
   if(ht == NULL || name == NULL){
     /* Empty params provided */
-    return;
+    return NULL;
   }
 
-  int index = hash_function(name);
-  int original_index = index;
+  index  = hash_function(name);
+  original_index = index;
 
   /* Linear probing to find correct bucket */
   while(ht->bucket[index].is_taken){
-    if(strcmp(ht->bucket[index].macro_name, macro_name) == 0){ /* Macro exists */
-      return ht->bucket[index]; /* Macro found return it*/
+    if(strcmp(ht->bucket[index].macro_name, name) == 0){ /* Macro exists */
+      return &(ht->bucket[index]); /* Macro found return it*/
     }
     index = (index+1)%ht->size;
     if(index == original_index){
@@ -150,20 +156,20 @@ hashBucket *get_entry(hashTable *ht, char *name){
       return NULL;
     }
   }
-
+  return NULL; /* Didn't find the entry */
 }
 
 void free_hash_table(hashTable *ht){
+  int i;
   if(ht == NULL){
     /* Empty hash table provided */
     return;
   }
 
-  int i;
   for(i = 0; i < ht->size; i++){
     if(ht->bucket[i].is_taken){
       free(ht->bucket[i].macro_name);
-      free_list(ht_bucket[i].code_nodes);
+      free_list(ht->bucket[i].code_nodes);
     }
   }
 

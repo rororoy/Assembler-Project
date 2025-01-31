@@ -22,6 +22,6 @@ int main(int argc, char *argv[]){
     }
 
     f_count--;
-
   }
+  return 1;
 }

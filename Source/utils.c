@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../Headers/utils.h"
 #include "../Headers/error.h"
+#include "../Headers/global.h"
 
 void check_malloc(void *ptr){
   if(ptr == NULL){
-    print_error(1);
+    print_error();
   }
 }
 
@@ -13,11 +15,24 @@ void check_malloc(void *ptr){
   @return 0 if non-empty line, return 1 if empty line
 */
 int empty_line(char *line){
+  int i;
   if(line == NULL){
     return 1;
   }
 
-  while(*str)
+  for(i = 0; line[i] != '\0'; i++){
+    if(line[i] != ' ' && line[i] != '\t' && line[i] != '\n'){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+char *strdup(char *s){
+    char *dup = malloc(strlen(s) + 1);
+    if (dup) strcpy(dup, s);
+    return dup;
 }
 
 /*

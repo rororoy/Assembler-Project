@@ -2,11 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "../Headers/linked_list.h"
-
-typedef struct node{
-  char *data;
-  struct node *next;
-} node;
+#include "../Headers/utils.h"
 
 node *make_node(char *data){
   node *new_node = malloc(sizeof(node));
@@ -20,12 +16,13 @@ node *make_node(char *data){
 
 
 void add_node(node **head, char *data){
+  node *new_node;
   if(head == NULL){ /* Verify that the head pointer is valid at all */
     fprintf(stderr, "[!] Head pointer is NULL\n");
     return;
   }
 
-  node *new_node = make_node(data);
+  new_node = make_node(data);
 
   if(*head == NULL){ /* Check if head pointer is empty */
     *head = new_node;
@@ -48,21 +45,23 @@ void print_list(node *head){
 }
 
 int write_list_to_file(node *head, char *filename){
+  FILE *file;
+  node *current;
   if(filename == NULL){
-    fprint(stderr, "[!] Filename provided is null");
+    fprintf(stderr, "[!] Filename provided is null");
     return 0; /* Failed */
   }
 
-  FILE *file = fopen(filename, "w");
-  if(file == "NULL"){
+  file = fopen(filename, "w");
+  if(file == NULL){
     perror("[!] Error opening file for writing");
     return 0;
   }
 
-  node *current = head;
+  current = head;
   while(current != NULL){
-    if(fprintf(file, "%s\n", curent->data) < 0){
-      perror("[!] Error writing to file %s", filename);
+    if(fprintf(file, "%s\n", current->data) < 0){
+      perror("[!] Error writing to file");
       fclose(file);
       return 0;
     }

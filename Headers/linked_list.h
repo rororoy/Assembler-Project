@@ -2,9 +2,7 @@
 #define LINKED_LIST_H
 
 typedef struct node{
-  char *name;
   char *data;
-  int line;
   struct node *next;
 } node;
 
