@@ -11,6 +11,38 @@ void check_malloc(void *ptr){
   }
 }
 
+char *get_first_word(const char *line) {
+    if (line == NULL) {
+        return NULL;
+    }
+
+    while (*line && isspace((unsigned char)*line)) {
+        line++;
+    }
+
+    if (*line == '\0') {
+        return strdup("");
+    }
+
+    const char *start = line;
+
+    while (*line && !isspace((unsigned char)*line)) {
+        line++;
+    }
+
+    size_t len = line - start;
+
+    char *word = malloc(len + 1);
+    if (word == NULL) {
+        return NULL;
+    }
+
+    memcpy(word, start, len);
+    word[len] = '\0';
+
+    return word;
+}
+
 /*
   @return 0 if non-empty line, return 1 if empty line
 */

@@ -91,7 +91,30 @@ hashBucket *insert_entry(hashTable *ht, char *name){
   return &(ht->bucket[index]);
 }
 
+hashBucket *search_table(hashTable *ht, char *name){
+  int index;
+  int original_index;
+  if(ht == NULL || name == NULL){ /* If one of the params is empty */
+    fprintf(stderr, "Error invalid arguments for macro:%s\n", name);
+    return NULL;
+  }
 
+  index = hash_function(name) % ht->size;
+  original_index = index;
+
+  /* Linear probing to find next empty bucket */
+  while(ht->bucket[index].is_taken){
+    if(strcmp(ht->bucket[index].macro_name, name) == 0){ /* Macro exists */
+      return &(ht->bucket[index]); /* Macro found return it*/
+    }
+    index = (index+1) % ht->size;
+    if(index == original_index){
+      fprintf(stderr, "ERROR HASH TABLE IS FULL");
+      return NULL;
+    }
+  }
+  return NULL; /* empty */
+}
 
 hashTable *resize_table(hashTable *old_ht){
   int i;

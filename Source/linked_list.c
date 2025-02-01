@@ -38,10 +38,13 @@ void add_node(node **head, char *data){
 
 void print_list(node *head){
   node *current = head;
-  printf("Printing linked list %s: ", current->data);
+
+  printf("Printing linked list %s ", current->data);
   while(current != NULL){
     printf("%s->", current->data);
+    current = current->next;
   }
+  printf("\n");
 }
 
 int write_list_to_file(node *head, char *filename){

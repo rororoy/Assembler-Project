@@ -95,18 +95,26 @@ int pre_assembler(char *filename){
         return 0;
       }
 
-      if(check_for_macro(line)){ /* Check if the line has a macro defenition */
-        if((macro_name = extract_macro(line)) != NULL){ /* Extract macro */
+      if(check_for_macro(line)) { /* Check if the line has a macro definition */
+        if((macro_name = extract_macro(line)) != NULL) { /* Extract macro */
           printf("found macro %s\n", macro_name);
           ht_bucket = insert_entry(macro_table, macro_name);
-          fgets(line,sizeof(line), file);
-          while(!check_for_macro(line)){
-            printf(">>%s\n", line);
-            fgets(line,sizeof(line), file);
-            insert_node(ht_bucket[hash_function(macro_name) % macro_table->size].code_nodes);
-            /* TODO CHECK WHICH OBJ IS RETURNED FROM THE INSERT ENTRY FUNC */
+
+          /* Get the next lines after the defenition */
+          fgets(line, sizeof(line), file);
+          while(!check_for_macro(line)) {
+              printf(">>%s", line);
+              add_node(&ht_bucket->code_nodes, line);
+              if (ht_bucket->code_nodes){
+                fgets(line, sizeof(line), file);
+              }
           }
+          print_list(ht_bucket->code_nodes);
         }
+      }else if((ht_bucket = search_table(macro_table, get_first_word(line))) != NULL){
+        /* TODO INSERT A TOKANIZER FUNCTION AND TAKE THE FIRST TOKEN FROM THERE AND COMPARE */
+        /* If the macro is already logged in the table */
+        printf("Found macro %s\n", ht_bucket->macro_name);
       }
     }
   }
