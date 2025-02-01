@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -ansi -Wall -pedantic -Wextra
+CFLAGS = -ansi -Wall -pedantic
 
 # Name of the final executable
 TARGET = assembler
@@ -12,7 +12,7 @@ all: $(TARGET)
 $(TARGET): assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o
 	$(CC) $(CFLAGS) -o $(TARGET) assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o
 
-assembler.o: ./Source/assembler.c ./Headers/assembler.h ./Headers/pre_assembler.h
+assembler.o: ./Source/assembler.c ./Headers/assembler.h ./Headers/pre_assembler.h ./Headers/utils.h
 	$(CC) $(CFLAGS) -c ./Source/assembler.c
 
 # Compile mycomp.o

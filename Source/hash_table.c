@@ -61,7 +61,7 @@ hashBucket *insert_entry(hashTable *ht, char *name){
 
     free(new_ht);
   }
-  index = hash_function(name);
+  index = hash_function(name) % ht->size;
   original_index = index;
 
   /* Linear probing to find next empty bucket */
@@ -165,6 +165,7 @@ void free_hash_table(hashTable *ht){
     /* Empty hash table provided */
     return;
   }
+
 
   for(i = 0; i < ht->size; i++){
     if(ht->bucket[i].is_taken){

@@ -22,10 +22,10 @@ int empty_line(char *line){
 
   for(i = 0; line[i] != '\0'; i++){
     if(line[i] != ' ' && line[i] != '\t' && line[i] != '\n'){
-      return 1;
+      return 0;
     }
   }
-  return 0;
+  return 1;
 }
 
 

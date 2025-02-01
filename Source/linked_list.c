@@ -74,7 +74,6 @@ int write_list_to_file(node *head, char *filename){
   }
 
   return 1;
-
 }
 
 void free_list(node *head){

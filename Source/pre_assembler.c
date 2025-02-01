@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "../Headers/pre_assembler.h"
 #include "../Headers/error.h"
 #include "../Headers/hash_table.h"
@@ -19,6 +20,7 @@ int check_for_macro(char *line){
   char *ptr = line;
   while(isspace(*ptr)){ptr++;}
 
+
   if(strncmp(ptr, "mcro", 4) != 0){
     return 0;
   }
@@ -33,14 +35,16 @@ char *extract_macro(char *line){
   while(isspace(*ptr)){ptr++;}
   ptr += 4;
 
-  if(!(iswhitespace(ptr))){
+  if(!(isspace(*ptr))){
     print_error(); /* Error in mcro defenition - unkown command */
     return NULL;
   }
 
+  while(isspace(*ptr)){ptr++;}
+
   macro_start = ptr;
 
-  while(*ptr != ' ' && *ptr != '\t' && *ptr != '\n' && *ptr != '\0'){
+  while(!isspace(*ptr)){
     ptr++;
   }
 
@@ -50,8 +54,15 @@ char *extract_macro(char *line){
   }
 
 
-  strncpy(macro_name);
+  extracted_macro = malloc(ptr-macro_start + 1);
+
+  strncpy(extracted_macro, macro_start, ptr-macro_start);
+  extracted_macro[(ptr-macro_start)] = '\0';
+
+  return extracted_macro;
 }
+
+
 
 /*
 
@@ -64,6 +75,8 @@ int pre_assembler(char *filename){
   int line_count = 1; /* Line counter */
   hashTable *macro_table;
   char *macro_name;
+  hashBucket *ht_bucket;
+
 
   /* Open the file */
   file = fopen(filename, "r");
@@ -75,19 +88,28 @@ int pre_assembler(char *filename){
 
   /* Scan and handle macros line by line*/
   while (fgets(line,sizeof(line), file) != NULL){
+    printf(">%s\n", line);
     if(!empty_line(line)){ /* Skip empty lines */
       if(!valid_length_line(line)){
         print_error(); /* ERROR: LINE LENGTH */
+        return 0;
       }
 
       if(check_for_macro(line)){ /* Check if the line has a macro defenition */
         if((macro_name = extract_macro(line)) != NULL){ /* Extract macro */
-
+          printf("found macro %s\n", macro_name);
+          ht_bucket = insert_entry(macro_table, macro_name);
+          fgets(line,sizeof(line), file);
+          while(!check_for_macro(line)){
+            printf(">>%s\n", line);
+            fgets(line,sizeof(line), file);
+            insert_node(ht_bucket[hash_function(macro_name) % macro_table->size].code_nodes);
+            /* TODO CHECK WHICH OBJ IS RETURNED FROM THE INSERT ENTRY FUNC */
+          }
         }
       }
     }
   }
-
   free_hash_table(macro_table);
   fclose(file);
   return 1;
