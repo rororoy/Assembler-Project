@@ -75,3 +75,52 @@ char *strdup(char *s){
 int valid_length_line(char *line){
   return(strlen(line) <= MAX_LINE_LENGTH);
 }
+
+int tokanize_line(char *line, char *tokens[4]) {
+    if (line == NULL || tokens == NULL) {
+        return 0;
+    }
+
+    char *line_copy = strdup(line);
+    if (line_copy == NULL) {
+        return 0;
+    }
+
+    int count = 0;
+    char *token = strtok(line_copy, " \t\n,");
+
+    while (token != NULL) {
+        if (count >= 4) {
+            free(line_copy);
+            return 0;
+        }
+
+        if (count == 0) {
+            size_t len = strlen(token);
+            if (len > 0 && token[len - 1] == ':') {
+                token[len - 1] = '\0';
+            }
+        }
+
+        tokens[count++] = token;
+        token = strtok(NULL, " \t\n,");
+    }
+
+    while (count < 4) {
+        tokens[count++] = NULL;
+    }
+
+    /*
+     * IMPORTANT:
+     * The tokens point into the memory allocated by strdup (line_copy).
+     * If you need the tokens to persist beyond the current scope,
+     * consider managing the lifetime of 'line_copy' appropriately.
+     *
+     * For this example, we are not freeing 'line_copy' immediately because
+     * the tokens would then point to freed memory. In a real application,
+     * you should either return 'line_copy' to the caller (so they can free it later)
+     * or manage its lifetime within a larger context.
+     */
+
+    return 1;
+}

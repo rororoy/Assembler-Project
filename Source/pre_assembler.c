@@ -78,6 +78,10 @@ int pre_assembler(char *filename){
   hashBucket *ht_bucket;
 
 
+  int i;
+  char *tokens[4] = {"", "", "", ""};
+
+
   /* Open the file */
   file = fopen(filename, "r");
   if(file == NULL) {
@@ -89,13 +93,18 @@ int pre_assembler(char *filename){
   /* Scan and handle macros line by line*/
   while (fgets(line,sizeof(line), file) != NULL){
     printf(">%s\n", line);
+
+    if (!tokanize_line(line, tokens)) {
+      printf("Error tokenizing line\n");
+    }
+
     if(!empty_line(line)){ /* Skip empty lines */
       if(!valid_length_line(line)){
         print_error(); /* ERROR: LINE LENGTH */
         return 0;
       }
 
-      if(check_for_macro(line)) { /* Check if the line has a macro definition */
+      if(strcmp(tokens[0], "mcro") == 0) { /* Check if the line has a macro definition */
         if((macro_name = extract_macro(line)) != NULL) { /* Extract macro */
           printf("found macro %s\n", macro_name);
           ht_bucket = insert_entry(macro_table, macro_name);
@@ -111,7 +120,7 @@ int pre_assembler(char *filename){
           }
           print_list(ht_bucket->code_nodes);
         }
-      }else if((ht_bucket = search_table(macro_table, get_first_word(line))) != NULL){
+      }else if((ht_bucket = search_table(macro_table, tokens[0])) != NULL){
         /* TODO INSERT A TOKANIZER FUNCTION AND TAKE THE FIRST TOKEN FROM THERE AND COMPARE */
         /* If the macro is already logged in the table */
         printf("Found macro %s\n", ht_bucket->macro_name);
