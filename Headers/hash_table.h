@@ -32,4 +32,6 @@ hashBucket *get_entry(hashTable *ht, char *name);
 
 void free_hash_table(hashTable *ht);
 
+hashBucket *search_table(hashTable *ht, char *name);
+
 #endif

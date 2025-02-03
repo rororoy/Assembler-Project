@@ -12,7 +12,7 @@ void add_node(node **head, char *data);
 
 void print_list(node *head);
 
-int write_list_to_file(node *head, char *filename);
+int write_list_to_file(FILE *file, node *head, char *filename);
 
 void free_list(node *head);
 

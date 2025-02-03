@@ -11,38 +11,6 @@ void check_malloc(void *ptr){
   }
 }
 
-char *get_first_word(const char *line) {
-    if (line == NULL) {
-        return NULL;
-    }
-
-    while (*line && isspace((unsigned char)*line)) {
-        line++;
-    }
-
-    if (*line == '\0') {
-        return strdup("");
-    }
-
-    const char *start = line;
-
-    while (*line && !isspace((unsigned char)*line)) {
-        line++;
-    }
-
-    size_t len = line - start;
-
-    char *word = malloc(len + 1);
-    if (word == NULL) {
-        return NULL;
-    }
-
-    memcpy(word, start, len);
-    word[len] = '\0';
-
-    return word;
-}
-
 /*
   @return 0 if non-empty line, return 1 if empty line
 */
@@ -77,17 +45,20 @@ int valid_length_line(char *line){
 }
 
 int tokanize_line(char *line, char *tokens[4]) {
+    int count;
+    char *token;
+    char *line_copy = strdup(line);
+
     if (line == NULL || tokens == NULL) {
         return 0;
     }
 
-    char *line_copy = strdup(line);
     if (line_copy == NULL) {
         return 0;
     }
 
-    int count = 0;
-    char *token = strtok(line_copy, " \t\n,");
+    count = 0;
+    token = strtok(line_copy, " \t\n,");
 
     while (token != NULL) {
         if (count >= 4) {

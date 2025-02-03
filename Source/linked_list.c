@@ -47,33 +47,20 @@ void print_list(node *head){
   printf("\n");
 }
 
-int write_list_to_file(node *head, char *filename){
-  FILE *file;
+int write_list_to_file(FILE *file, node *head, char *filename){
   node *current;
   if(filename == NULL){
     fprintf(stderr, "[!] Filename provided is null");
     return 0; /* Failed */
   }
 
-  file = fopen(filename, "w");
-  if(file == NULL){
-    perror("[!] Error opening file for writing");
-    return 0;
-  }
-
   current = head;
   while(current != NULL){
-    if(fprintf(file, "%s\n", current->data) < 0){
+    if(fprintf(file, "%s", current->data) < 0){
       perror("[!] Error writing to file");
-      fclose(file);
       return 0;
     }
     current = current->next;
-  }
-
-  if(fclose(file) != 0){
-    perror("[!] Error closing the file");
-    return 0;
   }
 
   return 1;

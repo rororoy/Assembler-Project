@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../Headers/pre_assembler.h"
+#include "../Headers/error.h"
 #include "../Headers/utils.h"
 
 
@@ -17,8 +18,8 @@ int main(int argc, char *argv[]){
 
   while(f_count < argc){
     printf("[*] Starting the pre assembler stage\n");
-    if(pre_assembler("test1.as")){
-      /* */
+    if(pre_assembler(argv[f_count])){
+      printf("[*] Finished the pre assembler stage\n");
     }else{
       printf("[!] Failed the pre_assembler stage on %s\n", argv[f_count]);
     }
