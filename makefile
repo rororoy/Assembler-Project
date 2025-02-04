@@ -34,7 +34,7 @@ hash_table.o: ./Source/hash_table.c ./Headers/hash_table.h ./Headers/linked_list
 linked_list.o: ./Source/linked_list.c ./Headers/linked_list.h ./Headers/utils.h
 	$(CC) $(CFLAGS) -c ./Source/linked_list.c
 
-utils.o: ./Source/utils.c ./Headers/utils.h ./Headers/error.h ./Headers/global.h
+utils.o: ./Source/utils.c ./Headers/utils.h ./Headers/error.h ./Headers/global.h ./Headers/validate.h
 	$(CC) $(CFLAGS) -c ./Source/utils.c
 
 # Clean up generated files

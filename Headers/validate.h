@@ -3,4 +3,6 @@
 
 int is_saved_word(char *str);
 
+int valid_label(char *tok);
+
 #endif

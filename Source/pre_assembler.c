@@ -77,6 +77,7 @@ int pre_assembler(char *filename){
   hashTable *macro_table;
   char *macro_name;
   hashBucket *ht_bucket;
+  int i;
 
 
   char *tokens[4] = {"", "", "", ""};
@@ -102,8 +103,14 @@ int pre_assembler(char *filename){
   /* Scan and handle macros line by line*/
   while (fgets(line,sizeof(line), file) != NULL){
 
-    if (!tokanize_line(line, tokens)) {
+    if (!tokanize_line(line, tokens, 0)) {
       printf("Error tokenizing line\n");
+    }
+
+    for (i = 0; i < 4; i++) {
+      if (tokens[i] != NULL) {
+        printf("  Tokenssss %d: '%s'\n", i, tokens[i]);
+      }
     }
 
     if(!empty_line(line)){ /* Skip empty lines */
@@ -127,16 +134,28 @@ int pre_assembler(char *filename){
 
           /* Get the next lines after the defenition and log the macro */
           fgets(line, sizeof(line), file);
-          if (!tokanize_line(line, tokens)) {
+          if (!tokanize_line(line, tokens, 0)) {
             printf("Error tokenizing line %s", line);
+          }
+
+          for (i = 0; i < 4; i++) {
+            if (tokens[i] != NULL) {
+              printf("  Token %d: '%s'\n", i, tokens[i]);
+            }
           }
 
           while(strcmp(tokens[0], "mcroend") != 0) {
               add_node(&ht_bucket->code_nodes, line);
               if (ht_bucket->code_nodes){
                 fgets(line, sizeof(line), file);
-                if (!tokanize_line(line, tokens)) {
-                  printf("Error tokenizing line %s", line);
+                if (!tokanize_line(line, tokens, 0)) {
+                  printf("Error tokenizing macro line %s", line);
+                }
+
+                for (i = 0; i < 4; i++) {
+                  if (tokens[i] != NULL) {
+                    printf("  Token %d: '%s'\n", i, tokens[i]);
+                  }
                 }
               }
           }

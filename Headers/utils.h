@@ -9,6 +9,6 @@ char *strdup(char *s);
 
 int valid_length_line(char *line);
 
-int tokanize_line(char *line, char *tokens[4]);
+int tokanize_line(char *line, char *tokens[4], int check_saved_word);
 
 #endif

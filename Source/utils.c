@@ -1,9 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "../Headers/utils.h"
 #include "../Headers/error.h"
 #include "../Headers/global.h"
+#include "../Headers/validate.h"
+
+/*
+ * skip_ws
+ *
+ * Skips any leading whitespace. This helper is modular so that you can later
+ * change (or remove) this behavior.
+ */
+char *skip_ws(char *s)
+{
+    while (*s && isspace(*s)) {
+        s++;
+    }
+    return s;
+}
 
 void check_malloc(void *ptr){
   if(ptr == NULL){
@@ -44,54 +60,108 @@ int valid_length_line(char *line){
   return(strlen(line) <= MAX_LINE_LENGTH);
 }
 
-int tokanize_line(char *line, char *tokens[4]) {
-    int count;
-    char *token;
-    char *line_copy = strdup(line);
+int tokanize_line(char *original_line, char *tokens[4], int check_saved_word)
+{
+    char *p;
+    int token_count = 0;
+    int i;
+    char *start;
+    int command_index = 0;
+    int len;
+    char *line = strdup(original_line);
+    line[strcspn(line, "\n")] = '\0';
 
-    if (line == NULL || tokens == NULL) {
-        return 0;
+    /* Skip any initial whitespace */
+    p = skip_ws(line);
+    if (*p == '\0' || *p == '\n') {
+        return 0;  /* empty line is considered a failure */
     }
 
-    if (line_copy == NULL) {
-        return 0;
-    }
-
-    count = 0;
-    token = strtok(line_copy, " \t\n,");
-
-    while (token != NULL) {
-        if (count >= 4) {
-            free(line_copy);
+    /* Loop over the line until we hit the newline or end of string */
+    while (*p && *p != '\n') {
+        /* Skip delimiters: whitespace and commas */
+        while (*p && (*p == ' ' || *p == '\t' || *p == ',')) {
+            p++;
+        }
+        if (*p == '\0' || *p == '\n') {
+            break;
+        }
+        if (token_count >= 4) {
+            /* Too many tokens */
             return 0;
         }
+        if (*p == '"') {
+            /* A token starting with a double quote: string literal */
+            start = p;  /* Include the opening quote */
+            p++;  /* Advance past the opening quote */
+            while (*p && *p != '\n' && *p != '"') {
+                p++;
+            }
+            if (*p != '"') {
+                /* No closing quote found */
+                return 0;
+            }
+            p++;  /* Move past the closing quote */
+            /* Optionally, if a delimiter follows, null-terminate here */
+            if (*p && (*p == ' ' || *p == '\t' || *p == ',')) {
+                *p = '\0';
+                p++;
+            }
+            tokens[token_count++] = start;
+        } else {
+            /* A non-quoted token */
+            start = p;
+            while (*p && *p != '\0' && *p != '\n' &&
+                   !isspace((unsigned char)*p) && *p != ',') {
+                p++;
+            }
+            if (*p && *p != '\n') {
+                *p = '\0';
+                p++;
+            }
+            tokens[token_count++] = start;
+        }
+        /* Skip any delimiters following the token */
+        while (*p && (*p == ' ' || *p == '\t' || *p == ',')) {
+            p++;
+        }
+    }
 
-        if (count == 0) {
-            size_t len = strlen(token);
-            if (len > 0 && token[len - 1] == ':') {
-                token[len - 1] = '\0';
+    /* Check for an optional label */
+    if (token_count > 0) {
+        len = strlen(tokens[0]);
+        if (len > 0 && tokens[0][len - 1] == ':') {
+            if (!valid_label(tokens[0])) {
+                return 0;
+            }
+            command_index = 1;  /* The command is the next token */
+        } else {
+            command_index = 0;
+        }
+        if (command_index >= token_count) {
+            /* No command token found after the label */
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+
+    /* Verify that the command token is one of the saved words */
+    if (!is_saved_word(tokens[command_index]) && check_saved_word) {
+      return 0;  /* Fail if macros are not allowed */
+    }
+
+    /* For each argument token (if not a string literal), ensure it is not a saved word */
+    for (i = command_index + 1; i < token_count; i++) {
+        if (tokens[i][0] != '"') {
+            if (is_saved_word(tokens[i])) {
+                return 0;
             }
         }
-
-        tokens[count++] = token;
-        token = strtok(NULL, " \t\n,");
     }
-
-    while (count < 4) {
-        tokens[count++] = NULL;
+    /* Set any remaining tokens to NULL */
+    for (i = token_count; i < 4; i++) {
+        tokens[i] = NULL;
     }
-
-    /*
-     * IMPORTANT:
-     * The tokens point into the memory allocated by strdup (line_copy).
-     * If you need the tokens to persist beyond the current scope,
-     * consider managing the lifetime of 'line_copy' appropriately.
-     *
-     * For this example, we are not freeing 'line_copy' immediately because
-     * the tokens would then point to freed memory. In a real application,
-     * you should either return 'line_copy' to the caller (so they can free it later)
-     * or manage its lifetime within a larger context.
-     */
-
     return 1;
 }

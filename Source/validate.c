@@ -1,4 +1,5 @@
 #include <string.h>
+#include <ctype.h>
 #include "../Headers/validate.h"
 #include "../Headers/global.h"
 
@@ -37,4 +38,21 @@ int is_saved_word(char *str){
   }
 
   return 0;
+}
+
+int valid_label(char *tok){
+    int i, len;
+    len = strlen(tok);
+    if (len < 2) {
+        return 0;  /* too short to be a label */
+    }
+    if (tok[len - 1] != ':') {
+        return 0;
+    }
+    for (i = 0; i < len - 1; i++) {
+        if (!isalpha((unsigned char)tok[i])) {
+            return 0;
+        }
+    }
+    return 1;
 }
