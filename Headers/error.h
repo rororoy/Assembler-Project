@@ -1,6 +1,14 @@
+typedef enum {
+    INTERNAL,
+    EXTERNAL
+} error_scope;
+
 typedef struct{
-  int code; /* The error code number */
-  char *msg; /* The description of the error */
+  error_scope context; /* The context of the error - if it was iternal (fault in the program) or external (user) */
+  char *name;
+  char *description;
 } error;
 
-void print_error();
+extern error errors[];
+
+void print_error(char *name, char *additional_arg, int line_number);

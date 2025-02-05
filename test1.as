@@ -7,7 +7,7 @@ mcroend
  lea STR, r6
  inc r6
  mov r3, K
-mcro b_mc   asdas
+mcro b_mc asda
  add r1, r2
  mov r1, r3
  sub r4, r2

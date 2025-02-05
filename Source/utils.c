@@ -51,16 +51,8 @@ char *strdup(char *s){
     return dup;
 }
 
-/*
-  Recieves a line from the assembly file and checks if it falls withing the 80
-  chars length limit
-  @return 0 if the line length is too long return 1 if valid
-*/
-int valid_length_line(char *line){
-  return(strlen(line) <= MAX_LINE_LENGTH);
-}
 
-int tokanize_line(char *original_line, char *tokens[4], int check_saved_word)
+int tokanize_line(char *original_line, char *tokens[4], int macro_scan)
 {
     char *p;
     int token_count = 0;
@@ -74,7 +66,7 @@ int tokanize_line(char *original_line, char *tokens[4], int check_saved_word)
     /* Skip any initial whitespace */
     p = skip_ws(line);
     if (*p == '\0' || *p == '\n') {
-        return 0;  /* empty line is considered a failure */
+        return 0;  /* Encountered an empty line - skip */
     }
 
     /* Loop over the line until we hit the newline or end of string */
@@ -87,7 +79,7 @@ int tokanize_line(char *original_line, char *tokens[4], int check_saved_word)
             break;
         }
         if (token_count >= 4) {
-            /* Too many tokens */
+            print_error(); /* Extranous text at the end */
             return 0;
         }
         if (*p == '"') {
@@ -146,22 +138,38 @@ int tokanize_line(char *original_line, char *tokens[4], int check_saved_word)
         return 0;
     }
 
-    /* Verify that the command token is one of the saved words */
-    if (!is_saved_word(tokens[command_index]) && check_saved_word) {
-      return 0;  /* Fail if macros are not allowed */
-    }
-
-    /* For each argument token (if not a string literal), ensure it is not a saved word */
-    for (i = command_index + 1; i < token_count; i++) {
-        if (tokens[i][0] != '"') {
-            if (is_saved_word(tokens[i])) {
-                return 0;
-            }
+    if (!macro_scan) {
+      if (is_saved_word(tokens[command_index])) {
+          /* For each argument token (if not a string literal), ensure it is not a saved word */
+          for (i = command_index + 1; i < token_count; i++) {
+              if (tokens[i][0] != '"') {
+                  if (is_saved_word(tokens[i])) {
+                      return 0;
+                  }
+              }
+          }
         }
-    }
+    } else {
+        /* Not a saved word: check for valid macro commands */
+        if (strcmp(tokens[command_index], "mcroend") == 0) {
+            /* "mcroend" must be the only token (or only token after a label) */
+            if (token_count != command_index + 1){
+              printf("ERROR: Faulty macro at mcroend\n");
+              return 0;
+            }
+        } else if (strcmp(tokens[command_index], "mcro") == 0) {
+            /* "mcro" must be followed by exactly one token (the macro name) */
+            printf("FOR TOKEN %s THE TOKEN COUNT IS %d\n", tokens[1], token_count);
+            if (token_count != command_index + 2){
+              printf("ERROR: Faulty macro definiton\n");
+              return 0;
+          }
+      }
+  }
+
     /* Set any remaining tokens to NULL */
-    for (i = token_count; i < 4; i++) {
-        tokens[i] = NULL;
-    }
-    return 1;
+  for (i = token_count; i < 4; i++) {
+    tokens[i] = NULL;
+  }
+  return 1;
 }

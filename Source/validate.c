@@ -28,11 +28,21 @@ char *RESERVED_WORDS[] = {
   "mcroend"
 };
 
+/*
+  Recieves a line from the assembly file and checks if it falls withing the 80
+  chars length limit
+  @return 0 if the line length is too long return 1 if valid
+*/
+int valid_length_line(char *line){
+  return(strlen(line) <= MAX_LINE_LENGTH);
+}
+
 int is_saved_word(char *str){
   int i;
 
   for(i = 0; i < NUM_RESERVED_WORDS; i++){
     if(strcmp(str, RESERVED_WORDS[i]) == 0){
+      print_error(); /* Saved word */
       return 1;
     }
   }
@@ -47,11 +57,13 @@ int valid_label(char *tok){
         return 0;  /* too short to be a label */
     }
     if (tok[len - 1] != ':') {
-        return 0;
+      print_error(); /* unkown command used */
+      return 0;
     }
     for (i = 0; i < len - 1; i++) {
         if (!isalpha((unsigned char)tok[i])) {
-            return 0;
+          print_error(); /* Label defenition */
+          return 0;
         }
     }
     return 1;

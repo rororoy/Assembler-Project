@@ -42,7 +42,7 @@ hashBucket *insert_entry(hashTable *ht, char *name){
   int index;
   int original_index;
   if(ht == NULL || name == NULL){ /* If one of the params is empty */
-    fprintf(stderr, "Error invalid arguments for macro:%s\n", name);
+    print_error(); /* Recieved an empty parameter */
     return NULL;
   }
 
@@ -95,7 +95,7 @@ hashBucket *search_table(hashTable *ht, char *name){
   int index;
   int original_index;
   if(ht == NULL || name == NULL){ /* If one of the params is empty */
-    fprintf(stderr, "Error invalid arguments for macro:%s\n", name);
+    print_error(); /* Missing argument in function */
     return NULL;
   }
 
@@ -109,7 +109,7 @@ hashBucket *search_table(hashTable *ht, char *name){
     }
     index = (index+1) % ht->size;
     if(index == original_index){
-      fprintf(stderr, "ERROR HASH TABLE IS FULL");
+       /* Didn't find the entry */
       return NULL;
     }
   }
@@ -149,6 +149,7 @@ hashTable *resize_table(hashTable *old_ht){
         }
       }else{
         /* Encountered problem in inserting entry */
+        print_error(); /* Error inserting entry */
         return NULL;
       }
     }

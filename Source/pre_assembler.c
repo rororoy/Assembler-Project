@@ -63,10 +63,8 @@ char *extract_macro(char *line){
   return extracted_macro;
 }
 
-
-
 /*
-
+TODO make the function return and close all its contents for each return call
   @param
   @return 0 if encountered error 1 if ok
 */
@@ -93,8 +91,7 @@ int pre_assembler(char *filename){
   /* Open the temp file */
   temp_file = fopen("temp.as", "w");
   if(temp_file == NULL){
-    print_error();
-    perror("[!] Error opening file for writing");
+    print_error(); /* ERROR: FILE OPEN ERROR */
     return 0;
   }
 
@@ -103,19 +100,19 @@ int pre_assembler(char *filename){
   /* Scan and handle macros line by line*/
   while (fgets(line,sizeof(line), file) != NULL){
 
-    if (!tokanize_line(line, tokens, 0)) {
-      printf("Error tokenizing line\n");
-    }
-
-    for (i = 0; i < 4; i++) {
-      if (tokens[i] != NULL) {
-        printf("  Tokenssss %d: '%s'\n", i, tokens[i]);
-      }
+    if (!tokanize_line(line, tokens, 1)) {
+      free_hash_table(macro_table);
+      fclose(file);
+      fclose(temp_file);
+      return 0;
     }
 
     if(!empty_line(line)){ /* Skip empty lines */
       if(!valid_length_line(line)){
         print_error(); /* ERROR: LINE LENGTH */
+        free_hash_table(macro_table);
+        fclose(file);
+        fclose(temp_file);
         return 0;
       }
 
@@ -134,33 +131,33 @@ int pre_assembler(char *filename){
 
           /* Get the next lines after the defenition and log the macro */
           fgets(line, sizeof(line), file);
-          if (!tokanize_line(line, tokens, 0)) {
+          if (!tokanize_line(line, tokens, 1)) {
             printf("Error tokenizing line %s", line);
-          }
-
-          for (i = 0; i < 4; i++) {
-            if (tokens[i] != NULL) {
-              printf("  Token %d: '%s'\n", i, tokens[i]);
-            }
+            printf("Closing\n");
+            free_hash_table(macro_table);
+            fclose(file);
+            fclose(temp_file);
+            return 0;
           }
 
           while(strcmp(tokens[0], "mcroend") != 0) {
               add_node(&ht_bucket->code_nodes, line);
               if (ht_bucket->code_nodes){
                 fgets(line, sizeof(line), file);
-                if (!tokanize_line(line, tokens, 0)) {
-                  printf("Error tokenizing macro line %s", line);
+                if (!tokanize_line(line, tokens, 1)) {
+                  printf("Closing\n");
+                  free_hash_table(macro_table);
+                  fclose(file);
+                  fclose(temp_file);
+                  return 0;
                 }
 
-                for (i = 0; i < 4; i++) {
-                  if (tokens[i] != NULL) {
-                    printf("  Token %d: '%s'\n", i, tokens[i]);
-                  }
-                }
               }
           }
           /* print_list(ht_bucket->code_nodes); */
         }
+
+      /* If a name of a defined macro was encountered - unpack it */
       }else if((ht_bucket = search_table(macro_table, tokens[0])) != NULL){
         /* Found a mention of a macro we encountered -> unpack it */
         if(!write_list_to_file(temp_file, ht_bucket->code_nodes, "temp.as")){
@@ -172,7 +169,8 @@ int pre_assembler(char *filename){
           return 0;
         }
 
-      }else{ /* If any other line -> just write it as is */
+      /* If any other line -> just write it as is */
+      }else{
         if(fprintf(temp_file, "%s", line) < 0){
           printf("Failed to write to file\n");
           free_hash_table(macro_table);
