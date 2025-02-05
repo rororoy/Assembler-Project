@@ -27,7 +27,7 @@ validate.o: ./Source/validate.c ./Headers/validate.h ./Headers/global.h
 	$(CC) $(CFLAGS) -c ./Source/validate.c
 
 # Compile utils.o
-hash_table.o: ./Source/hash_table.c ./Headers/hash_table.h ./Headers/linked_list.h ./Headers/utils.h
+hash_table.o: ./Source/hash_table.c ./Headers/hash_table.h ./Headers/linked_list.h ./Headers/utils.h ./Headers/error.h
 	$(CC) $(CFLAGS) -c ./Source/hash_table.c
 
 # Compile utils.o

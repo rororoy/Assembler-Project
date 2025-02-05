@@ -1,7 +1,9 @@
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 #include "../Headers/validate.h"
 #include "../Headers/global.h"
+#include "../Headers/error.h"
 
 char *RESERVED_WORDS[] = {
   "mov",
@@ -42,7 +44,7 @@ int is_saved_word(char *str){
 
   for(i = 0; i < NUM_RESERVED_WORDS; i++){
     if(strcmp(str, RESERVED_WORDS[i]) == 0){
-      print_error(); /* Saved word */
+      print_error("Saved word", str, 0); /* Saved word */
       return 1;
     }
   }
@@ -57,12 +59,12 @@ int valid_label(char *tok){
         return 0;  /* too short to be a label */
     }
     if (tok[len - 1] != ':') {
-      print_error(); /* unkown command used */
+      print_error("Unkown command", tok, 0); /* unkown command used */
       return 0;
     }
     for (i = 0; i < len - 1; i++) {
         if (!isalpha((unsigned char)tok[i])) {
-          print_error(); /* Label defenition */
+          print_error("Unkown command", tok, 0); /* Label defenition */
           return 0;
         }
     }

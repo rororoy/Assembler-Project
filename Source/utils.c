@@ -23,7 +23,7 @@ char *skip_ws(char *s)
 
 void check_malloc(void *ptr){
   if(ptr == NULL){
-    print_error();
+    print_error("Malloc", "", 0);
   }
 }
 
@@ -79,7 +79,7 @@ int tokanize_line(char *original_line, char *tokens[4], int macro_scan)
             break;
         }
         if (token_count >= 4) {
-            print_error(); /* Extranous text at the end */
+            print_error("Extranous text", "", 0); /* Extranous text at the end */
             return 0;
         }
         if (*p == '"') {
@@ -154,15 +154,17 @@ int tokanize_line(char *original_line, char *tokens[4], int macro_scan)
         if (strcmp(tokens[command_index], "mcroend") == 0) {
             /* "mcroend" must be the only token (or only token after a label) */
             if (token_count != command_index + 1){
-              printf("ERROR: Faulty macro at mcroend\n");
+              print_error("Extranous text", "mcroend", 0);
               return 0;
             }
         } else if (strcmp(tokens[command_index], "mcro") == 0) {
             /* "mcro" must be followed by exactly one token (the macro name) */
-            printf("FOR TOKEN %s THE TOKEN COUNT IS %d\n", tokens[1], token_count);
-            if (token_count != command_index + 2){
-              printf("ERROR: Faulty macro definiton\n");
-              return 0;
+          if (token_count > 2){
+            print_error("Extranous text", "mcro", 0);
+            return 0;
+          }else if(token_count < 2){
+            print_error("No macro", "", 0);
+            return 0;
           }
       }
   }

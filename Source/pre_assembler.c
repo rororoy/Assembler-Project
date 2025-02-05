@@ -37,7 +37,7 @@ char *extract_macro(char *line){
   ptr += 4;
 
   if(!(isspace(*ptr))){
-    print_error(); /* Error in mcro defenition - unkown command */
+    print_error("Unkown command", "", 0); /* Error in mcro defenition - unkown command */
     return NULL;
   }
 
@@ -50,7 +50,7 @@ char *extract_macro(char *line){
   }
 
   if(ptr-macro_start == 0){
-    print_error(); /* No macro defined */
+    print_error("No macro", "", 0); /* No macro defined */
     return NULL;
   }
 
@@ -75,7 +75,7 @@ int pre_assembler(char *filename){
   hashTable *macro_table;
   char *macro_name;
   hashBucket *ht_bucket;
-  int i;
+  int line_count = 1;
 
 
   char *tokens[4] = {"", "", "", ""};
@@ -84,14 +84,14 @@ int pre_assembler(char *filename){
   /* Open the original file */
   file = fopen(filename, "r");
   if(file == NULL) {
-    print_error(); /* ERROR: FILE OPEN ERROR */
+    print_error("File read", filename, line_count); /* ERROR: FILE OPEN ERROR */
     return 0;
   }
 
   /* Open the temp file */
   temp_file = fopen("temp.as", "w");
   if(temp_file == NULL){
-    print_error(); /* ERROR: FILE OPEN ERROR */
+    print_error("File write", "temp.as", line_count); /* ERROR: FILE OPEN ERROR */
     return 0;
   }
 
@@ -99,6 +99,12 @@ int pre_assembler(char *filename){
 
   /* Scan and handle macros line by line*/
   while (fgets(line,sizeof(line), file) != NULL){
+    line_count++;
+
+    while(empty_line(line)){
+      line_count++;
+      fgets(line, sizeof(line), file);
+    }
 
     if (!tokanize_line(line, tokens, 1)) {
       free_hash_table(macro_table);
@@ -109,7 +115,7 @@ int pre_assembler(char *filename){
 
     if(!empty_line(line)){ /* Skip empty lines */
       if(!valid_length_line(line)){
-        print_error(); /* ERROR: LINE LENGTH */
+        print_error("Line length", "", line_count); /* ERROR: LINE LENGTH */
         free_hash_table(macro_table);
         fclose(file);
         fclose(temp_file);
@@ -120,7 +126,6 @@ int pre_assembler(char *filename){
         if((macro_name = tokens[1]) != NULL) { /* Extract macro */
           /* printf("found macro %s\n", macro_name); */
           if(is_saved_word(macro_name)){
-            print_error(); /* ERROR: MACRO NAME CAN'T BE A SAVED WORD */
             free_hash_table(macro_table);
             fclose(file);
             fclose(temp_file);
@@ -131,9 +136,15 @@ int pre_assembler(char *filename){
 
           /* Get the next lines after the defenition and log the macro */
           fgets(line, sizeof(line), file);
+
+          /* Skip empty lines */
+          while(empty_line(line)){
+            line_count++;
+            fgets(line, sizeof(line), file);
+          }
+
+          line_count++;
           if (!tokanize_line(line, tokens, 1)) {
-            printf("Error tokenizing line %s", line);
-            printf("Closing\n");
             free_hash_table(macro_table);
             fclose(file);
             fclose(temp_file);
@@ -141,18 +152,31 @@ int pre_assembler(char *filename){
           }
 
           while(strcmp(tokens[0], "mcroend") != 0) {
-              add_node(&ht_bucket->code_nodes, line);
-              if (ht_bucket->code_nodes){
-                fgets(line, sizeof(line), file);
-                if (!tokanize_line(line, tokens, 1)) {
-                  printf("Closing\n");
+            add_node(&ht_bucket->code_nodes, line);
+            if (ht_bucket->code_nodes){
+              line_count++;
+
+              /* Read next line */
+              fgets(line, sizeof(line), file);
+              /* Skip empty lines */
+              while(empty_line(line)){
+                line_count++;
+                if(fgets(line, sizeof(line), file) == NULL){
+                  print_error("Macro reached EOF", "", line_count);
                   free_hash_table(macro_table);
                   fclose(file);
                   fclose(temp_file);
                   return 0;
                 }
-
               }
+
+              if (!tokanize_line(line, tokens, 1)) {
+                free_hash_table(macro_table);
+                fclose(file);
+                fclose(temp_file);
+                return 0;
+              }
+            }
           }
           /* print_list(ht_bucket->code_nodes); */
         }
@@ -161,8 +185,6 @@ int pre_assembler(char *filename){
       }else if((ht_bucket = search_table(macro_table, tokens[0])) != NULL){
         /* Found a mention of a macro we encountered -> unpack it */
         if(!write_list_to_file(temp_file, ht_bucket->code_nodes, "temp.as")){
-          print_error();
-          printf("Failed unpacking");
           free_hash_table(macro_table);
           fclose(file);
           fclose(temp_file);
@@ -172,7 +194,7 @@ int pre_assembler(char *filename){
       /* If any other line -> just write it as is */
       }else{
         if(fprintf(temp_file, "%s", line) < 0){
-          printf("Failed to write to file\n");
+          print_error("Failed writing", "temp.as", line_count);
           free_hash_table(macro_table);
           fclose(file);
           fclose(temp_file);

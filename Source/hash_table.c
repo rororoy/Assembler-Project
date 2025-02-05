@@ -4,6 +4,7 @@
 #include "../Headers/hash_table.h"
 #include "../Headers/linked_list.h"
 #include "../Headers/utils.h"
+#include "../Headers/error.h"
 
 hashTable *make_hash_table(int size){
   int i;
@@ -42,7 +43,7 @@ hashBucket *insert_entry(hashTable *ht, char *name){
   int index;
   int original_index;
   if(ht == NULL || name == NULL){ /* If one of the params is empty */
-    print_error(); /* Recieved an empty parameter */
+    print_error("Missing argument", "(insert entry)", 0); /* Recieved an empty parameter */
     return NULL;
   }
 
@@ -70,8 +71,7 @@ hashBucket *insert_entry(hashTable *ht, char *name){
       return &(ht->bucket[index]); /* Macro already exists return it*/
     }
     index = (index+1)%ht->size;
-    if(index == original_index){
-      fprintf(stderr, "ERROR HASH TABLE IS FULL");
+    if(index == original_index){ /* TODO CHECK IF NEED THIS COS NO WAY THIS IS FULL */
       return NULL;
     }
   }
@@ -95,7 +95,7 @@ hashBucket *search_table(hashTable *ht, char *name){
   int index;
   int original_index;
   if(ht == NULL || name == NULL){ /* If one of the params is empty */
-    print_error(); /* Missing argument in function */
+    print_error("Missing argument", "(search table)", 0); /* Recieved an empty parameter */
     return NULL;
   }
 
@@ -129,7 +129,7 @@ hashTable *resize_table(hashTable *old_ht){
   new_ht = make_hash_table(new_size);
 
   if(new_ht == NULL){
-    fprintf(stderr, "ERROR WHEN CREATING NEW RESIZED HASH TABLE\n");
+    print_error("Create hashtable", "(resize)", 0);
     return NULL;
   }
 
@@ -149,7 +149,7 @@ hashTable *resize_table(hashTable *old_ht){
         }
       }else{
         /* Encountered problem in inserting entry */
-        print_error(); /* Error inserting entry */
+        print_error("Insert hash", "(resize)", 0); /* Error inserting entry */
         return NULL;
       }
     }
