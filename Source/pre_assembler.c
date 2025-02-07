@@ -28,6 +28,10 @@ int check_for_macro(char *line){
   return 1;
 }
 
+int process_macro_definition(FILE *in, hashBucket *ht_bucket, int *line_count){
+  return 0;
+}
+
 char *extract_macro(char *line){
   /* TODO CHECK FOR SAVED WORDS WITH AN IMPLEMENTATION OF SAVED_WORDS */
   char *macro_start;
@@ -68,143 +72,125 @@ TODO make the function return and close all its contents for each return call
   @param
   @return 0 if encountered error 1 if ok
 */
-int pre_assembler(char *filename){
-  FILE *file, *temp_file;
-  char line[MAX_LINE_LENGTH + 2]; /* Create an 80 char buffer + \0 + \n chars */
-  /* int line_count = 1;  Line counter */
-  hashTable *macro_table;
-  char *macro_name;
-  hashBucket *ht_bucket;
-  int line_count = 1;
+int pre_assembler(char *filename) {
+    FILE *file, *temp_file;
+    char line[MAX_LINE_LENGTH + 2]; /* Buffer for a line: MAX_LINE_LENGTH + '\n' + '\0' */
+    hashTable *macro_table;
+    char *macro_name;
+    hashBucket *ht_bucket;
+    int line_count = 0;
+    char *tokens[4] = {"", "", "", ""};
 
-
-  char *tokens[4] = {"", "", "", ""};
-
-
-  /* Open the original file */
-  file = fopen(filename, "r");
-  if(file == NULL) {
-    print_error("File read", filename, line_count); /* ERROR: FILE OPEN ERROR */
-    return 0;
-  }
-
-  /* Open the temp file */
-  temp_file = fopen("temp.as", "w");
-  if(temp_file == NULL){
-    print_error("File write", "temp.as", line_count); /* ERROR: FILE OPEN ERROR */
-    return 0;
-  }
-
-  macro_table = make_hash_table(HASH_TABLE_INITIAL_SIZE);
-
-  /* Scan and handle macros line by line*/
-  while (fgets(line,sizeof(line), file) != NULL){
-    line_count++;
-
-    while(empty_line(line)){
-      line_count++;
-      fgets(line, sizeof(line), file);
-    }
-
-    if (!tokanize_line(line, tokens, 1)) {
-      free_hash_table(macro_table);
-      fclose(file);
-      fclose(temp_file);
-      return 0;
-    }
-
-    if(!empty_line(line)){ /* Skip empty lines */
-      if(!valid_length_line(line)){
-        print_error("Line length", "", line_count); /* ERROR: LINE LENGTH */
-        free_hash_table(macro_table);
-        fclose(file);
-        fclose(temp_file);
+    /* Open the original file */
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        print_error("File read", filename, line_count);
         return 0;
-      }
+    }
 
-      if(strcmp(tokens[0], "mcro") == 0) { /* Check if the line has a macro definition */
-        if((macro_name = tokens[1]) != NULL) { /* Extract macro */
-          /* printf("found macro %s\n", macro_name); */
-          if(is_saved_word(macro_name)){
+    /* Open the temporary output file */
+    temp_file = fopen("temp.as", "w");
+    if (temp_file == NULL) {
+        print_error("File write", "temp.as", line_count);
+        fclose(file);
+        return 0;
+    }
+
+    macro_table = make_hash_table(HASH_TABLE_INITIAL_SIZE);
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        line_count++;
+
+        if (!valid_length_line(line)) {
+            print_error("Line length", "", line_count);
             free_hash_table(macro_table);
             fclose(file);
             fclose(temp_file);
             return 0;
-          }
+        }
 
-          ht_bucket = insert_entry(macro_table, macro_name);
+        /* Filter out empty lines */
+        if (empty_line(line))
+            continue;
 
-          /* Get the next lines after the defenition and log the macro */
-          fgets(line, sizeof(line), file);
-
-          /* Skip empty lines */
-          while(empty_line(line)){
-            line_count++;
-            fgets(line, sizeof(line), file);
-          }
-
-          line_count++;
-          if (!tokanize_line(line, tokens, 1)) {
+        if (!tokanize_line(line, tokens, 1)) {
             free_hash_table(macro_table);
             fclose(file);
             fclose(temp_file);
             return 0;
-          }
+        }
 
-          while(strcmp(tokens[0], "mcroend") != 0) {
-            add_node(&ht_bucket->code_nodes, line);
-            if (ht_bucket->code_nodes){
-              line_count++;
-
-              /* Read next line */
-              fgets(line, sizeof(line), file);
-              /* Skip empty lines */
-              while(empty_line(line)){
-                line_count++;
-                if(fgets(line, sizeof(line), file) == NULL){
-                  print_error("Macro reached EOF", "", line_count);
-                  free_hash_table(macro_table);
-                  fclose(file);
-                  fclose(temp_file);
-                  return 0;
-                }
-              }
-
-              if (!tokanize_line(line, tokens, 1)) {
+        /* Check for a macro definition start */
+        if (strcmp(tokens[0], "mcro") == 0) {
+            macro_name = tokens[1];
+            if (macro_name == NULL || is_saved_word(macro_name)) {
                 free_hash_table(macro_table);
                 fclose(file);
                 fclose(temp_file);
                 return 0;
-              }
             }
-          }
-          /* print_list(ht_bucket->code_nodes); */
+
+            ht_bucket = insert_entry(macro_table, macro_name);
+            if(ht_bucket == NULL){
+              /* TODO ERROR HERE */
+              break;
+            }
+
+            /* Read the macro body until "mcroend" is encountered.
+               Empty lines within the macro definition are filtered out. */
+            while (fgets(line, sizeof(line), file) != NULL) {
+                line_count++;
+
+                if (!valid_length_line(line)) {
+                    print_error("Line length", "", line_count);
+                    free_hash_table(macro_table);
+                    fclose(file);
+                    fclose(temp_file);
+                    return 0;
+                }
+
+                if (empty_line(line))
+                    continue;
+
+                if (!tokanize_line(line, tokens, 1)) {
+                    free_hash_table(macro_table);
+                    fclose(file);
+                    fclose(temp_file);
+                    return 0;
+                }
+
+                if (strcmp(tokens[0], "mcroend") == 0){
+                  break; /* End of macro definition */
+                }
+                add_node(&ht_bucket->code_nodes, line);
+            }
+            /* After storing the macro definition, move on to the next line */
+            continue;
         }
 
-      /* If a name of a defined macro was encountered - unpack it */
-      }else if((ht_bucket = search_table(macro_table, tokens[0])) != NULL){
-        /* Found a mention of a macro we encountered -> unpack it */
-        if(!write_list_to_file(temp_file, ht_bucket->code_nodes, "temp.as")){
-          free_hash_table(macro_table);
-          fclose(file);
-          fclose(temp_file);
-          return 0;
+        /* Check for a macro call: if the first token matches a defined macro */
+        ht_bucket = search_table(macro_table, tokens[0]);
+        if (ht_bucket != NULL) {
+            if (!write_list_to_file(temp_file, ht_bucket->code_nodes, "temp.as")) {
+                free_hash_table(macro_table);
+                fclose(file);
+                fclose(temp_file);
+                return 0;
+            }
+        } else {
+            /* A normal line: write it to the output file */
+            if (fprintf(temp_file, "%s", line) < 0) {
+                print_error("Failed writing", "temp.as", line_count);
+                free_hash_table(macro_table);
+                fclose(file);
+                fclose(temp_file);
+                return 0;
+            }
         }
-
-      /* If any other line -> just write it as is */
-      }else{
-        if(fprintf(temp_file, "%s", line) < 0){
-          print_error("Failed writing", "temp.as", line_count);
-          free_hash_table(macro_table);
-          fclose(file);
-          fclose(temp_file);
-          return 0;
-        }
-      }
     }
-  }
-  free_hash_table(macro_table);
-  fclose(file);
-  fclose(temp_file);
-  return 1;
+
+    free_hash_table(macro_table);
+    fclose(file);
+    fclose(temp_file);
+    return 1;
 }

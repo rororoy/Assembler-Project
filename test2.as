@@ -1,16 +1,39 @@
-op1 r1, r2
-op2 r2, r1
-mcro test_macro
-  add, $4
-  do something1
-  do something 2
+op1
+op2
+mcro macro1
+  macro1_command1
+  macro1_command2
+  macro1_command3
 
-  test
+
+
+
+
+  macro1_command4
+
 mcroend
 
-LALALA
-mcro t1
-  test1
+op3
+op4
+
+
+
+op5
+
+macro1
+
+macro1
+
+macro 1
+
+mcro macro2
+
+  macro2_command1
 mcroend
 
-test_macro
+macro2
+
+mcro macro3
+mcroend
+
+macro3
