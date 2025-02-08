@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "../Headers/linked_list.h"
 #include "../Headers/utils.h"
+#include "../Headers/error.h"
 
 node *make_node(char *data){
   node *new_node = malloc(sizeof(node));

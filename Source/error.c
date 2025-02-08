@@ -3,8 +3,8 @@
 #include "../Headers/error.h"
 
 error errors[] = {
-  {INTERNAL, "File write", "Error opening file for writing"},
-  {INTERNAL, "File read", "Error opening file for reading"},
+  {INTERNAL, "File write", "Error opening file for writing on"},
+  {INTERNAL, "File read", "Error opening file for reading on"},
   {INTERNAL, "Missing argument", "Missing arguents in function"},
   {INTERNAL, "Malloc", "Failed on memory alocation"},
   {INTERNAL, "Insert hash", "Encountered error inserting entry into the hash table"},
@@ -25,7 +25,13 @@ void print_error(char *name, char *additional_arg, int line_number){
   int i = 0;
   while(errors[i].name != NULL){
     if(strcmp(errors[i].name, name) == 0){
-      printf("[!] ERROR: %s %s on line %d\n", errors[i].description, additional_arg, line_number);
+      printf("[!] ERROR: %s %s", errors[i].description, additional_arg);
+
+      if(errors[i].context == EXTERNAL){
+        printf(" on line %d", line_number);
+      }
+
+      printf("\n");
       return;
     }
     i++;

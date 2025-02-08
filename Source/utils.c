@@ -51,6 +51,30 @@ char *strdup(char *s){
     return dup;
 }
 
+char* append_extension(char *filename, const char *extension) {
+  size_t total_length;
+  char *new_filename;
+
+  if (filename == NULL || extension == NULL){
+    print_error("Missing arguments", "", 0);
+    return NULL;
+  }
+
+  /* Calculate the total length needed: original length + extension length + 1 for null terminator */
+  total_length = strlen(filename) + strlen(extension) + 1;
+  new_filename = malloc(total_length);
+  if (new_filename == NULL) {
+    perror("malloc failed");
+    exit(EXIT_FAILURE);
+  }
+
+  /* Copy the original filename and append the extension */
+  strcpy(new_filename, filename);
+  strcat(new_filename, extension);
+
+  return new_filename;
+}
+
 
 int tokanize_line(char *original_line, char *tokens[4], int macro_scan)
 {
