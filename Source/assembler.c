@@ -4,6 +4,7 @@
 #include "../Headers/error.h"
 #include "../Headers/utils.h"
 #include "../Headers/first_stage.h"
+#include "../Headers/linked_list.h"
 
 /*
   TODO ADD WRAPPER FUNCTION TO FGETS WHEN READING NEW LINES - TO HANDLE STUFF LIKE SKIPPING NEW LINES AND CHECKING FOR ERRORS
@@ -22,6 +23,8 @@ int main(int argc, char *argv[]){
   }
 
   while(f_count < argc){
+    node *label_table = NULL;
+
     /***************        Pre assembler stage       *************************/
     printf("[*] Starting the pre assembler stage on %s\n", argv[f_count]);
 
@@ -35,7 +38,7 @@ int main(int argc, char *argv[]){
     /***************      First assembler stage       *************************/
     printf("[*] Starting the first assembler stage on %s\n", argv[f_count]);
 
-    if(first_pass(argv[f_count])){
+    if((label_table = first_pass(argv[f_count])) != NULL){
       printf("[*] Finished the first assembler stage on %s\n\n", argv[f_count]);
     }else{
       printf("[!] Failed the first assembler stage on %s\n\n", argv[f_count]);

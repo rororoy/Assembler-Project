@@ -7,7 +7,22 @@
 #include "../Headers/utils.h"
 #include "../Headers/global.h"
 #include "../Headers/validate.h"
+#include "../Headers/translate.h"
+#include "../Headers/linked_list.h"
 
-int first_pass(char *filename){
-  return 1;
+node *first_pass(char *filename){
+  FILE *file;
+  node *labels_list = NULL;
+
+  am_file = append_extension(filename, ".am");
+
+  /* Open the am file */
+  file = fopen(as_file, "r");
+  if (file == NULL) {
+    print_error("File read", filename, line_count);
+    return NULL;
+  }
+
+  return labels_list;
+
 }

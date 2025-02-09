@@ -9,10 +9,10 @@ TARGET = assembler
 all: $(TARGET)
 
 # Link object files to create the executable
-$(TARGET): assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o
-	$(CC) $(CFLAGS) -o $(TARGET) assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o
+$(TARGET): assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o
+	$(CC) $(CFLAGS) -o $(TARGET) assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o
 
-assembler.o: ./Source/assembler.c ./Headers/assembler.h ./Headers/pre_assembler.h ./Headers/utils.h ./Headers/error.h ./Headers/first_stage.h
+assembler.o: ./Source/assembler.c ./Headers/assembler.h ./Headers/pre_assembler.h ./Headers/utils.h ./Headers/error.h ./Headers/first_stage.h ./Headers/translate.h ./Headers/linked_list.h
 	$(CC) $(CFLAGS) -c ./Source/assembler.c
 
 # Compile mycomp.o
@@ -37,8 +37,11 @@ linked_list.o: ./Source/linked_list.c ./Headers/linked_list.h ./Headers/utils.h 
 utils.o: ./Source/utils.c ./Headers/utils.h ./Headers/error.h ./Headers/global.h ./Headers/validate.h
 	$(CC) $(CFLAGS) -c ./Source/utils.c
 
-first_stage.o: ./Source/first_stage.c ./Headers/first_stage.h ./Headers/error.h ./Headers/utils.h ./Headers/global.h ./Headers/validate.h
+first_stage.o: ./Source/first_stage.c ./Headers/first_stage.h ./Headers/error.h ./Headers/utils.h ./Headers/global.h ./Headers/validate.h ./Headers/linked_list.h
 	$(CC) $(CFLAGS) -c ./Source/first_stage.c
+
+translate.o: ./Source/translate.c ./Headers/translate.h ./Headers/global.h ./Headers/linked_list.h
+	$(CC) $(CFLAGS) -c ./Source/translate.c
 
 # Clean up generated files
 clean:
