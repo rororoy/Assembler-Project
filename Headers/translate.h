@@ -16,6 +16,9 @@ typedef struct{
   signed   e          : 1; /* bits 0 */
 } instructionWord;
 
+/* Define an enum for the supported assembly commands */
+typedef enum {LBL_CODE, LBL_DATA} labelType;
+
 /* Command symanyics */
 typedef struct{
   commands name;
@@ -23,10 +26,18 @@ typedef struct{
   int op_code;
 } commandSem;
 
+/* Entry in the symbol table */
 typedef struct{
   char *name;
   int address;
+  labelType type;
 } symbol;
+
+typedef struct{
+  int address;
+  char *source_code;
+  instructionWord binary[3];
+} transTable;
 
 extern char *allowed_commands[];
 

@@ -23,7 +23,6 @@ void handle_exit(FILE *in_file, FILE *temp_file, hashTable *ht, char *filename1,
 }
 
 /*
-TODO make the function return and close all its contents for each return call
   @param
   @return 0 if encountered error 1 if ok
 */

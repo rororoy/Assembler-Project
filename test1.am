@@ -17,8 +17,3 @@ END: stop
  mov r1, r3
  sub r4, r2
 STR: .string “abcd”
-LIST: .data 6, -9
- .data -100
-K: .data 31
- cmp K, #-6
- bne &END

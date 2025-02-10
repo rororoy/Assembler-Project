@@ -87,6 +87,11 @@ int tokanize_line(char *original_line, char *tokens[4], int macro_scan)
     char *line = strdup(original_line);
     line[strcspn(line, "\n")] = '\0';
 
+    /* Clear the tokens array first */
+    for (i = 0; i < 4; i++) {
+      tokens[i] = NULL;
+    }
+
     /* Skip any initial whitespace */
     p = skip_ws(line);
     if (*p == '\0' || *p == '\n') {
@@ -163,16 +168,11 @@ int tokanize_line(char *original_line, char *tokens[4], int macro_scan)
     }
 
     if (!macro_scan) {
+      /* TODO FIX THIS TO CHECK FOR SVED WORDS ONLY WHEN NEEDED
+      TODO FIX THE TOKANIZE FUNCTION TO ACCEPT MORE THAN 4 ARGUMENTS INCASE OF BIG DATA DECLERATION
       if (is_saved_word(tokens[command_index])) {
-          /* For each argument token (if not a string literal), ensure it is not a saved word */
-          for (i = command_index + 1; i < token_count; i++) {
-              if (tokens[i][0] != '"') {
-                  if (is_saved_word(tokens[i])) {
-                      return 0;
-                  }
-              }
-          }
-        }
+      }
+      */
     } else {
         /* Not a saved word: check for valid macro commands */
         if (strcmp(tokens[command_index], "mcroend") == 0) {
