@@ -31,7 +31,7 @@ int main(int argc, char *argv[]){
     if(pre_assembler(argv[f_count])){
       printf("[*] Finished the pre assembler stage on %s\n\n", argv[f_count]);
     }else{
-      printf("[!] Failed the pre_assembler stage on %s\n\n", argv[f_count]);
+      printf("[!] Failed the pre assembler stage on %s\n\n", argv[f_count]);
       break;
     }
 

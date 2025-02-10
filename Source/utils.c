@@ -76,7 +76,7 @@ char* append_extension(char *filename, const char *extension) {
 }
 
 
-int tokanize_line(char *original_line, char *tokens[4], int macro_scan)
+int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_scan)
 {
     char *p;
     int token_count = 0;
@@ -84,53 +84,61 @@ int tokanize_line(char *original_line, char *tokens[4], int macro_scan)
     char *start;
     int command_index = 0;
     int len;
-    char *line = strdup(original_line);
-    line[strcspn(line, "\n")] = '\0';
 
-    /* Clear the tokens array first */
-    for (i = 0; i < 4; i++) {
-      tokens[i] = NULL;
+    /* Duplicate the original line so we can modify it */
+    char *line = strdup(original_line);
+    if (!line) {
+        perror("strdup failed");
+        return 0;
+    }
+    line[strcspn(line, "\n")] = '\0';  /* Remove trailing newline */
+
+    /* Clear the tokens array */
+    for (i = 0; i < MAX_LINE_LENGTH; i++) {
+        tokens[i] = NULL;
     }
 
     /* Skip any initial whitespace */
     p = skip_ws(line);
     if (*p == '\0' || *p == '\n') {
-        return 0;  /* Encountered an empty line - skip */
+        free(line);
+        return 0;  /* Empty line */
     }
 
-    /* Loop over the line until we hit the newline or end of string */
+    /*
+     * Tokenize the line.
+     * We treat whitespace and commas as delimiters.
+     * A token that begins with a double-quote is treated as a string literal.
+     */
     while (*p && *p != '\n') {
-        /* Skip delimiters: whitespace and commas */
+        /* Skip any delimiter characters */
         while (*p && (*p == ' ' || *p == '\t' || *p == ',')) {
             p++;
         }
         if (*p == '\0' || *p == '\n') {
             break;
         }
-        if (token_count >= 4) {
-            print_error("Extranous text", "", 0); /* Extranous text at the end */
-            return 0;
-        }
+        /* If token begins with a double quote, scan until the closing quote */
         if (*p == '"') {
-            /* A token starting with a double quote: string literal */
             start = p;  /* Include the opening quote */
-            p++;  /* Advance past the opening quote */
+            p++;  /* Skip opening quote */
             while (*p && *p != '\n' && *p != '"') {
                 p++;
             }
             if (*p != '"') {
-                /* No closing quote found */
+                print_error("Missing closing quote", start, 0);
+                free(line);
                 return 0;
             }
-            p++;  /* Move past the closing quote */
-            /* Optionally, if a delimiter follows, null-terminate here */
+            p++;  /* Skip closing quote */
+            /* Optionally, null-terminate if a delimiter follows */
             if (*p && (*p == ' ' || *p == '\t' || *p == ',')) {
                 *p = '\0';
                 p++;
             }
             tokens[token_count++] = start;
         } else {
-            /* A non-quoted token */
+            /* Non-quoted token */
             start = p;
             while (*p && *p != '\0' && *p != '\n' &&
                    !isspace((unsigned char)*p) && *p != ',') {
@@ -142,60 +150,130 @@ int tokanize_line(char *original_line, char *tokens[4], int macro_scan)
             }
             tokens[token_count++] = start;
         }
-        /* Skip any delimiters following the token */
+        /* Skip any delimiters that follow */
         while (*p && (*p == ' ' || *p == '\t' || *p == ',')) {
             p++;
         }
     }
 
-    /* Check for an optional label */
+    /* --- Check if the first token contains a colon (label delimiter) --- */
+    if (token_count > 0) {
+        char *colon = strchr(tokens[0], ':');
+        if (colon != NULL) {
+            /* We found a colon in the first token.
+             * Replace it with '\0' to end the label.
+             * If there is text immediately after the colon, insert it as a new token.
+             */
+            *colon = '\0';  /* Now tokens[0] is just the label */
+            if (*(colon + 1) != '\0') {
+                /* Shift tokens right to make room for the new token */
+                for (i = token_count; i > 0; i--) {
+                    tokens[i + 1] = tokens[i];
+                }
+                tokens[1] = colon + 1;
+                token_count++;
+            }
+        }
+    }
+
+    /* --- Check for an optional label --- */
     if (token_count > 0) {
         len = strlen(tokens[0]);
-        if (len > 0 && tokens[0][len - 1] == ':') {
-            if (!valid_label(tokens[0])) {
-                return 0;
-            }
-            command_index = 1;  /* The command is the next token */
+        /* If the first token came from a label declaration, it should now be only letters/digits.
+           Validate it with valid_label. */
+        if (valid_label(tokens[0])) {
+            command_index = 1;  /* Command is expected as the next token */
         } else {
-            command_index = 0;
+            command_index = 0;  /* No valid label; treat first token as command */
         }
         if (command_index >= token_count) {
-            /* No command token found after the label */
+            print_error("Missing command after label", "", 0);
+            free(line);
             return 0;
         }
     } else {
+        free(line);
         return 0;
     }
 
-    if (!macro_scan) {
-      /* TODO FIX THIS TO CHECK FOR SVED WORDS ONLY WHEN NEEDED
-      TODO FIX THE TOKANIZE FUNCTION TO ACCEPT MORE THAN 4 ARGUMENTS INCASE OF BIG DATA DECLERATION
-      if (is_saved_word(tokens[command_index])) {
-      }
-      */
-    } else {
-        /* Not a saved word: check for valid macro commands */
+    /* --- Handle directives that begin with '.' --- */
+    if (tokens[command_index][0] == '.') {
+        if (strcmp(tokens[command_index], ".string") == 0) {
+            /* The .string directive must have exactly one parameter (a quoted string) */
+            if (token_count != command_index + 2) {
+                print_error("Invalid number of parameters for .string directive", "", 0);
+                free(line);
+                return 0;
+            }
+            char *strParam = tokens[command_index + 1];
+            int strLen = strlen(strParam);
+            if (strLen < 2 || strParam[0] != '"' || strParam[strLen - 1] != '"') {
+                print_error("Invalid string literal in .string directive", strParam, 0);
+                free(line);
+                return 0;
+            }
+            /* Optionally: strip the quotes and process the string */
+        }
+        else if (strcmp(tokens[command_index], ".data") == 0) {
+            /* The .data directive must have at least one parameter (an integer) */
+            if (token_count <= command_index + 1) {
+                print_error("Missing parameters in .data directive", "", 0);
+                free(line);
+                return 0;
+            }
+            for (i = command_index + 1; i < token_count; i++) {
+                char *numToken = tokens[i];
+                char *endptr;
+                long val = strtol(numToken, &endptr, 10);
+                if (*endptr != '\0') {
+                    print_error("Invalid number in .data directive", numToken, 0);
+                    free(line);
+                    return 0;
+                }
+                /* Process the number 'val' as needed (e.g., add it to your data image) */
+            }
+        }
+        else if (strcmp(tokens[command_index], ".extern") == 0) {
+            /* Placeholder for .extern handling */
+        }
+        else if (strcmp(tokens[command_index], ".entry") == 0) {
+            /* Placeholder for .entry handling */
+        }
+    }
+
+    /* --- Macro scan handling --- */
+    if (macro_scan) {
         if (strcmp(tokens[command_index], "mcroend") == 0) {
             /* "mcroend" must be the only token (or only token after a label) */
-            if (token_count != command_index + 1){
-              print_error("Extranous text", "mcroend", 0);
-              return 0;
+            if (token_count != command_index + 1) {
+                print_error("Extraneous text after mcroend", "mcroend", 0);
+                free(line);
+                return 0;
             }
-        } else if (strcmp(tokens[command_index], "mcro") == 0) {
+        }
+        else if (strcmp(tokens[command_index], "mcro") == 0) {
             /* "mcro" must be followed by exactly one token (the macro name) */
-          if (token_count > 2){
-            print_error("Extranous text", "mcro", 0);
-            return 0;
-          }else if(token_count < 2){
-            print_error("No macro", "", 0);
-            return 0;
-          }
-      }
-  }
+            if (token_count > command_index + 2) {
+                print_error("Extraneous text after mcro", "mcro", 0);
+                free(line);
+                return 0;
+            }
+            else if (token_count < command_index + 2) {
+                print_error("No macro name specified after mcro", "", 0);
+                free(line);
+                return 0;
+            }
+        }
+    }
 
-    /* Set any remaining tokens to NULL */
-  for (i = token_count; i < 4; i++) {
-    tokens[i] = NULL;
-  }
-  return 1;
+    /*
+     * (Optionally) Set any remaining tokens to NULL.
+     * (This may not be necessary if your tokens array is larger than token_count.)
+     */
+    for (i = token_count; i < MAX_LINE_LENGTH; i++) {
+        tokens[i] = NULL;
+    }
+
+    free(line);
+    return 1;
 }

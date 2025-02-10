@@ -33,9 +33,9 @@ int pre_assembler(char *filename) {
     char *as_file, *am_file;
     hashTable *macro_table;
     hashBucket *ht_bucket;
+    char *tokens[MAX_LINE_LENGTH];
 
     int line_count = 0; /* TODO RECONSIDER THIS IN FAVOR OF IP GLOBAL */
-    char *tokens[4] = {"", "", "", ""};
 
     as_file = append_extension(filename, ".as");
     am_file = append_extension(filename, ".am");
@@ -72,7 +72,6 @@ int pre_assembler(char *filename) {
         continue;
 
       if (!tokanize_line(line, tokens, 1)) {
-        print_error("Line length", "", line_count);
         handle_exit(file, temp_file, macro_table, as_file, am_file);
         return 0;
       }
@@ -129,7 +128,7 @@ int pre_assembler(char *filename) {
 
 int process_macro_definition(FILE *file, hashBucket *ht_bucket, int *line_count) {
   char line[MAX_LINE_LENGTH + 2];
-  char *tokens[4] = {"", "", "", ""};
+  char *tokens[MAX_LINE_LENGTH];
   int found_macro_end = 0;  /* Flag to indicate that "mcroend" was encountered */
 
 

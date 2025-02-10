@@ -15,7 +15,7 @@ node *first_pass(char *filename){
   node *labels_list = NULL;
   int i;
   char line[MAX_LINE_LENGTH + 2]; /* Buffer for a line: MAX_LINE_LENGTH + '\n' + '\0' */
-  char *tokens[4];
+  char *tokens[MAX_LINE_LENGTH];
 
   char *am_file = append_extension(filename, ".am");
 
@@ -30,7 +30,8 @@ node *first_pass(char *filename){
   while (fgets(line, sizeof(line), file) != NULL) {
     if(!tokanize_line(line, tokens, 0)) return 0;
     printf("Tokanized-->");
-    for(i = 0; i<4; i++){
+    for(i = 0; i<MAX_LINE_LENGTH; i++){
+      if(tokens[i] == NULL){break;}
       printf("%s|", tokens[i]);
     }
     printf("\n");

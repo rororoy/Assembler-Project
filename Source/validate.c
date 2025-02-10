@@ -52,21 +52,32 @@ int is_saved_word(char *str){
   return 0;
 }
 
-int valid_label(char *tok){
-    int i, len;
-    len = strlen(tok);
-    if (len < 2) {
-        return 0;  /* too short to be a label */
+int valid_label(char *label) {
+    int i;
+
+    /* Check for a NULL pointer or an empty string */
+    if (label == NULL || label[0] == '\0') {
+        return 0;
     }
-    if (tok[len - 1] != ':') {
-      print_error("Unkown command", tok, 0); /* unkown command used */
-      return 0;
+
+    /* The first character must be a letter */
+    if (!isalpha(label[0])) {
+        return 0;
     }
-    for (i = 0; i < len - 1; i++) {
-        if (!isalpha((unsigned char)tok[i])) {
-          print_error("Unkown command", tok, 0); /* Label defenition */
-          return 0;
+
+    /* Check that every character is alphanumeric */
+    for (i = 0; label[i] != '\0'; i++) {
+        if (!isalnum(label[i])) {
+            return 0;
         }
     }
+
+    /* Use is_saved_word to reject reserved words */
+    if (is_saved_word(label)) {
+        return 0;
+    }
+
+    /* Passed all checks: the label is valid */
+    printf("VALID LABEL %s\n", label);
     return 1;
 }
