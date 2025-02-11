@@ -72,6 +72,7 @@ int pre_assembler(char *filename) {
         continue;
 
       if (!tokanize_line(line, tokens, 1)) {
+        /* Encountered an error in the pre-proc stage - terminate */
         handle_exit(file, temp_file, macro_table, as_file, am_file);
         return 0;
       }
@@ -102,6 +103,7 @@ int pre_assembler(char *filename) {
           handle_exit(file, temp_file, macro_table, as_file, am_file);
           return 0;
         }
+        continue;
       }
 
       /* Check for a macro call: if the first token matches a defined macro */

@@ -78,6 +78,5 @@ int valid_label(char *label) {
     }
 
     /* Passed all checks: the label is valid */
-    printf("VALID LABEL %s\n", label);
     return 1;
 }

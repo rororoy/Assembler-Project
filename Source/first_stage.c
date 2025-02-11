@@ -26,7 +26,7 @@ node *first_pass(char *filename){
     return NULL;
   }
 
-  /* Loop through the line checking for different cases */
+  /* Loop through the line checking for different cases
   while (fgets(line, sizeof(line), file) != NULL) {
     if(!tokanize_line(line, tokens, 0)) return 0;
     printf("Tokanized-->");
@@ -36,6 +36,7 @@ node *first_pass(char *filename){
     }
     printf("\n");
   }
+  */
 
   return labels_list;
 

@@ -42,7 +42,6 @@ int main(int argc, char *argv[]){
       printf("[*] Finished the first assembler stage on %s\n\n", argv[f_count]);
     }else{
       printf("[!] Failed the first assembler stage on %s\n\n", argv[f_count]);
-      break;
     }
 
     /***************     Second assembler stage       *************************/
