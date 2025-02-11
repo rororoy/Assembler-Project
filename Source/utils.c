@@ -91,41 +91,79 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     int i;
     int token_count = 0;
     char *token_start;
+    int label_encountered = 0;  /* Flag if a label was defined in the line */
+    int command_start = 0; /* Used to tell (in cases of labels) where the command starts */
 
+    /* Duplicate the original line so we can modify it */
     char *line = strdup(original_line);
     if (!line) {
         perror("strdup failed");
         return 0;
     }
 
-    line[strcspn(line, "\n")] = '\0';  /* Remove trailing newline */
+    /* Remove trailing newline */
+    line[strcspn(line, "\n")] = '\0';
 
+    /* Clear the tokens array */
     for (i = 0; i < MAX_LINE_LENGTH; i++) {
         tokens[i] = NULL;
     }
 
+    /* Skip any initial whitespace (spaces or tabs) */
     p = skip_ws(line);
-    if (*p == '\0' || *p == '\n') {
-        return 0;  /* Caller must free this */
+    if (*p == '\0') {
+        free(line);
+        return 0;  /* Empty or blank line */
     }
 
-    while (*p != '\0' && *p != '\n') {
+    /*
+     * Walk over the line character by character. delimiters are: ' ' ',' ':', '\t'
+     */
+    while (*p != '\0') {
         token_start = p;
-        while (*p != '\0' && *p != '\n' && *p != ' ' && *p != '\t' && *p != ',' && *p != ':') {
+        while (*p != '\0' &&
+               *p != ' ' && *p != '\t' &&
+               *p != ',' && *p != ':') {
             p++;
         }
+
+        /* If we have a token (non-empty substring), process it */
         if (p > token_start) {
-            if (*p != '\0' && *p != '\n') {
+            if (*p == ':') {
+              if(token_count > 0){
+                print_error("Label not first", "", 0);
+                free(line);
+                return 0;
+              }
+                /* If a colon has already been encountered, report an error and abort */
+              if (label_encountered) {
+                    print_error("Multiple ':' encountered in line", ":", 0);
+                    free(line);
+                    return 0;
+                }
+                label_encountered = 1;
+                command_start = 1;
+                *p = '\0';  /* Terminate the token (colon not included) */
+                p++;        /* Advance past the colon */
+            } else if (*p != '\0') {
+                /* For spaces, tabs, or commas, terminate the token */
                 *p = '\0';
                 p++;
             }
-            tokens[token_count++] = token_start;
+            /* Duplicate the token so that it remains valid after 'line' is freed */
+            tokens[token_count++] = strdup(token_start);
         }
+
+        /* Skip any extra delimiters: spaces, tabs, or commas */
         while (*p == ' ' || *p == '\t' || *p == ',') {
             p++;
         }
     }
 
+    /* Free the duplicated line since each token has been separately duplicated */
+    free(line);
+
+    /* --- Macro scan handling --- */
     if (macro_scan) {
         if (strcmp(tokens[0], "mcroend") == 0) {
             if (token_count > 1) {
@@ -141,8 +179,15 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
                 return 0;
             }
         }
-        return 1;
     }
 
+    if(label_encountered){
+      if(!valid_label(tokens[0])){
+        print_error("Label definition", tokens[0], 0);
+        return 0;
+      }
+    }
+
+    if(label_encountered){return 2;}
     return 1;
 }

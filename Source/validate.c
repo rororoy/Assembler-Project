@@ -23,9 +23,13 @@ char *RESERVED_WORDS[] = {
   "rts",
   "stop",
   ".string",
+  "string",
   ".extern",
+  "extern",
   ".data",
+  "data",
   ".entry",
+  "entry",
   "mcro",
   "mcroend"
 };
@@ -44,7 +48,6 @@ int is_saved_word(char *str){
 
   for(i = 0; i < NUM_RESERVED_WORDS; i++){
     if(strcmp(str, RESERVED_WORDS[i]) == 0){
-      print_error("Saved word", str, 0); /* Saved word */
       return 1;
     }
   }
@@ -74,7 +77,8 @@ int valid_label(char *label) {
 
     /* Use is_saved_word to reject reserved words */
     if (is_saved_word(label)) {
-        return 0;
+      print_error("Saved word", label, 0); /* Saved word */
+      return 0;
     }
 
     /* Passed all checks: the label is valid */

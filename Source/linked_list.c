@@ -67,6 +67,17 @@ int write_list_to_file(FILE *file, node *head, char *filename){
   return 1;
 }
 
+node *search_node(node *head, char *data){
+  node *current = head;
+  while(current != NULL){
+    if(strcmp(current->data, data) == 0){
+      return current;
+    }
+    current = current->next;
+  }
+  return NULL;
+}
+
 void free_list(node *head){
   node *current = head;
   while(current != NULL){

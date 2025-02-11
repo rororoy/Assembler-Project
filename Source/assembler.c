@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
     /***************      First assembler stage       *************************/
     printf("[*] Starting the first assembler stage on %s\n", argv[f_count]);
 
-    if((label_table = first_pass(argv[f_count])) != NULL){
+    if(first_pass(argv[f_count])){
       printf("[*] Finished the first assembler stage on %s\n\n", argv[f_count]);
     }else{
       printf("[!] Failed the first assembler stage on %s\n\n", argv[f_count]);

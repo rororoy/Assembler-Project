@@ -1,4 +1,4 @@
 #include "./translate.h"
 #include "./linked_list.h"
 
-node *first_pass(char *filename);
+int first_pass(char *filename);

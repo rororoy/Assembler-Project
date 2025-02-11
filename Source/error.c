@@ -13,11 +13,12 @@ error errors[] = {
   {EXTERNAL, "Usage", "Program usage: ./assembler <filename1.as> <filename2.as>..."},
   {EXTERNAL, "Saved word", "Can't use saved words as arguments"},
   {EXTERNAL, "Extranous text", "Extranous text at the end of a command"},
-  {EXTERNAL, "Label definition", "Faulty label definition - can only be named with letters"},
+  {EXTERNAL, "Label definition", "Faulty label definition - can only contain alphanumeric characters"},
   {EXTERNAL, "Unkown command", "Encountered an unkown command"},
   {EXTERNAL, "Line length", "Lines should be at a maximum length of 80"},
   {EXTERNAL, "No macro", "No macro provided after macro definition"},
   {EXTERNAL, "Macro reached EOF", "Reached the end of the file without closing the macro block"},
+  {EXTERNAL, "Label not first", "A decleration of a label must be only at the begining of a line"},
   {EXTERNAL, NULL, NULL}
 };
 
