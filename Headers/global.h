@@ -7,6 +7,8 @@
 
 #define NUM_RESERVED_WORDS 22
 
+extern int LINE_NUMBER;
+
 extern char *RESERVED_WORDS[];
 
 /* Define an enum for the supported assembly commands */

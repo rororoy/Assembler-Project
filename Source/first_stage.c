@@ -20,8 +20,12 @@ int first_pass(char *filename){
   char *am_file = append_extension(filename, ".am");
 
   int DC = 0, IC = 100;
+  int command_start = 0;
 
   symbolTable *symbol_table = create_symbol_table();
+
+  LINE_NUMBER = 0;
+
   if (symbol_table == NULL) {
     printf("Failed to create symbol table\n");
     return 0;
@@ -36,6 +40,8 @@ int first_pass(char *filename){
 
   /* Loop through the line checking for different cases */
   while (fgets(line, sizeof(line), file) != NULL) {
+    LINE_NUMBER++;
+
     if(!(tokens_mode = tokanize_line(line, tokens, 0))) return 0;
 
     printf("Tokanized-->");
@@ -45,11 +51,9 @@ int first_pass(char *filename){
     }
     printf("\n");
 
-    /* TODO THIS DOESNT WORK - IT SHOULD RETURN A SPECIAL NUMBER SAYING WE ENCOUNTERED A LABEL IN THE TOKANIZE */
+    /* Encountered a decleration of a label in the line */
     if(tokens_mode == 2){
-      /* Encountered a decleration of a label in the line */
-      /* TODO MOVE ERROR PRINTING FOR SAVED WORD OUTSIDE FROM THE FUNCTION */
-      if(strcmp(tokens[1],".data") == 0 || strcmp(tokens[1],".string") == 0){
+      if((tokens[1] != NULL) && (strcmp(tokens[1],".data") == 0 || strcmp(tokens[1],".string") == 0)){
         if(!insert_symbol(symbol_table, tokens[0], IC, LBL_DATA)){
           printf("ERROR INSERTING %s", tokens[0]);
           return 0;
@@ -60,6 +64,7 @@ int first_pass(char *filename){
           return 0;
         }
       }
+      command_start = 1;
     }
     IC++;
   }

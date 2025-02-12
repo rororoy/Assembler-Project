@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "../Headers/translate.h"
+#include "../Headers/utils.h"
 #include "../Headers/global.h"
 
 commandSem command_table[] = {
@@ -59,15 +61,10 @@ commandSem *command_lookup(char *cmd_name) {
 /* Create a new symbol table */
 symbolTable* create_symbol_table() {
     symbolTable *table = (symbolTable*)malloc(sizeof(symbolTable));
-    if (!check_malloc(table)) {
-        return NULL;
-    }
+    check_malloc(table);
 
     table->symbols = (symbol*)malloc(INITIAL_TABLE_SIZE * sizeof(symbol));
-    if (!check_malloc(table->symbols)) {
-        free(table);
-        return NULL;
-    }
+    check_malloc(table->symbols);
 
     table->size = 0;
     table->capacity = INITIAL_TABLE_SIZE;
@@ -79,9 +76,7 @@ int resize_symbol_table(symbolTable *table) {
     int new_capacity = table->capacity * GROWTH_FACTOR;
     symbol *new_symbols = (symbol*)realloc(table->symbols, new_capacity * sizeof(symbol));
 
-    if (!check_malloc(new_symbols)) {
-        return 0;  /* Failed to resize */
-    }
+    check_malloc(new_symbols);
 
     table->symbols = new_symbols;
     table->capacity = new_capacity;
@@ -99,9 +94,7 @@ int insert_symbol(symbolTable *table, const char *name, int address, labelType t
 
     /* Allocate memory for the name */
     table->symbols[table->size].name = (char*)malloc(strlen(name) + 1);
-    if (!check_malloc(table->symbols[table->size].name)) {
-        return 0;
-    }
+    check_malloc(table->symbols[table->size].name);
 
     /* Copy the data */
     strcpy(table->symbols[table->size].name, name);

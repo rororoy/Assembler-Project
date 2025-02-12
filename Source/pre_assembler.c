@@ -35,7 +35,7 @@ int pre_assembler(char *filename) {
     hashBucket *ht_bucket;
     char *tokens[MAX_LINE_LENGTH];
 
-    int line_count = 0; /* TODO RECONSIDER THIS IN FAVOR OF IP GLOBAL */
+    LINE_NUMBER = 0; /* Make sure to zero the line count */
 
     as_file = append_extension(filename, ".as");
     am_file = append_extension(filename, ".am");
@@ -43,7 +43,7 @@ int pre_assembler(char *filename) {
     /* Open the original file */
     file = fopen(as_file, "r");
     if (file == NULL) {
-      print_error("File read", filename, line_count);
+      print_error("File read", filename, LINE_NUMBER);
       handle_exit(NULL, NULL, NULL, as_file, am_file);
       return 0;
     }
@@ -51,7 +51,7 @@ int pre_assembler(char *filename) {
     /* Open the temporary output file */
     temp_file = fopen(am_file, "w");
     if (temp_file == NULL) {
-      print_error("File write", "temp.as", line_count);
+      print_error("File write", "temp.as", LINE_NUMBER);
       handle_exit(file, NULL, NULL, as_file, am_file);
       return 0;
     }
@@ -59,10 +59,10 @@ int pre_assembler(char *filename) {
     macro_table = make_hash_table(HASH_TABLE_INITIAL_SIZE);
 
     while (fgets(line, sizeof(line), file) != NULL) {
-      line_count++;
+      LINE_NUMBER++;
 
       if (!valid_length_line(line)) {
-        print_error("Line length", "", line_count);
+        print_error("Line length", "", LINE_NUMBER);
         handle_exit(file, temp_file, macro_table, as_file, am_file);
         return 0;
       }
@@ -82,12 +82,12 @@ int pre_assembler(char *filename) {
         macro_name = tokens[1];
 
         if (macro_name == NULL){ /* No macro name provided */
-          print_error("No macro", "", line_count);
+          print_error("No macro", "", LINE_NUMBER);
           handle_exit(file, temp_file, macro_table, as_file, am_file);
           return 0;
 
         }else if(is_saved_word(macro_name)) { /* Macro is a saved word */
-          print_error("Saved word", "", line_count);
+          print_error("Saved word", "", LINE_NUMBER);
           handle_exit(file, temp_file, macro_table, as_file, am_file);
           return 0;
         }
@@ -99,7 +99,7 @@ int pre_assembler(char *filename) {
         }
 
         /* Run through the macro and log all of it */
-        if(!process_macro_definition(file, ht_bucket, &line_count)){
+        if(!process_macro_definition(file, ht_bucket)){
           handle_exit(file, temp_file, macro_table, as_file, am_file);
           return 0;
         }
@@ -117,7 +117,7 @@ int pre_assembler(char *filename) {
       } else {
         /* A normal line: write it to the output file */
         if (fprintf(temp_file, "%s", line) < 0) {
-          print_error("Failed writing", "temp.as", line_count);
+          print_error("Failed writing", "temp.as", LINE_NUMBER);
           handle_exit(file, temp_file, macro_table, as_file, am_file);
           return 0;
         }
@@ -128,17 +128,17 @@ int pre_assembler(char *filename) {
     return 1;
 }
 
-int process_macro_definition(FILE *file, hashBucket *ht_bucket, int *line_count) {
+int process_macro_definition(FILE *file, hashBucket *ht_bucket) {
   char line[MAX_LINE_LENGTH + 2];
   char *tokens[MAX_LINE_LENGTH];
   int found_macro_end = 0;  /* Flag to indicate that "mcroend" was encountered */
 
 
   while (fgets(line, sizeof(line), file) != NULL) {
-    (*line_count)++;
+    LINE_NUMBER++;
 
     if (!valid_length_line(line)) {
-      print_error("Line length", "", *line_count);
+      print_error("Line length", "", LINE_NUMBER);
       return 0;
     }
 
@@ -160,7 +160,7 @@ int process_macro_definition(FILE *file, hashBucket *ht_bucket, int *line_count)
   }
 
   if (!found_macro_end) {
-    print_error("Macro reached EOF", "", *line_count);
+    print_error("Macro reached EOF", "", LINE_NUMBER);
     return 0;
   }
   return 1;

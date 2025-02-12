@@ -21,6 +21,8 @@ char *skip_ws(char *s)
     return s;
 }
 
+/* TODO RESTRUCTURE PROGRAM SO THAT A FUNCTION THAT CALLS CHECK_MALLOC EXITS IF MALOC PROBLEM
+RIGHT NOW IT ONLY PRINTS AN ERROR AND DOESNT SIGNAL TO THE FUNCTION THAT CALLED IT THAT THE MALLOC DIDNT WORK*/
 void check_malloc(void *ptr){
   if(ptr == NULL){
     print_error("Malloc", "", 0);
@@ -181,7 +183,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
         }
     }
 
-    if(label_encountered){
+  if(label_encountered){
       if(!valid_label(tokens[0])){
         print_error("Label definition", tokens[0], 0);
         return 0;

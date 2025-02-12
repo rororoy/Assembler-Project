@@ -19,6 +19,7 @@ error errors[] = {
   {EXTERNAL, "No macro", "No macro provided after macro definition"},
   {EXTERNAL, "Macro reached EOF", "Reached the end of the file without closing the macro block"},
   {EXTERNAL, "Label not first", "A decleration of a label must be only at the begining of a line"},
+  {EXTERNAL, "Unterminated string", "A decleration of a string wasn't closed with parentheses"},
   {EXTERNAL, NULL, NULL}
 };
 

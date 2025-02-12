@@ -9,8 +9,8 @@ TARGET = assembler
 all: $(TARGET)
 
 # Link object files to create the executable
-$(TARGET): assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o
-	$(CC) $(CFLAGS) -o $(TARGET) assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o
+$(TARGET): assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o global.o
+	$(CC) $(CFLAGS) -o $(TARGET) assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o global.o
 
 assembler.o: ./Source/assembler.c ./Headers/assembler.h ./Headers/pre_assembler.h ./Headers/utils.h ./Headers/error.h ./Headers/first_stage.h ./Headers/translate.h ./Headers/linked_list.h
 	$(CC) $(CFLAGS) -c ./Source/assembler.c
@@ -40,8 +40,11 @@ utils.o: ./Source/utils.c ./Headers/utils.h ./Headers/error.h ./Headers/global.h
 first_stage.o: ./Source/first_stage.c ./Headers/first_stage.h ./Headers/error.h ./Headers/utils.h ./Headers/global.h ./Headers/validate.h ./Headers/linked_list.h
 	$(CC) $(CFLAGS) -c ./Source/first_stage.c
 
-translate.o: ./Source/translate.c ./Headers/translate.h ./Headers/global.h ./Headers/linked_list.h
+translate.o: ./Source/translate.c ./Headers/translate.h ./Headers/global.h ./Headers/linked_list.h ./Headers/utils.h
 	$(CC) $(CFLAGS) -c ./Source/translate.c
+
+global.o: ./Source/global.c ./Headers/global.h
+	$(CC) $(CFLAGS) -c ./Source/global.c
 
 # Clean up generated files
 clean:
