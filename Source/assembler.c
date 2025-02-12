@@ -23,8 +23,6 @@ int main(int argc, char *argv[]){
   }
 
   while(f_count < argc){
-    node *label_table = NULL;
-
     /***************        Pre assembler stage       *************************/
     printf("[*] Starting the pre assembler stage on %s\n", argv[f_count]);
 

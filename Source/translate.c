@@ -55,3 +55,75 @@ commandSem *command_lookup(char *cmd_name) {
   }
   return NULL; /* Not found */
 }
+
+/* Create a new symbol table */
+symbolTable* create_symbol_table() {
+    symbolTable *table = (symbolTable*)malloc(sizeof(symbolTable));
+    if (!check_malloc(table)) {
+        return NULL;
+    }
+
+    table->symbols = (symbol*)malloc(INITIAL_TABLE_SIZE * sizeof(symbol));
+    if (!check_malloc(table->symbols)) {
+        free(table);
+        return NULL;
+    }
+
+    table->size = 0;
+    table->capacity = INITIAL_TABLE_SIZE;
+    return table;
+}
+
+/* Resize the symbol table */
+int resize_symbol_table(symbolTable *table) {
+    int new_capacity = table->capacity * GROWTH_FACTOR;
+    symbol *new_symbols = (symbol*)realloc(table->symbols, new_capacity * sizeof(symbol));
+
+    if (!check_malloc(new_symbols)) {
+        return 0;  /* Failed to resize */
+    }
+
+    table->symbols = new_symbols;
+    table->capacity = new_capacity;
+    return 1;  /* Success */
+}
+
+/* Insert a symbol into the table */
+int insert_symbol(symbolTable *table, const char *name, int address, labelType type) {
+    /* Check if we need to resize */
+    if (table->size >= table->capacity) {
+        if (!resize_symbol_table(table)) {
+            return 0;  /* Failed to resize */
+        }
+    }
+
+    /* Allocate memory for the name */
+    table->symbols[table->size].name = (char*)malloc(strlen(name) + 1);
+    if (!check_malloc(table->symbols[table->size].name)) {
+        return 0;
+    }
+
+    /* Copy the data */
+    strcpy(table->symbols[table->size].name, name);
+    table->symbols[table->size].address = address;
+    table->symbols[table->size].type = type;
+
+    table->size++;
+    return 1;  /* Success */
+}
+
+/* Print the symbol table */
+void print_symbol_table(const symbolTable *table) {
+    int i;
+    printf("\nSymbol Table Contents:\n");
+    printf("---------------------\n");
+    for (i = 0; i < table->size; i++) {
+        printf("[%d] Name: %-20s Address: %-6d Type: %s\n",
+               i,
+               table->symbols[i].name,
+               table->symbols[i].address,
+               table->symbols[i].type == LBL_CODE ? "CODE" : "DATA");
+    }
+    printf("---------------------\n");
+    printf("Total symbols: %d (Capacity: %d)\n", table->size, table->capacity);
+}
