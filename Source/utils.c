@@ -95,6 +95,8 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     char *token_start;
     int label_encountered = 0;  /* Flag if a label was defined in the line */
     int command_start = 0; /* Used to tell (in cases of labels) where the command starts */
+    int in_string = 0;
+    char *string_start = NULL;  /* Added to track start of string content */
 
     /* Duplicate the original line so we can modify it */
     char *line = strdup(original_line);
@@ -118,47 +120,72 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
         return 0;  /* Empty or blank line */
     }
 
-    /*
-     * Walk over the line character by character. delimiters are: ' ' ',' ':', '\t'
-     */
     while (*p != '\0') {
-        token_start = p;
-        while (*p != '\0' &&
-               *p != ' ' && *p != '\t' &&
-               *p != ',' && *p != ':') {
-            p++;
-        }
+        if (!in_string) {
+            token_start = p;
 
-        /* If we have a token (non-empty substring), process it */
-        if (p > token_start) {
-            if (*p == ':') {
-              if(token_count > 0){
-                print_error("Label not first", "", 0);
+            while (*p != '\0' && *p != ' ' && *p != '\t' && *p != ',' && *p != ':' && *p != '"') {
+                p++;
+            }
+
+        } else {
+            /* In string mode, just look for the closing quote */
+            while (*p != '\0' && *p != '"') {
+              p++;
+            }
+            if (*p == '\0') {
+                print_error("Unterminated string", "", LINE_NUMBER);
                 free(line);
                 return 0;
-              }
-                /* If a colon has already been encountered, report an error and abort */
-              if (label_encountered) {
+            }
+        }
+
+        /* Process the token */
+        if (p >= token_start) {
+            if (*p == '"') {
+                if (!in_string) {
+                    in_string = 1;
+                    p++;
+                    string_start = p;
+                    continue;
+                } else {
+                    in_string = 0;
+                    *p = '\0';
+                    tokens[token_count++] = strdup(string_start);
+                    p++;
+                }
+            } else if (*p == ':' && !in_string) {
+                if (token_count > 0) {
+                    print_error("Label not first", "", 0);
+                    free(line);
+                    return 0;
+                }
+                if (label_encountered) {
                     print_error("Multiple ':' encountered in line", ":", 0);
                     free(line);
                     return 0;
                 }
                 label_encountered = 1;
                 command_start = 1;
-                *p = '\0';  /* Terminate the token (colon not included) */
-                p++;        /* Advance past the colon */
-            } else if (*p != '\0') {
-                /* For spaces, tabs, or commas, terminate the token */
                 *p = '\0';
+                tokens[token_count++] = strdup(token_start);
                 p++;
+
+            } else if (*p == '\0' || (!in_string && (*p == ' ' || *p == '\t' || *p == ','))) {
+                /* Normal token termination */
+                char saved = *p;
+                *p = '\0';
+                tokens[token_count++] = strdup(token_start);
+                *p = saved;
+                if (*p != '\0') p++;
             }
-            /* Duplicate the token so that it remains valid after 'line' is freed */
-            tokens[token_count++] = strdup(token_start);
         }
 
-        /* Skip any extra delimiters: spaces, tabs, or commas */
-        while (*p == ' ' || *p == '\t' || *p == ',') {
-            p++;
+        /* Skip delimiters (but only if we're not in a string) */
+        if (!in_string) {
+            while (*p == ' ' || *p == '\t' || *p == ',') {
+                p++;
+            }
         }
     }
 
@@ -183,13 +210,15 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
         }
     }
 
-  if(label_encountered){
-      if(!valid_label(tokens[0])){
-        print_error("Label definition", tokens[0], 0);
-        return 0;
-      }
+    if (label_encountered) {
+        if (!valid_label(tokens[0])) {
+            print_error("Label definition", tokens[0], 0);
+            return 0;
+        }
     }
 
-    if(label_encountered){return 2;}
+    if (label_encountered) {
+        return 2;
+    }
     return 1;
 }

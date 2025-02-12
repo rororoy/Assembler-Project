@@ -20,7 +20,7 @@ a_mc
  jmp &LOOP
 END: stop
 b_mc
-STR: .string “ab cd"
+STR: .string "ab cd"
 LIST: .data 6, -9,5, 5
  .data -100
 K: .data 31
