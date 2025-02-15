@@ -62,6 +62,8 @@ int resize_symbol_table(symbolTable *table);
 
 int insert_symbol(symbolTable *table, const char *name, int address, labelType type);
 
+int is_valid_command();
+
 void print_symbol_table(const symbolTable *table);
 
 

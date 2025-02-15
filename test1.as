@@ -21,7 +21,7 @@ a_mc
 END: stop
 b_mc
 STR: .string "ab cd"
-LIST: .data 6, -9,5, 5
+LIST: .data 6, -9,5,4
  .data -100
 K: .data 31
 a_mc

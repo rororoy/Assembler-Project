@@ -23,7 +23,7 @@ pre_assembler.o: ./Source/pre_assembler.c ./Headers/pre_assembler.h ./Headers/er
 error.o: ./Source/error.c ./Headers/error.h
 	$(CC) $(CFLAGS) -c ./Source/error.c
 
-validate.o: ./Source/validate.c ./Headers/validate.h ./Headers/global.h
+validate.o: ./Source/validate.c ./Headers/validate.h ./Headers/global.h ./Headers/translate.h
 	$(CC) $(CFLAGS) -c ./Source/validate.c
 
 # Compile utils.o

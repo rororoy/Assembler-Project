@@ -4,6 +4,7 @@
 #include "../Headers/validate.h"
 #include "../Headers/global.h"
 #include "../Headers/error.h"
+#include "../Headers/translate.h"
 
 char *RESERVED_WORDS[] = {
   "mov",
@@ -83,4 +84,95 @@ int valid_label(char *label) {
 
     /* Passed all checks: the label is valid */
     return 1;
+}
+
+
+int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
+    commandSem *cmd_info;
+
+    /* Check if the token at command_start is not NULL */
+    if (tokens[command_start] == NULL) {
+        printf("[EMPTY COMMAND]\n");
+        return 0;
+    }
+
+    /* Get command info using the command_lookup function */
+    cmd_info = command_lookup(tokens[command_start]);
+
+    /* Check if command was found */
+    if (cmd_info == NULL) {
+        printf("[UNKNOWN COMMAND]\n");
+        return 0;
+    }
+
+    /* Process the command based on its type - assuming cmd_info has a 'type' field of type 'commands' */
+    switch (cmd_info->name) {
+        case CMD_MOV:
+            /* Correct syntax: mov <>, <> */
+            return 1;
+
+        case CMD_CMP:
+            printf("[CMP]\n");
+            return 1;
+
+        case CMD_ADD:
+            printf("[ADD]\n");
+            return 1;
+
+        case CMD_SUB:
+            printf("[SUB]\n");
+            return 1;
+
+        case CMD_LEA:
+            printf("[LEA]\n");
+            return 1;
+
+        case CMD_CLR:
+            printf("[CLR]\n");
+            return 1;
+
+        case CMD_NOT:
+            printf("[NOT]\n");
+            return 1;
+
+        case CMD_INC:
+            printf("[INC]\n");
+            return 1;
+
+        case CMD_DEC:
+            printf("[DEC]\n");
+            return 1;
+
+        case CMD_JMP:
+            printf("[JMP]\n");
+            return 1;
+
+        case CMD_BNE:
+            printf("[BNE]\n");
+            return 1;
+
+        case CMD_JSR:
+            printf("[JSR]\n");
+            return 1;
+
+        case CMD_RED:
+            printf("[RED]\n");
+            return 1;
+
+        case CMD_RTS:
+            printf("[RTS]\n");
+            return 1;
+
+        case CMD_PRN:
+            printf("[PRN]\n");
+            return 1;
+
+        case CMD_STOP:
+            printf("[STOP]\n");
+            return 1;
+
+        default:
+            printf("[UNKNOWN COMMAND]\n");
+            return 0;
+    }
 }

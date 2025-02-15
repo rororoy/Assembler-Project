@@ -5,6 +5,8 @@
 #include "../Headers/utils.h"
 #include "../Headers/global.h"
 
+/* TODO MOVE THIS TO GLOBAL VVV */
+
 commandSem command_table[] = {
     /*  CMD   funct op */
     {CMD_MOV, -1,  0},

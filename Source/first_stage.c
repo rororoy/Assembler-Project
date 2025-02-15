@@ -66,6 +66,12 @@ int first_pass(char *filename){
       }
       command_start = 1;
     }
+
+    if(!is_valid_command(command_start, tokens)){
+
+    }
+    
+    command_start = 0;
     IC++;
   }
 
