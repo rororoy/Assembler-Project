@@ -54,10 +54,22 @@ int first_pass(char *filename){
     /* Encountered a decleration of a label in the line */
     if(tokens_mode == 2){
       if((tokens[1] != NULL) && (strcmp(tokens[1],".data") == 0 || strcmp(tokens[1],".string") == 0)){
-        if(!insert_symbol(symbol_table, tokens[0], IC, LBL_DATA)){
+        if(!insert_symbol(symbol_table, tokens[0], IC+DC, LBL_DATA)){
           printf("ERROR INSERTING %s", tokens[0]);
           return 0;
         }
+
+        if(strcmp(tokens[1],".string") == 0){
+          DC += strlen(tokens[1]) + 1;
+        }else{
+          /* Count reserved space in memory for each data type declared */
+          for(i = 2; i<MAX_LINE_LENGTH; i++){
+            if(tokens[i] == NULL){ break; }
+            DC++;
+          }
+        }
+
+
       }else{
         if(!insert_symbol(symbol_table, tokens[0], IC, LBL_CODE)){
           printf("ERROR INSERTING %s", tokens[0]);
@@ -70,7 +82,7 @@ int first_pass(char *filename){
     if(!is_valid_command(command_start, tokens)){
 
     }
-    
+
     command_start = 0;
     IC++;
   }
