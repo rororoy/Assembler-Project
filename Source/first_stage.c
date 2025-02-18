@@ -17,6 +17,9 @@ int first_pass(char *filename){
   char *tokens[MAX_LINE_LENGTH];
   int tokens_mode;
 
+  /* Define the addressing type - 0 IMM, 1 DIRECT, 2 RELATIVE, 3 IMM REG, -1 ERR */
+  int addressing_mode;
+
   char *am_file = append_extension(filename, ".am");
 
   int DC = 0, IC = 100;
@@ -79,8 +82,11 @@ int first_pass(char *filename){
       command_start = 1;
     }
 
-    if(!is_valid_command(command_start, tokens)){
+    addressing_mode = is_valid_command(command_start, tokens);
+    if(addressing_mode != -1){
 
+    }else{
+      
     }
 
     command_start = 0;

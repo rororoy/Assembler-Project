@@ -156,12 +156,12 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
                 }
             } else if (*p == ':' && !in_string) {
                 if (token_count > 0) {
-                    print_error("Label not first", "", 0);
+                    print_error("Label not first", "", LINE_NUMBER);
                     free(line);
                     return 0;
                 }
                 if (label_encountered) {
-                    print_error("Multiple ':' encountered in line", ":", 0);
+                    print_error("Multiple ':' encountered in line", ":", LINE_NUMBER);
                     free(line);
                     return 0;
                 }
@@ -196,15 +196,15 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     if (macro_scan) {
         if (strcmp(tokens[0], "mcroend") == 0) {
             if (token_count > 1) {
-                print_error("Extraneous text after mcroend", "mcroend", 0);
+                print_error("Extraneous text after mcroend", "mcroend", LINE_NUMBER);
                 return 0;
             }
         } else if (strcmp(tokens[0], "mcro") == 0) {
             if (token_count > 2) {
-                print_error("Extraneous text after mcro", "mcro", 0);
+                print_error("Extraneous text after mcro", "mcro", LINE_NUMBER);
                 return 0;
             } else if (token_count < 2) {
-                print_error("No macro name specified after mcro", "", 0);
+                print_error("No macro name specified after mcro", "", LINE_NUMBER);
                 return 0;
             }
         }
@@ -212,7 +212,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
 
     if (label_encountered) {
         if (!valid_label(tokens[0])) {
-            print_error("Label definition", tokens[0], 0);
+            print_error("Label definition", tokens[0], LINE_NUMBER);
             return 0;
         }
     }

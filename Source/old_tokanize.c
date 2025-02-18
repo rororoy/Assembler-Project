@@ -49,7 +49,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
 
       /* If reached the end of the line without closing the string */
       if (*p != '"') {
-        print_error("Missing closing quote", start, 0);
+        print_error("Missing closing quote", start, LINE_NUMBER);
         free(line);
         return 0;
       }

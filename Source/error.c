@@ -20,6 +20,8 @@ error errors[] = {
   {EXTERNAL, "Macro reached EOF", "Reached the end of the file without closing the macro block"},
   {EXTERNAL, "Label not first", "A decleration of a label must be only at the begining of a line"},
   {EXTERNAL, "Unterminated string", "A decleration of a string wasn't closed with parentheses"},
+  {EXTERNAL, "Too many operands", "Too many operands for the command"},
+  {EXTERNAL, "Invalid dig op", "Digits in a command should be preceded by a '#'"},
   {EXTERNAL, NULL, NULL}
 };
 

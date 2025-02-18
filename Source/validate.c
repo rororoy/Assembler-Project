@@ -89,6 +89,7 @@ int valid_label(char *label) {
 
 int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
     commandSem *cmd_info;
+    int addressing_mode;
 
     /* Check if the token at command_start is not NULL */
     if (tokens[command_start] == NULL) {
@@ -105,10 +106,13 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
         return 0;
     }
 
+    printf("HERE\n");
+
     /* Process the command based on its type - assuming cmd_info has a 'type' field of type 'commands' */
     switch (cmd_info->name) {
         case CMD_MOV:
             /* Correct syntax: mov <>, <> */
+            addressing_mode = check_operands(command_start, tokens, 2);
             return 1;
 
         case CMD_CMP:
@@ -175,4 +179,56 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
             printf("[UNKNOWN COMMAND]\n");
             return 0;
     }
+}
+
+int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct_operands){
+  int i; /* Position of the first operand */
+  int addressing_mode;
+
+  /* Scan the command operand by operand */
+  for(i = command_start + 1; i<correct_operands; i++){
+    if(isreg(tokens[i])){
+      addressing_mode = 0;
+    }
+
+    if (tokens[i][0] == '#') {  /* Check if first char is # */
+      int j = 1;
+      /* Check for optional sign */
+      if (tokens[i][1] == '+' || tokens[i][1] == '-') {
+        j = 2;  /* Move past the sign */
+      }
+      /* Check if there's at least one digit after # or sign */
+      if (tokens[i][j] == '\0') {
+        return -1;  /* No number after # or sign */
+      }
+      /* Check all remaining characters are digits */
+      while (tokens[i][j] != '\0') {
+        if (!isdigit(tokens[i][j])) {
+          print_error("Invalid dig op", tokens[command_start], LINE_NUMBER);
+          return -1;  /* Invalid character found */
+        }
+      j++;
+    }
+    addressing_mode = 1;  /* Valid immediate number found */
+}
+  }
+
+  if(tokens[i] != NULL){
+    print_error("Too many operands", tokens[command_start], LINE_NUMBER);
+    return -1;
+  }
+
+  return addressing_mode;
+}
+
+int is_reg(char *word) {
+    int i;
+    /* Loop through all registers */
+    for (i = 0; registers[i] != NULL; i++) {
+        if (strcmp(registers[i], word) == 0) {
+            return 1;  /* Found a match */
+        }
+    }
+
+    return 0;  /* No match found */
 }
