@@ -22,6 +22,7 @@ error errors[] = {
   {EXTERNAL, "Unterminated string", "A decleration of a string wasn't closed with parentheses"},
   {EXTERNAL, "Too many operands", "Too many operands for the command"},
   {EXTERNAL, "Invalid dig op", "Digits in a command should be preceded by a '#'"},
+  {EXTERNAL, "Too few operands", "More operands expected for the command"},
   {EXTERNAL, NULL, NULL}
 };
 

@@ -113,7 +113,8 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
         case CMD_MOV:
             /* Correct syntax: mov <>, <> */
             addressing_mode = check_operands(command_start, tokens, 2);
-            return 1;
+            printf("ADDRESSING MODE %d\n", addressing_mode);
+            return addressing_mode;
 
         case CMD_CMP:
             printf("[CMP]\n");
@@ -182,37 +183,53 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
 }
 
 int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct_operands){
-  int i; /* Position of the first operand */
-  int addressing_mode;
+  int i; /* Position of the current operand */
+  int addressing_mode = -1;  /* Use distinct values for different operand types:
+                                0 for register, 1 for immediate, 2 for label */
 
-  /* Scan the command operand by operand */
-  for(i = command_start + 1; i<correct_operands; i++){
-    if(isreg(tokens[i])){
+  /* Adjust the loop so that it checks exactly the expected number of operands.
+     If there's a label definition at the beginning, the operands start at command_start+1. */
+  for(i = command_start + 1; i < command_start + correct_operands + 1; i++){
+    if(is_reg(tokens[i])){
       addressing_mode = 0;
     }
-
-    if (tokens[i][0] == '#') {  /* Check if first char is # */
+    else if(tokens[i][0] == '#'){  /* Immediate operand */
       int j = 1;
       /* Check for optional sign */
       if (tokens[i][1] == '+' || tokens[i][1] == '-') {
         j = 2;  /* Move past the sign */
       }
-      /* Check if there's at least one digit after # or sign */
+      /* Check if there's at least one digit after '#' or the sign */
       if (tokens[i][j] == '\0') {
-        return -1;  /* No number after # or sign */
+        print_error("No number after immediate indicator", tokens[command_start], LINE_NUMBER);
+        return -1;
       }
-      /* Check all remaining characters are digits */
+      /* Check that all remaining characters are digits */
       while (tokens[i][j] != '\0') {
         if (!isdigit(tokens[i][j])) {
-          print_error("Invalid dig op", tokens[command_start], LINE_NUMBER);
-          return -1;  /* Invalid character found */
+          print_error("Invalid digit in immediate operand", tokens[command_start], LINE_NUMBER);
+          return -1;
         }
-      j++;
+        j++;
+      }
+      addressing_mode = 1;
     }
-    addressing_mode = 1;  /* Valid immediate number found */
-}
+    else {
+      /* Assume operand is intended to be a label.
+         Check that every character is alphanumeric (letters and digits only) */
+      int j = 0;
+      while (tokens[i][j] != '\0') {
+        if (!isalnum(tokens[i][j])){
+          print_error("Invalid label (non-alphanumeric character)", tokens[command_start], LINE_NUMBER);
+          return -1;
+        }
+        j++;
+      }
+      addressing_mode = 2;
+    }
   }
 
+  /* If there is an extra operand beyond the allowed number, signal an error */
   if(tokens[i] != NULL){
     print_error("Too many operands", tokens[command_start], LINE_NUMBER);
     return -1;
@@ -220,6 +237,7 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
 
   return addressing_mode;
 }
+
 
 int is_reg(char *word) {
     int i;

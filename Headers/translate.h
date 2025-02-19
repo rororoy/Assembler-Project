@@ -54,6 +54,8 @@ extern char *allowed_commands[];
 
 extern commandSem command_table[];
 
+extern char *registers[];
+
 commandSem *command_lookup(char *cmd_name);
 
 symbolTable* create_symbol_table();
