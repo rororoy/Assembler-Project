@@ -23,6 +23,9 @@ error errors[] = {
   {EXTERNAL, "Too many operands", "Too many operands for the command"},
   {EXTERNAL, "Invalid dig op", "Digits in a command should be preceded by a '#'"},
   {EXTERNAL, "Too few operands", "More operands expected for the command"},
+  {EXTERNAL, "No number after #", "Expected a number as an operand after usage of # in"},
+  {EXTERNAL, "Invalid digit in immediate operand", "Expected a number operand but got something else than a digit in"},
+  
   {EXTERNAL, NULL, NULL}
 };
 

@@ -90,6 +90,7 @@ int valid_label(char *label) {
 int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
     commandSem *cmd_info;
     int addressing_mode;
+    addressModes operands_adress;
 
     /* Check if the token at command_start is not NULL */
     if (tokens[command_start] == NULL) {
@@ -108,25 +109,46 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
 
     printf("HERE\n");
 
+    operands_adress.destination_op = -1;
+    operands_adress.source_op = -1;
+
     /* Process the command based on its type - assuming cmd_info has a 'type' field of type 'commands' */
     switch (cmd_info->name) {
         case CMD_MOV:
-            /* Correct syntax: mov <>, <> */
-            addressing_mode = check_operands(command_start, tokens, 2);
-            printf("ADDRESSING MODE %d\n", addressing_mode);
-            return addressing_mode;
+          /* Correct syntax: mov <>, <> */
+          if(check_operands(command_start, tokens, 2, &operands_adress)){
+            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
+            return 1;
+          }else{
+            return 0;
+          }
 
         case CMD_CMP:
-            printf("[CMP]\n");
+          /* Correct syntax: cmp <>, <> */
+          if(check_operands(command_start, tokens, 2, &operands_adress)){
+            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
             return 1;
+          }else{
+            return 0;
+          }
 
         case CMD_ADD:
-            printf("[ADD]\n");
+          /* Correct syntax: cmp <>, <> */
+          if(check_operands(command_start, tokens, 2, &operands_adress)){
+            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
             return 1;
+          }else{
+            return 0;
+          }
 
         case CMD_SUB:
-            printf("[SUB]\n");
+          /* Correct syntax: cmp <>, <> */
+          if(check_operands(command_start, tokens, 2, &operands_adress)){
+            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
             return 1;
+          }else{
+            return 0;
+          }
 
         case CMD_LEA:
             printf("[LEA]\n");
@@ -182,17 +204,18 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
     }
 }
 
-int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct_operands){
+int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct_operands, addressModes *operands){
   int i; /* Position of the current operand */
-  int addressing_mode = -1;  /* Use distinct values for different operand types:
-                                0 for register, 1 for immediate, 2 for label */
+  int current_operator = 0; /* 0 for target op, 1 for source op */
 
   /* Adjust the loop so that it checks exactly the expected number of operands.
      If there's a label definition at the beginning, the operands start at command_start+1. */
   for(i = command_start + 1; i < command_start + correct_operands + 1; i++){
     if(is_reg(tokens[i])){
-      addressing_mode = 0;
+      current_operator ? (operands->source_op = 3) : (operands->destination_op = 3);
+      current_operator++;
     }
+
     else if(tokens[i][0] == '#'){  /* Immediate operand */
       int j = 1;
       /* Check for optional sign */
@@ -201,19 +224,21 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
       }
       /* Check if there's at least one digit after '#' or the sign */
       if (tokens[i][j] == '\0') {
-        print_error("No number after immediate indicator", tokens[command_start], LINE_NUMBER);
-        return -1;
+        print_error("No number after #", tokens[command_start], LINE_NUMBER);
+        return 0;
       }
       /* Check that all remaining characters are digits */
       while (tokens[i][j] != '\0') {
         if (!isdigit(tokens[i][j])) {
           print_error("Invalid digit in immediate operand", tokens[command_start], LINE_NUMBER);
-          return -1;
+          return 0;
         }
         j++;
       }
-      addressing_mode = 1;
+      current_operator ? (operands->source_op) = 0 : (operands->destination_op = 0);
+      current_operator++;
     }
+
     else {
       /* Assume operand is intended to be a label.
          Check that every character is alphanumeric (letters and digits only) */
@@ -221,21 +246,22 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
       while (tokens[i][j] != '\0') {
         if (!isalnum(tokens[i][j])){
           print_error("Invalid label (non-alphanumeric character)", tokens[command_start], LINE_NUMBER);
-          return -1;
+          return 0;
         }
         j++;
       }
-      addressing_mode = 2;
+      current_operator ? (operands->source_op = 2) : (operands->destination_op = 2);
+      current_operator++;
     }
   }
 
   /* If there is an extra operand beyond the allowed number, signal an error */
   if(tokens[i] != NULL){
     print_error("Too many operands", tokens[command_start], LINE_NUMBER);
-    return -1;
+    return 0;
   }
 
-  return addressing_mode;
+  return 1;
 }
 
 
