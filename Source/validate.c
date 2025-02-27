@@ -151,28 +151,68 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
           }
 
         case CMD_LEA:
-            printf("[LEA]\n");
+          /* Correct syntax: lea <>, <> */
+          if(check_operands(command_start, tokens, 2, &operands_adress)){
+            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
             return 1;
+          }else{
+            return 0;
+          }
 
         case CMD_CLR:
-            printf("[CLR]\n");
-            return 1;
+          /* Correct syntax: clr <> */
+          if(is_reg(tokens[command_start+1])){
+            if(check_operands(command_start, tokens, 1, &operands_adress)){
+              printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
+              return 1;
+            }
+          }
+          return 0;
 
         case CMD_NOT:
-            printf("[NOT]\n");
-            return 1;
+          /* Correct syntax: not <> */
+          if(is_reg(tokens[command_start+1])){
+            if(check_operands(command_start, tokens, 1, &operands_adress)){
+              printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
+              return 1;
+            }
+          }
+          return 0;
 
         case CMD_INC:
-            printf("[INC]\n");
+        /* Correct syntax: inc <> */
+        if(is_reg(tokens[command_start+1])){
+          if(check_operands(command_start, tokens, 1, &operands_adress)){
+            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
             return 1;
+          }
+        }
+        return 0;
 
         case CMD_DEC:
-            printf("[DEC]\n");
+        /* Correct syntax: dec <> */
+        if(is_reg(tokens[command_start+1])){
+          if(check_operands(command_start, tokens, 1, &operands_adress)){
+            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
             return 1;
+          }
+        }
+        return 0;
 
         case CMD_JMP:
-            printf("[JMP]\n");
-            return 1;
+          /* Correct syntax: jmp &<LABEL> */
+          if(tokens[command_start+1][0] != '&'){
+            print_error("Unexpected operand", "operand should be of format &LABEL", LINE_NUMBER);
+            return 0;
+          }
+
+          if(check_operands(command_start, tokens, 1, &operands_adress)){
+            if(operands_adress.destination_op == 2){
+              printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
+              return 1;
+            }
+          }
+          return 0;
 
         case CMD_BNE:
             printf("[BNE]\n");
@@ -214,6 +254,13 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
     if(is_reg(tokens[i])){
       current_operator ? (operands->source_op = 3) : (operands->destination_op = 3);
       current_operator++;
+    }
+
+    else if(tokens[i][0] == '&'){ /* jmp command */
+      if(valid_label(tokens[i]+1)){
+        operands->destination_op = 2;
+        current_operator++;
+      }
     }
 
     else if(tokens[i][0] == '#'){  /* Immediate operand */

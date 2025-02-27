@@ -7,8 +7,9 @@ LOOP: prn #48
  bne END
  cmp K, #-6
  bne &END
+ clr r1
  dec K
- jmp &LOOP
+ jmp &LOOP 
 END: stop
 STR: .string “abcd”
 LIST: .data 6, -9

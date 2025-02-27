@@ -25,7 +25,8 @@ error errors[] = {
   {EXTERNAL, "Too few operands", "More operands expected for the command"},
   {EXTERNAL, "No number after #", "Expected a number as an operand after usage of # in"},
   {EXTERNAL, "Invalid digit in immediate operand", "Expected a number operand but got something else than a digit in"},
-  
+  {EXTERNAL, "Unexpected operand", "Encountered an unexpected operand for a command:"},
+
   {EXTERNAL, NULL, NULL}
 };
 
