@@ -24,7 +24,11 @@ commandSem command_table[] = {
     {CMD_RED, -1, 12},
     {CMD_RTS, -1, 13},
     {CMD_PRN, -1, 14},
-    {CMD_STOP,-1, 15}
+    {CMD_STOP,-1, 15},
+    {CMD_EXTERN, -1, -1},
+    {CMD_ENTRY, -1, -1},
+    {CMD_DATA, -1, -1},
+    {CMD_STRING, -1, -1}
 };
 
 /* This array must match the order of the enum exactly. */
@@ -44,7 +48,11 @@ char *allowed_commands[] = {
     "red",
     "rts",
     "prn",
-    "stop"
+    "stop",
+    ".extern",
+    ".entry",
+    ".data",
+    ".string"
 };
 
 char *registers[] = {"r1", "r2", "r3", "r4", "r5", "r6"};

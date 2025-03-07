@@ -86,14 +86,14 @@ int first_pass(char *filename){
     if(addressing_mode != -1){
 
     }else{
-      
+
     }
 
     command_start = 0;
     IC++;
   }
 
-  printf("SYMBOL TABLE \n\n\n");
+  printf("\n\nSYMBOL TABLE \n\n\n");
   print_symbol_table(symbol_table);
 
   return 1;

@@ -1,16 +1,20 @@
 MAIN: add r3, LIST
 LOOP: prn #48
+mcro a_mc
+  cmp K, #-6
+ bne &END
+mcroend
  lea STR, r6
  inc r6
- mov r3,K
+ mov r3, K
  sub r1, r4
  bne END
- cmp K, #-6
- bne &END
- clr r1
+a_mc
  dec K
- jmp LOOP 
+ jmp &LOOP
 END: stop
+TEST: .extern hello
+TEST1: .entry test
 STR: .string “abcd”
 LIST: .data 6, -9
  .data -100

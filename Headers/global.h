@@ -3,7 +3,7 @@
 
 #define MAX_LINE_LENGTH 80
 
-#define NUM_ALLOWED_COMMANDS 16
+#define NUM_ALLOWED_COMMANDS 20
 
 #define NUM_RESERVED_WORDS 22
 
@@ -28,7 +28,11 @@ typedef enum {
     CMD_RED,  /* red */
     CMD_RTS,  /* rts */
     CMD_PRN,  /* prn */
-    CMD_STOP /* stop */
+    CMD_STOP, /* stop */
+    CMD_EXTERN, /* extern */
+    CMD_ENTRY, /* entry */
+    CMD_DATA, /* data */
+    CMD_STRING /* string */
 } commands;
 
 #endif

@@ -270,6 +270,36 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
             return 0;
           }
 
+        case CMD_EXTERN:
+          if(check_operands(command_start, tokens, 1, &operands_adress)){
+            if(operands_adress.destination_op == 2){ /* if contains only a label as its only operand */
+              printf("ADDRESSING SUCCESS MODES: target%d source%d FOUND LABEL IN EXTERN\n", operands_adress.destination_op, operands_adress.source_op);
+              return 1;
+            }else{
+              print_error("Unexpected operand", "extern command should contain a label name as an operand to extern", LINE_NUMBER);
+            }
+          }
+          return 0;
+
+        case CMD_ENTRY:
+          if(check_operands(command_start, tokens, 1, &operands_adress)){
+            if(operands_adress.destination_op == 2){ /* if contains only a label as its only operand */
+              printf("ADDRESSING SUCCESS MODES: target%d source%d FOUND LABEL IN ENTRY\n", operands_adress.destination_op, operands_adress.source_op);
+              return 1;
+            }else{
+              print_error("Unexpected operand", "entry command should contain a label name as an operand to define as entry", LINE_NUMBER);
+            }
+          }
+          return 0;
+
+        case CMD_DATA:
+          printf("DATA COMMAND\n");
+          return 1;
+
+        case CMD_STRING:
+          printf("STRING COMMAND\n");
+          return 1;
+
         default:
             printf("[UNKNOWN COMMAND]\n");
             return 0;
