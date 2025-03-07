@@ -83,7 +83,10 @@ int first_pass(char *filename){
     }
 
     addressing_mode = is_valid_command(command_start, tokens);
-    if(addressing_mode != -1){
+    if(addressing_mode > 1){ /* In case of a data command */
+      /* addressing_mode is a returned number of operands in the data decleration */
+      /* (counting also the .data command in the amount) */
+      DC += addressing_mode - 1;
 
     }else{
 

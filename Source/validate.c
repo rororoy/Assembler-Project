@@ -1,6 +1,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "../Headers/validate.h"
 #include "../Headers/global.h"
 #include "../Headers/error.h"
@@ -91,6 +92,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
     commandSem *cmd_info;
     int addressing_mode;
     addressModes operands_adress;
+    int i;
 
     /* Check if the token at command_start is not NULL */
     if (tokens[command_start] == NULL) {
@@ -293,12 +295,34 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH]) {
           return 0;
 
         case CMD_DATA:
-          printf("DATA COMMAND\n");
-          return 1;
+          i = command_start + 1;
+
+          while (tokens[i] != NULL) {
+            char *endptr;
+            long value = strtol(tokens[i], &endptr, 10);
+
+            /* Check if conversion was successful and the entire string was used */
+            if (*endptr != '\0') {
+              print_error("Unexpected operand", "expected only numbers in a data decleration", LINE_NUMBER);
+              return 0;  /* Not a valid number */
+            }
+
+            /* Check for overflow/underflow (though in a 32-bit environment,
+              we might need to be careful about range)
+            if ((value == LONG_MAX || value == LONG_MIN) && errno == ERANGE) {
+                return 0;   Overflow or underflow
+            }
+            */
+
+            i++;
+          }
+          printf("DATA COMMAND: TOTAL %d ITEMS\n", i - (command_start + 1));
+          return i - (command_start);  /* All tokens are valid numbers */
 
         case CMD_STRING:
+          /* All validation is done in the tokanize function no reason to validate */ 
           printf("STRING COMMAND\n");
-          return 1;
+          return 2;
 
         default:
             printf("[UNKNOWN COMMAND]\n");
