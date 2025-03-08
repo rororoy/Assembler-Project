@@ -10,22 +10,21 @@
 #include "../Headers/translate.h"
 #include "../Headers/linked_list.h"
 
-int first_pass(char *filename){
+int first_pass(char *filename) {
   FILE *file;
   int i;
   char line[MAX_LINE_LENGTH + 2]; /* Buffer for a line: MAX_LINE_LENGTH + '\n' + '\0' */
   char *tokens[MAX_LINE_LENGTH];
   int tokens_mode;
-
+  addressModes operands_adress;
   /* Define the addressing type - 0 IMM, 1 DIRECT, 2 RELATIVE, 3 IMM REG, -1 ERR */
   int addressing_mode;
-
   char *am_file = append_extension(filename, ".am");
-
   int DC = 0, IC = 100;
   int command_start = 0;
-
   symbolTable *symbol_table = create_symbol_table();
+
+
 
   LINE_NUMBER = 0;
 
@@ -38,67 +37,76 @@ int first_pass(char *filename){
   file = fopen(am_file, "r");
   if (file == NULL) {
     print_error("File read", filename, 0);
-    return 0  ;
+    return 0;
   }
 
   /* Loop through the line checking for different cases */
   while (fgets(line, sizeof(line), file) != NULL) {
     LINE_NUMBER++;
-
-    if(!(tokens_mode = tokanize_line(line, tokens, 0))) return 0;
+    if (!(tokens_mode = tokanize_line(line, tokens, 0)))
+        return 0;
 
     printf("Tokanized-->");
-    for(i = 0; i<MAX_LINE_LENGTH; i++){
-      if(tokens[i] == NULL){break;}
-      printf("%s|", tokens[i]);
+    for (i = 0; i < MAX_LINE_LENGTH; i++) {
+        if (tokens[i] == NULL) {
+            break;
+        }
+        printf("%s|", tokens[i]);
     }
     printf("\n");
 
+
+
     /* Encountered a decleration of a label in the line */
-    if(tokens_mode == 2){
-      if((tokens[1] != NULL) && (strcmp(tokens[1],".data") == 0 || strcmp(tokens[1],".string") == 0)){
-        if(!insert_symbol(symbol_table, tokens[0], IC+DC, LBL_DATA)){
+    command_start = tokens_mode == 2 ? 1 : 0;
+    addressing_mode = is_valid_command(command_start, tokens, &operands_adress);
+
+    if (tokens_mode == 2) {
+      if ((tokens[1] != NULL) && (strcmp(tokens[command_start], ".data") == 0 || strcmp(tokens[command_start], ".string") == 0)) {
+        /* Incase of .data and .string - special DC treatment is needed */
+        if (!insert_symbol(symbol_table, tokens[0], IC+DC, LBL_DATA)) {
           printf("ERROR INSERTING %s", tokens[0]);
           return 0;
         }
 
-        if(strcmp(tokens[1],".string") == 0){
-          DC += strlen(tokens[1]) + 1;
-        }else{
+        if (strcmp(tokens[command_start], ".string") == 0) {
+          DC += strlen(tokens[command_start+1]) + 1;
+          printf("THE STRING:%s\n", tokens[command_start+1]);
+          printf("@@@@@@@@@@@@@@@@@@@@@DC=%d\n", DC);
+        } else {
           /* Count reserved space in memory for each data type declared */
-          for(i = 2; i<MAX_LINE_LENGTH; i++){
-            if(tokens[i] == NULL){ break; }
-            DC++;
-          }
+          DC += addressing_mode - 1;
         }
+        /* TODO FIX THIS DUMB FIX */
+        IC--;
 
+        printf("##### target%d source%d FOUND LABEL IN ENTRY\n", operands_adress.destination_op, operands_adress.source_op);
 
-      }else{
-        if(!insert_symbol(symbol_table, tokens[0], IC, LBL_CODE)){
+        printf("!!!!!!!!!!!!!!!!!!!!!!!!!IC: %d + DC: %d = %d\n", IC, DC, IC+DC);
+
+      } else {
+        if (!insert_symbol(symbol_table, tokens[0], IC+DC, LBL_CODE)) {
           printf("ERROR INSERTING %s", tokens[0]);
           return 0;
         }
+
+        printf("##### target%d source%d FOUND LABEL IN ENTRY\n", operands_adress.destination_op, operands_adress.source_op);
+
+        IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
+        IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
       }
-      command_start = 1;
-    }
-
-    addressing_mode = is_valid_command(command_start, tokens);
-    if(addressing_mode > 1){ /* In case of a data command */
-      /* addressing_mode is a returned number of operands in the data decleration */
-      /* (counting also the .data command in the amount) */
-      DC += addressing_mode - 1;
-
     }else{
+      /* Incase of any other regular non label commands */
+      printf("##### target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
 
+      IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
+      IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
     }
-
-    command_start = 0;
     IC++;
+    printf("IC FINALLY NOW: %d DC FINALLY NOW: %d\n\n", IC, DC);
   }
 
   printf("\n\nSYMBOL TABLE \n\n\n");
   print_symbol_table(symbol_table);
-
   return 1;
-
 }
