@@ -72,7 +72,6 @@ int first_pass(char *filename) {
         if (strcmp(tokens[command_start], ".string") == 0) {
           DC += strlen(tokens[command_start+1]) + 1;
           printf("THE STRING:%s\n", tokens[command_start+1]);
-          printf("@@@@@@@@@@@@@@@@@@@@@DC=%d\n", DC);
         } else {
           /* Count reserved space in memory for each data type declared */
           DC += addressing_mode - 1;
@@ -80,30 +79,29 @@ int first_pass(char *filename) {
         /* TODO FIX THIS DUMB FIX */
         IC--;
 
-        printf("##### target%d source%d FOUND LABEL IN ENTRY\n", operands_adress.destination_op, operands_adress.source_op);
-
-        printf("!!!!!!!!!!!!!!!!!!!!!!!!!IC: %d + DC: %d = %d\n", IC, DC, IC+DC);
-
       } else {
         if (!insert_symbol(symbol_table, tokens[0], IC+DC, LBL_CODE)) {
           printf("ERROR INSERTING %s", tokens[0]);
           return 0;
         }
 
-        printf("##### target%d source%d FOUND LABEL IN ENTRY\n", operands_adress.destination_op, operands_adress.source_op);
-
         IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
         IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
       }
     }else{
       /* Incase of any other regular non label commands */
-      printf("##### target%d source%d\n", operands_adress.destination_op, operands_adress.source_op);
 
       IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
       IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
     }
     IC++;
-    printf("IC FINALLY NOW: %d DC FINALLY NOW: %d\n\n", IC, DC);
+
+    /* Run through the command operands and log into the symb table */
+    i = command_start + 1;
+    while(tokens[i] != NULL){
+
+    }
+
   }
 
   printf("\n\nSYMBOL TABLE \n\n\n");

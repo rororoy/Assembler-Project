@@ -130,3 +130,21 @@ void print_symbol_table(const symbolTable *table) {
     printf("---------------------\n");
     printf("Total symbols: %d (Capacity: %d)\n", table->size, table->capacity);
 }
+
+
+int insert_extra_word(transTable *tb, int wordtype, char *data, int operand) {
+    if (wordtype == 0) { /* For a number */
+        /* Convert the string data to an unsigned integer and store it */
+        int num = atoi(data);
+        /* Store the number in the value field (22 bits) */
+        tb->binary[operand].extra_word.value = (unsigned)num & 0x3FFFFF; /* 0x3FFFFF = 22 bits of 1s */
+
+        /* Set addressing flags to default values for a number */
+        tb->binary[operand].extra_word.a = 1; /* Absolute addressing for numbers */
+        tb->binary[operand].extra_word.r = 0; /* Not relocatable */
+        tb->binary[operand].extra_word.e = 0; /* Not external */
+    }else if(wordtype == 1){
+      
+    }
+    return 1;
+}
