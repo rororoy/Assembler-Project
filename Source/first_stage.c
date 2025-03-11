@@ -25,6 +25,8 @@ int first_pass(char *filename) {
   symbolTable *symbol_table = create_symbol_table();
   transTable *my_table = create_transTable(50);
 
+  int tablepointer = 0;
+
   LINE_NUMBER = 0;
 
   if (symbol_table == NULL) {
@@ -104,18 +106,18 @@ int first_pass(char *filename) {
     }*/
 
     /* Insert first entry - example: "MAIN: add r3, LIST" */
-    insert_command_entry(my_table, 0, 100, "MAIN: add r3, LIST",
+    insert_command_entry(my_table, tablepointer++, IC, join_tokens(tokens),
                          0, 0, 3, 1, 0, 10); /* Sample values, adjust as needed */
 
     /* Insert an extra word for the LIST address (assuming it's at position 101) */
-    char list_addr[] = "101"; /* The address as string */
-    insert_extra_word(&my_table[0], 0, list_addr, 1); /* Insert as second word */
+    insert_extra_word(&my_table[tablepointer], 0, 256, 1); /* Insert as second word */
 
   }
 
   /* Print the table */
   printf("TransTable contents:\n");
-  print_complete_transTable(my_table, 10); /* Print just the first entry */
+  print_complete_transTable(my_table, 9); /* Print just the first entry */
+
   /* Free the allocated memory */
   free_transTable(my_table, 10);
   printf("\n\nSYMBOL TABLE \n\n\n");

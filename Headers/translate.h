@@ -75,7 +75,27 @@ int resize_symbol_table(symbolTable *table);
 
 int insert_symbol(symbolTable *table, char *name, int address, labelType type);
 
+/* Initialize a single transTable entry */
 void initialize_transTable_entry(transTable *entry, int address, char *source_code);
+
+/* Create and initialize a dynamic array of transTable entries */
+transTable* create_transTable(int initial_size);
+
+/* Free a single transTable entry */
+void free_transTable_entry(transTable *entry);
+
+/* Free the entire transTable */
+void free_transTable(transTable *table, int size);
+
+/* Insert a command entry in the transTable */
+void insert_command_entry(transTable *table, int index, int address, char *source_code,
+                         int opcode, int src_mode, int src_reg, int dst_mode, int dst_reg, int funct);
+
+/* Insert extra word for a number or address - takes int value directly */
+int insert_extra_word(transTable *tb, int wordtype, int value, int operand);
+
+/* Print the complete transTable */
+void print_complete_transTable(transTable *table, int size);
 
 int is_valid_command();
 

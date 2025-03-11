@@ -15,4 +15,6 @@ char *get_substring(char *start, char *end);
 
 int tokanize_line(char *line, char *tokens[MAX_LINE_LENGTH], int macro_scan);
 
+char *join_tokens(char **tokens);
+
 #endif

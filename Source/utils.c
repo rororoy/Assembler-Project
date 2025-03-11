@@ -222,3 +222,50 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     }
     return 1;
 }
+
+char* join_tokens(char **tokens) {
+  int i;
+  size_t total_len = 0;
+  int token_count = 0;
+  char *result;
+    if (tokens == NULL)
+        return NULL;
+
+    /* First, calculate the total length needed and count tokens */
+
+    for (i = 0; tokens[i] != NULL; i++) {
+        total_len += strlen(tokens[i]);
+        token_count++;
+
+        /* Add space for a separator (except after the last token) */
+        if (tokens[i+1] != NULL) {
+            total_len += 1; /* Space character */
+        }
+    }
+
+    /* If no tokens found, return empty string */
+    if (token_count == 0) {
+        char *empty = (char *)malloc(1);
+        if (empty == NULL) return NULL;
+        empty[0] = '\0';
+        return empty;
+    }
+
+    /* Allocate memory for the joined string (plus null terminator) */
+    result = (char *)malloc(total_len + 1);
+    if (result == NULL)
+        return NULL;
+
+    /* Join the tokens */
+    result[0] = '\0'; /* Start with empty string */
+    for (i = 0; tokens[i] != NULL; i++) {
+        strcat(result, tokens[i]);
+
+        /* Add separator (except after the last token) */
+        if (tokens[i+1] != NULL) {
+            strcat(result, " ");
+        }
+    }
+
+    return result;
+}

@@ -263,19 +263,19 @@ void print_symbol_table(const symbolTable *table) {
 }
 
 
-int insert_extra_word(transTable *tb, int wordtype, char *data, int operand) {
-    if (wordtype == 0) { /* For a number */
-        /* Convert the string data to an unsigned integer and store it */
-        int num = atoi(data);
-        /* Store the number in the value field (22 bits) */
-        tb->binary[operand].extra_word.value = (unsigned)num & 0x3FFFFF; /* 0x3FFFFF = 22 bits of 1s */
-
-        /* Set addressing flags to default values for a number */
-        tb->binary[operand].extra_word.a = 1; /* Absolute addressing for numbers */
-        tb->binary[operand].extra_word.r = 0; /* Not relocatable */
-        tb->binary[operand].extra_word.e = 0; /* Not external */
-    }else if(wordtype == 1){
-
+int insert_extra_word(transTable *tb, int wordtype, int value, int word_index) {
+    /* Make sure we're only using valid indices (0, 1, or 2) */
+    if (word_index < 0 || word_index > 2) {
+        return 0; /* Invalid index */
     }
-    return 1;
+
+    if (wordtype == 0) { /* For a number */
+        /* Store the number in the value field (22 bits) */
+        tb->binary[word_index].extra_word.value = (unsigned)value & 0x3FFFFF;
+        /* Set addressing flags */
+        tb->binary[word_index].extra_word.a = 1; /* Absolute addressing for numbers */
+        tb->binary[word_index].extra_word.r = 0; /* Not relocatable */
+        tb->binary[word_index].extra_word.e = 0; /* Not external */
+    }
+    return 1; /* Success */
 }
