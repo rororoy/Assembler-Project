@@ -23,8 +23,7 @@ int first_pass(char *filename) {
   int DC = 0, IC = 100;
   int command_start = 0;
   symbolTable *symbol_table = create_symbol_table();
-
-
+  transTable *my_table = create_transTable(50);
 
   LINE_NUMBER = 0;
 
@@ -96,14 +95,29 @@ int first_pass(char *filename) {
     }
     IC++;
 
+
     /* Run through the command operands and log into the symb table */
+    /*
     i = command_start + 1;
     while(tokens[i] != NULL){
 
-    }
+    }*/
+
+    /* Insert first entry - example: "MAIN: add r3, LIST" */
+    insert_command_entry(my_table, 0, 100, "MAIN: add r3, LIST",
+                         0, 0, 3, 1, 0, 10); /* Sample values, adjust as needed */
+
+    /* Insert an extra word for the LIST address (assuming it's at position 101) */
+    char list_addr[] = "101"; /* The address as string */
+    insert_extra_word(&my_table[0], 0, list_addr, 1); /* Insert as second word */
 
   }
 
+  /* Print the table */
+  printf("TransTable contents:\n");
+  print_complete_transTable(my_table, 10); /* Print just the first entry */
+  /* Free the allocated memory */
+  free_transTable(my_table, 10);
   printf("\n\nSYMBOL TABLE \n\n\n");
   print_symbol_table(symbol_table);
   return 1;

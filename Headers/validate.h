@@ -18,6 +18,8 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
 int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct_operands, addressModes *operands_adress);
 
+void print_transTable(transTable *table, int size);
+
 int is_reg(char *word);
 
 #endif

@@ -87,10 +87,8 @@ int valid_label(char *label) {
     return 1;
 }
 
-
 int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressModes *operands_adress) {
     commandSem *cmd_info;
-    int addressing_mode;
     int i;
 
     /* Check if the token at command_start is not NULL */
@@ -297,7 +295,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
           while (tokens[i] != NULL) {
             char *endptr;
-            long value = strtol(tokens[i], &endptr, 10);
+            strtol(tokens[i], &endptr, 10);
 
             /* Check if conversion was successful and the entire string was used */
             if (*endptr != '\0') {

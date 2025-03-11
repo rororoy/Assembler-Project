@@ -73,7 +73,9 @@ symbolTable* create_symbol_table();
 
 int resize_symbol_table(symbolTable *table);
 
-int insert_symbol(symbolTable *table, const char *name, int address, labelType type);
+int insert_symbol(symbolTable *table, char *name, int address, labelType type);
+
+void initialize_transTable_entry(transTable *entry, int address, char *source_code);
 
 int is_valid_command();
 
