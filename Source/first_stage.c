@@ -17,6 +17,7 @@ int first_pass(char *filename) {
   char *tokens[MAX_LINE_LENGTH];
   int tokens_mode;
   addressModes operands_adress;
+  int src, tgt;
   /* Define the addressing type - 0 IMM, 1 DIRECT, 2 RELATIVE, 3 IMM REG, -1 ERR */
   int addressing_mode;
   char *am_file = append_extension(filename, ".am");
@@ -24,6 +25,7 @@ int first_pass(char *filename) {
   int command_start = 0;
   symbolTable *symbol_table = create_symbol_table();
   transTable *my_table = create_transTable(50);
+
 
   int tablepointer = 0;
 
@@ -105,12 +107,9 @@ int first_pass(char *filename) {
 
     }*/
 
-    /* Insert first entry - example: "MAIN: add r3, LIST" */
-    insert_command_entry(my_table, tablepointer++, IC, join_tokens(tokens),
-                         0, 0, 3, 1, 0, 10); /* Sample values, adjust as needed */
+    process_assembly_command(my_table, &tablepointer, tokens, IC,
+                         operands_adress.source_op, operands_adress.destination_op);
 
-    /* Insert an extra word for the LIST address (assuming it's at position 101) */
-    insert_extra_word(&my_table[tablepointer], 0, 256, 1); /* Insert as second word */
 
   }
 
@@ -123,4 +122,97 @@ int first_pass(char *filename) {
   printf("\n\nSYMBOL TABLE \n\n\n");
   print_symbol_table(symbol_table);
   return 1;
+}
+
+void process_assembly_command(transTable *my_table, int *tablepointer, char **tokens, int IC,
+                               int operand_src_type, int operand_dst_type) {
+    int src_reg = 0;
+    int dst_reg = 0;
+    int command_start = 0;
+    int opcode = 0; /* Default opcode - will be updated based on actual command */
+    int funct = 0;  /* Default function code - will be updated based on actual command */
+    char *source_line;
+    int extra_words_count = 0;
+
+    /* Find where the command starts (skip label if present) */
+    if (tokens[0] != NULL && tokens[1] != NULL && strstr(tokens[0], ":") != NULL) {
+        command_start = 1;
+    }
+
+    /* Join tokens to create the source line */
+    source_line = join_tokens(tokens);
+    if (source_line == NULL) {
+        fprintf(stderr, "Memory allocation failed for source line\n");
+        return;
+    }
+
+    /* Determine register numbers if register addressing is used */
+    if (operand_src_type == 3) { /* Register addressing for source */
+        /* Extract register number - assuming format like "r3" */
+        if (tokens[command_start + 1] != NULL && tokens[command_start + 1][0] == 'r') {
+            src_reg = tokens[command_start + 1][1] - '0';
+        }
+    }
+
+    if (operand_dst_type == 3) { /* Register addressing for destination */
+        /* Extract register number - assuming format like "r3" */
+        if (tokens[command_start + 2] != NULL && tokens[command_start + 2][0] == 'r') {
+            dst_reg = tokens[command_start + 2][1] - '0';
+        }
+    }
+
+    /* Insert the main instruction word */
+    insert_command_entry(my_table, *tablepointer, IC, source_line,
+                         opcode, operand_src_type, src_reg,
+                         operand_dst_type, dst_reg, funct);
+
+    /* Handle extra words based on addressing types */
+    int current_word = 1; /* Start after the main word */
+
+    /* Process source operand extra word if needed */
+    if (operand_src_type == 0) { /* Immediate addressing (#value) */
+        /* Extract the immediate value, assuming format like "#123" */
+        if (tokens[command_start + 1] != NULL) {
+            int value = atoi(&tokens[command_start + 1][1]); /* Skip the '#' character */
+            insert_extra_word(&my_table[*tablepointer], 0, value, current_word++);
+            extra_words_count++;
+        }
+    }
+    else if (operand_src_type == 1) { /* Direct addressing (variable name) */
+        /* Here you would look up the address of the label in your symbol table */
+        /* For now, using placeholder value */
+        insert_extra_word(&my_table[*tablepointer], 0, IC, current_word++);
+        extra_words_count++;
+    }
+    else if (operand_src_type == 2) { /* Relative addressing (&label) */
+        /* Calculate relative distance - would require symbol table lookup */
+        /* For now, using placeholder value */
+        insert_extra_word(&my_table[*tablepointer], 0, 50, current_word++);
+        extra_words_count++;
+    }
+
+    /* Process destination operand extra word if needed */
+    if (operand_dst_type == 0) { /* Immediate addressing */
+        if (tokens[command_start + 2] != NULL) {
+            int value = atoi(&tokens[command_start + 2][1]); /* Skip the '#' character */
+            insert_extra_word(&my_table[*tablepointer], 0, value, current_word++);
+            extra_words_count++;
+        }
+    }
+    else if (operand_dst_type == 1) { /* Direct addressing */
+        /* For now, using placeholder value */
+        insert_extra_word(&my_table[*tablepointer], 0, IC, current_word++);
+        extra_words_count++;
+    }
+    else if (operand_dst_type == 2) { /* Relative addressing */
+        /* For now, using placeholder value */
+        insert_extra_word(&my_table[*tablepointer], 0, 75, current_word++);
+        extra_words_count++;
+    }
+
+    /* Increment table pointer and update IC based on words used */
+    (*tablepointer)++;
+
+    /* Free the source line memory */
+    free(source_line);
 }

@@ -75,6 +75,8 @@ int resize_symbol_table(symbolTable *table);
 
 int insert_symbol(symbolTable *table, char *name, int address, labelType type);
 
+symbol* find_symbol(symbolTable *table, char *name);
+
 /* Initialize a single transTable entry */
 void initialize_transTable_entry(transTable *entry, int address, char *source_code);
 

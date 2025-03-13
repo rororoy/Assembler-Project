@@ -115,6 +115,27 @@ int insert_symbol(symbolTable *table, char *name, int address, labelType type) {
     return 1;  /* Success */
 }
 
+/* Search for a symbol by name in the symbol table */
+symbol* find_symbol(symbolTable *table, char *name) {
+    int i;
+
+    /* Check if table is valid */
+    if (table == NULL || name == NULL) {
+        return NULL;
+    }
+
+    /* Linear search through the table */
+    for (i = 0; i < table->size; i++) {
+        if (strcmp(table->symbols[i].name, name) == 0) {
+            /* Found the symbol */
+            return &(table->symbols[i]);
+        }
+    }
+
+    /* Symbol not found */
+    return NULL;
+}
+
 /* Initialize a single transTable entry */
 void initialize_transTable_entry(transTable *entry, int address, char *source_code) {
     /* Set the address */
