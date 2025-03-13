@@ -17,7 +17,7 @@ int first_pass(char *filename) {
   char *tokens[MAX_LINE_LENGTH];
   int tokens_mode;
   addressModes operands_adress;
-  int src, tgt;
+  int prev_DC;
   /* Define the addressing type - 0 IMM, 1 DIRECT, 2 RELATIVE, 3 IMM REG, -1 ERR */
   int addressing_mode;
   char *am_file = append_extension(filename, ".am");
@@ -64,6 +64,7 @@ int first_pass(char *filename) {
     command_start = tokens_mode == 2 ? 1 : 0;
     addressing_mode = is_valid_command(command_start, tokens, &operands_adress);
 
+    /* If ecnountered a label definition at the start of the line */
     if (tokens_mode == 2) {
       if ((tokens[1] != NULL) && (strcmp(tokens[command_start], ".data") == 0 || strcmp(tokens[command_start], ".string") == 0)) {
         /* Incase of .data and .string - special DC treatment is needed */
@@ -73,11 +74,10 @@ int first_pass(char *filename) {
         }
 
         if (strcmp(tokens[command_start], ".string") == 0) {
-          DC += strlen(tokens[command_start+1]) + 1;
-          printf("THE STRING:%s\n", tokens[command_start+1]);
+          prev_DC = strlen(tokens[command_start+1]) + 1;
         } else {
           /* Count reserved space in memory for each data type declared */
-          DC += addressing_mode - 1;
+          prev_DC = addressing_mode - 1;
         }
         /* TODO FIX THIS DUMB FIX */
         IC--;
@@ -87,35 +87,24 @@ int first_pass(char *filename) {
           printf("ERROR INSERTING %s", tokens[0]);
           return 0;
         }
-
-        IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
-        IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
       }
     }else{
-      /* Incase of any other regular non label commands */
-
-      IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
-      IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
+      /* Incase of any other regular commands without a label defined */
     }
+
+    process_assembly_command(my_table, &tablepointer, tokens, IC, operands_adress.source_op, operands_adress.destination_op, command_start);
+
+    IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
+    IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
     IC++;
+    DC += prev_DC;
 
-
-    /* Run through the command operands and log into the symb table */
-    /*
-    i = command_start + 1;
-    while(tokens[i] != NULL){
-
-    }*/
-
-    process_assembly_command(my_table, &tablepointer, tokens, IC,
-                         operands_adress.source_op, operands_adress.destination_op);
-
-
+    printf("\n");
   }
 
   /* Print the table */
   printf("TransTable contents:\n");
-  print_complete_transTable(my_table, 9); /* Print just the first entry */
+  print_complete_transTable(my_table, 20); /* Print just the first entry */
 
   /* Free the allocated memory */
   free_transTable(my_table, 10);
@@ -125,19 +114,20 @@ int first_pass(char *filename) {
 }
 
 void process_assembly_command(transTable *my_table, int *tablepointer, char **tokens, int IC,
-                               int operand_src_type, int operand_dst_type) {
+                               int operand_src_type, int operand_dst_type, int command_start) {
     int src_reg = 0;
     int dst_reg = 0;
-    int command_start = 0;
-    int opcode = 0; /* Default opcode - will be updated based on actual command */
-    int funct = 0;  /* Default function code - will be updated based on actual command */
+    int opcode; /* Default opcode - will be updated based on actual command */
+    int funct;  /* Default function code - will be updated based on actual command */
     char *source_line;
     int extra_words_count = 0;
+    int current_word = 1; /* Start after the main word */
 
-    /* Find where the command starts (skip label if present) */
-    if (tokens[0] != NULL && tokens[1] != NULL && strstr(tokens[0], ":") != NULL) {
-        command_start = 1;
-    }
+    commandSem *cmnd = command_lookup(tokens[command_start]);
+
+    /* Define the opcode and funct - if dont exist - put 0 */
+    opcode = cmnd->op_code == -1 ? 0 : cmnd->op_code;
+    funct = cmnd->funct == -1 ? 0 : cmnd->funct;
 
     /* Join tokens to create the source line */
     source_line = join_tokens(tokens);
@@ -167,8 +157,6 @@ void process_assembly_command(transTable *my_table, int *tablepointer, char **to
                          operand_dst_type, dst_reg, funct);
 
     /* Handle extra words based on addressing types */
-    int current_word = 1; /* Start after the main word */
-
     /* Process source operand extra word if needed */
     if (operand_src_type == 0) { /* Immediate addressing (#value) */
         /* Extract the immediate value, assuming format like "#123" */

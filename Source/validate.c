@@ -336,13 +336,13 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
      If there's a label definition at the beginning, the operands start at command_start+1. */
   for(i = command_start + 1; i < command_start + correct_operands + 1; i++){
     if(is_reg(tokens[i])){
-      current_operator ? (operands->source_op = 3) : (operands->destination_op = 3);
+      current_operator ? (operands->destination_op = 3) : (operands->source_op = 3);
       current_operator++;
     }
 
     else if(tokens[i][0] == '&'){ /* external label mentioned */
       if(valid_label(tokens[i]+1)){
-        operands->destination_op = 2;
+        operands->source_op = 2;
         current_operator++;
       }
     }
@@ -366,7 +366,7 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
         }
         j++;
       }
-      current_operator ? (operands->source_op) = 0 : (operands->destination_op = 0);
+      current_operator ? (operands->destination_op) = 0 : (operands->source_op = 0);
       current_operator++;
     }
 
@@ -381,7 +381,7 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
         }
         j++;
       }
-      current_operator ? (operands->source_op = 2) : (operands->destination_op = 2);
+      current_operator ? (operands->destination_op = 1) : (operands->source_op = 1);
       current_operator++;
     }
   }

@@ -22,8 +22,8 @@ commandSem command_table[] = {
     {CMD_BNE,  2,  9},
     {CMD_JSR,  3,  9},
     {CMD_RED, -1, 12},
-    {CMD_RTS, -1, 13},
-    {CMD_PRN, -1, 14},
+    {CMD_RTS, -1, 14},
+    {CMD_PRN, -1, 13},
     {CMD_STOP,-1, 15},
     {CMD_EXTERN, -1, -1},
     {CMD_ENTRY, -1, -1},
@@ -116,7 +116,7 @@ int insert_symbol(symbolTable *table, char *name, int address, labelType type) {
 }
 
 /* Search for a symbol by name in the symbol table */
-symbol* find_symbol(symbolTable *table, char *name) {
+symbol *find_symbol(symbolTable *table, char *name) {
     int i;
 
     /* Check if table is valid */
@@ -255,16 +255,131 @@ void insert_command_entry(transTable *table, int index, int address, char *sourc
     /* Initialize entry with address and source code */
     initialize_transTable_entry(&table[index], address, source_code);
 
+    src_mode = src_mode == -1 ? 0 : src_mode;
+    dst_mode = dst_mode == -1 ? 0 : dst_mode;
+
+    printf("@[PUTTING src_mode:%d, dst_mode:%d, funct: %d]\n", src_mode, dst_mode, funct);
+
     /* Set up the instruction word */
     table[index].binary[0].instruction.opcode = opcode;
+
+    print_word_binary(table[index].binary[0]);
+
     table[index].binary[0].instruction.src_mode = src_mode;
+    print_word_binary(table[index].binary[0]);
+
     table[index].binary[0].instruction.src_reg = src_reg;
+    print_word_binary(table[index].binary[0]);
+
     table[index].binary[0].instruction.dst_mode = dst_mode;
+    print_word_binary(table[index].binary[0]);
+
     table[index].binary[0].instruction.dst_reg = dst_reg;
     table[index].binary[0].instruction.funct = funct;
+    print_word_binary(table[index].binary[0]);
+
     table[index].binary[0].instruction.a = 1; /* Typically absolute for instructions */
     table[index].binary[0].instruction.r = 0;
     table[index].binary[0].instruction.e = 0;
+
+    print_word_binary(table[index].binary[0]);
+
+}
+
+void print_word_binary(word w) {
+    unsigned int i;
+
+    /* Create a temporary variable to hold the word bits */
+    unsigned int bits = 0;
+
+    /* Determine which word format we're dealing with */
+    if (w.instruction.opcode != 0) {
+        /* It's likely an instruction word */
+
+        /* Copy all fields to their correct bit positions */
+        bits |= (w.instruction.opcode & 0x3F) << 18;    /* 6 bits, position 18-23 */
+        bits |= (w.instruction.src_mode & 0x3) << 16;   /* 2 bits, position 16-17 */
+        bits |= (w.instruction.src_reg & 0x7) << 13;    /* 3 bits, position 13-15 */
+        bits |= (w.instruction.dst_mode & 0x3) << 11;   /* 2 bits, position 11-12 */
+        bits |= (w.instruction.dst_reg & 0x7) << 8;     /* 3 bits, position 8-10 */
+        bits |= (w.instruction.funct & 0x1F) << 3;      /* 5 bits, position 3-7 */
+        bits |= (w.instruction.a & 0x1) << 2;           /* 1 bit, position 2 */
+        bits |= (w.instruction.r & 0x1) << 1;           /* 1 bit, position 1 */
+        bits |= (w.instruction.e & 0x1);                /* 1 bit, position 0 */
+
+        /* Print instruction word format in specific chunks */
+        printf("Binary: ");
+
+        /* Opcode: 6 bits (bits 18-23) */
+        for (i = 0; i < 6; i++) {
+            printf("%c", (bits & (1 << (23 - i))) ? '1' : '0');
+        }
+        printf(" ");
+
+        /* src_mode: 2 bits (bits 16-17) */
+        for (i = 0; i < 2; i++) {
+            printf("%c", (bits & (1 << (17 - i))) ? '1' : '0');
+        }
+        printf(" ");
+
+        /* src_reg: 3 bits (bits 13-15) */
+        for (i = 0; i < 3; i++) {
+            printf("%c", (bits & (1 << (15 - i))) ? '1' : '0');
+        }
+        printf(" ");
+
+        /* dst_mode: 2 bits (bits 11-12) */
+        for (i = 0; i < 2; i++) {
+            printf("%c", (bits & (1 << (12 - i))) ? '1' : '0');
+        }
+        printf(" ");
+
+        /* dst_reg: 3 bits (bits 8-10) */
+        for (i = 0; i < 3; i++) {
+            printf("%c", (bits & (1 << (10 - i))) ? '1' : '0');
+        }
+        printf(" ");
+
+        /* funct: 5 bits (bits 3-7) */
+        for (i = 0; i < 5; i++) {
+            printf("%c", (bits & (1 << (7 - i))) ? '1' : '0');
+        }
+        printf(" ");
+
+        /* a: 1 bit (bit 2) */
+        printf("%c ", (bits & (1 << 2)) ? '1' : '0');
+
+        /* r: 1 bit (bit 1) */
+        printf("%c ", (bits & (1 << 1)) ? '1' : '0');
+
+        /* e: 1 bit (bit 0) */
+        printf("%c", (bits & 1) ? '1' : '0');
+    } else {
+        /* It's likely an extra word */
+        bits |= (w.extra_word.value & 0x3FFFFF);        /* 22 bits, position 0-21 */
+        bits |= (w.extra_word.a & 0x1) << 22;           /* 1 bit, position 22 */
+        bits |= (w.extra_word.r & 0x1) << 23;           /* 1 bit, position 23 */
+        bits |= (w.extra_word.e & 0x1) << 24;           /* 1 bit, position 24 */
+
+        /* For extra word, print in a format that makes sense for its structure */
+        printf("Binary (extra word): ");
+
+        /* Print the value bits (22 bits) */
+        for (i = 0; i < 22; i++) {
+            printf("%c", (bits & (1 << (21 - i))) ? '1' : '0');
+            /* Add space after every 6 bits for readability */
+            if ((i + 1) % 6 == 0 && i < 21) {
+                printf(" ");
+            }
+        }
+        printf(" ");
+
+        /* Print the flag bits individually */
+        printf("%c ", (bits & (1 << 22)) ? '1' : '0');  /* a flag */
+        printf("%c ", (bits & (1 << 23)) ? '1' : '0');  /* r flag */
+        printf("%c",  (bits & (1 << 24)) ? '1' : '0');  /* e flag */
+    }
+    printf("\n");
 }
 
 /* Print the symbol table */
