@@ -17,11 +17,10 @@ int first_pass(char *filename) {
   char *tokens[MAX_LINE_LENGTH];
   int tokens_mode;
   addressModes operands_adress;
-  int prev_DC;
   /* Define the addressing type - 0 IMM, 1 DIRECT, 2 RELATIVE, 3 IMM REG, -1 ERR */
   int addressing_mode;
   char *am_file = append_extension(filename, ".am");
-  int DC = 0, IC = 100;
+  int DC = 0, IC = 100, prev_DC = 0;
   int command_start = 0;
   symbolTable *symbol_table = create_symbol_table();
   transTable *my_table = create_transTable(50);
@@ -64,8 +63,11 @@ int first_pass(char *filename) {
     command_start = tokens_mode == 2 ? 1 : 0;
     addressing_mode = is_valid_command(command_start, tokens, &operands_adress);
 
+    process_assembly_command(my_table, &tablepointer, tokens, IC+DC, operands_adress.source_op, operands_adress.destination_op, command_start);
+
     /* If ecnountered a label definition at the start of the line */
     if (tokens_mode == 2) {
+      printf(">>>>>>>>>>>>>>>>>>Entered with %s\n", tokens[command_start]);
       if ((tokens[command_start] != NULL) && (strcmp(tokens[command_start], ".data") == 0 || strcmp(tokens[command_start], ".string") == 0)) {
         /* Incase of .data and .string - special DC treatment is needed */
         if (!insert_symbol(symbol_table, tokens[0], IC+DC, LBL_DATA)) {
@@ -75,29 +77,40 @@ int first_pass(char *filename) {
 
         if (strcmp(tokens[command_start], ".string") == 0) {
           prev_DC = strlen(tokens[command_start+1]) + 1;
-        } else {
+        } else { /* .data */
           /* Count reserved space in memory for each data type declared */
           prev_DC = addressing_mode - 1;
+          printf("PREV DEC PASSED:%d\n", prev_DC);
         }
         /* TODO FIX THIS DUMB FIX */
         IC--;
 
       } else {
-        if (!insert_symbol(symbol_table, tokens[command_start], IC+DC, LBL_CODE)) {
+        if (!insert_symbol(symbol_table, tokens[0], IC+DC, LBL_CODE)) {
           printf("ERROR INSERTING %s", tokens[0]);
           return 0;
         }
       }
     }else{
       /* Incase of any other regular commands without a label defined */
+      if (strcmp(tokens[command_start], ".string") == 0) {
+        prev_DC = strlen(tokens[command_start+1]) + 1;
+        IC--;
+      } else if (strcmp(tokens[command_start], ".data") == 0){ /* .data */
+        /* Count reserved space in memory for each data type declared */
+        prev_DC = addressing_mode - 1;
+        printf("PREV DEC PASSED:%d\n", prev_DC);
+        IC--;
+      }
     }
 
-    process_assembly_command(my_table, &tablepointer, tokens, IC, operands_adress.source_op, operands_adress.destination_op, command_start);
+    printf("[[[[[[[[CHECK: DEST:%d, SRC:%d IC:%d, DC:%d}}}}}}}}}}\n", operands_adress.destination_op, operands_adress.source_op, IC, DC);
 
     IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
     IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
-    IC++;
     DC += prev_DC;
+    IC++;
+    prev_DC = 0;
 
     print_complete_transTable(my_table, tablepointer); /* Print just the first entry */
 
@@ -106,10 +119,10 @@ int first_pass(char *filename) {
 
   /* Print the table */
   printf("TransTable contents:\n");
-  print_complete_transTable(my_table, 20); /* Print just the first entry */
+  print_complete_transTable(my_table, tablepointer); /* Print just the first entry */
 
   /* Free the allocated memory */
-  free_transTable(my_table, 10);
+  free_transTable(my_table, tablepointer);
   printf("\n\nSYMBOL TABLE \n\n\n");
   print_symbol_table(symbol_table);
   return 1;

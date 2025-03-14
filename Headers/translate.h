@@ -10,7 +10,7 @@ typedef struct wordNode wordNode;
 
 typedef union {
   struct {
-    unsigned value : 24;  /* Stores the data (bits 0-23) */
+    unsigned data : 24;  /* Stores the data (bits 0-23) */
   } data_word;  /* Used when storing a data component */
 
   struct {
