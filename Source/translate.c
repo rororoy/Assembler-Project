@@ -189,9 +189,7 @@ void free_transTable(transTable *table, int size) {
 }
 
 void print_complete_transTable(transTable *table, int size) {
-    int i, j, bit;
-    int has_binary;
-    char binary_str[25]; /* For 24-bit binary representation */
+    int i, j;
 
     /* Print table header */
     printf("+----------+--------------------------------+-------------------------+\n");
@@ -204,44 +202,91 @@ void print_complete_transTable(transTable *table, int size) {
         /* Print address in decimal, padded to 7 digits */
         printf("| %07d  | %-30s | ", table[i].address, table[i].source_code ? table[i].source_code : "");
 
-        /* Check if this entry has any binary data to print */
-        has_binary = 0;
-        for (j = 0; j < 3; j++) {
-            if (*(unsigned int*)&table[i].binary[j] != 0) {
-                has_binary = 1;
-                break;
+        /* Print first binary word */
+        if (*(unsigned int*)&table[i].binary[0] != 0) {
+            char binary_str[25];
+
+            /* Convert each field to binary string representation */
+            char opcode_str[7], src_mode_str[3], src_reg_str[4], dst_mode_str[3],
+                 dst_reg_str[4], funct_str[6], are_str[4];
+
+            /* Convert opcode (6 bits) */
+            int val = table[i].binary[0].instruction.opcode;
+            for (j = 0; j < 6; j++) {
+                opcode_str[5-j] = (val & (1 << j)) ? '1' : '0';
             }
+            opcode_str[6] = '\0';
+
+            /* Convert src_mode (2 bits) */
+            val = table[i].binary[0].instruction.src_mode;
+            for (j = 0; j < 2; j++) {
+                src_mode_str[1-j] = (val & (1 << j)) ? '1' : '0';
+            }
+            src_mode_str[2] = '\0';
+
+            /* Convert src_reg (3 bits) */
+            val = table[i].binary[0].instruction.src_reg;
+            for (j = 0; j < 3; j++) {
+                src_reg_str[2-j] = (val & (1 << j)) ? '1' : '0';
+            }
+            src_reg_str[3] = '\0';
+
+            /* Convert dst_mode (2 bits) */
+            val = table[i].binary[0].instruction.dst_mode;
+            for (j = 0; j < 2; j++) {
+                dst_mode_str[1-j] = (val & (1 << j)) ? '1' : '0';
+            }
+            dst_mode_str[2] = '\0';
+
+            /* Convert dst_reg (3 bits) */
+            val = table[i].binary[0].instruction.dst_reg;
+            for (j = 0; j < 3; j++) {
+                dst_reg_str[2-j] = (val & (1 << j)) ? '1' : '0';
+            }
+            dst_reg_str[3] = '\0';
+
+            /* Convert funct (5 bits) */
+            val = table[i].binary[0].instruction.funct;
+            for (j = 0; j < 5; j++) {
+                funct_str[4-j] = (val & (1 << j)) ? '1' : '0';
+            }
+            funct_str[5] = '\0';
+
+            /* Convert ARE bits */
+            are_str[0] = table[i].binary[0].instruction.a ? '1' : '0';
+            are_str[1] = table[i].binary[0].instruction.r ? '1' : '0';
+            are_str[2] = table[i].binary[0].instruction.e ? '1' : '0';
+            are_str[3] = '\0';
+
+            /* Concatenate all parts */
+            sprintf(binary_str, "%s%s%s%s%s%s%s",
+                    opcode_str, src_mode_str, src_reg_str, dst_mode_str,
+                    dst_reg_str, funct_str, are_str);
+
+            printf("%s |\n", binary_str);
+        } else {
+            printf("%24s |\n", "");
         }
 
-        /* Print first binary word and close the row */
-        if (has_binary) {
-            /* Convert the first word to binary string representation */
-            for (bit = 0; bit < 24; bit++) {
-                /* Extract each bit from the word */
-                unsigned int word_value = *(unsigned int*)&table[i].binary[0];
-                binary_str[23-bit] = ((word_value >> bit) & 1) ? '1' : '0';
-            }
-            binary_str[24] = '\0'; /* Null-terminate the string */
-            printf("%s |\n", binary_str);
+        /* Print additional binary words if they exist */
+        for (j = 1; j < 3; j++) {
+            if (*(unsigned int*)&table[i].binary[j] != 0) {
+                char binary_str[25];
+                int k;
 
-            /* Print additional binary words if they exist */
-            for (j = 1; j < 3; j++) {
-                if (*(unsigned int*)&table[i].binary[j] != 0) {
-                    /* For additional words, print blank in address and source columns */
-                    printf("| %7s  | %-30s | ", "", "");
-
-                    /* Convert to binary string */
-                    for (bit = 0; bit < 24; bit++) {
-                        unsigned int word_value = *(unsigned int*)&table[i].binary[j];
-                        binary_str[23-bit] = ((word_value >> bit) & 1) ? '1' : '0';
-                    }
-                    binary_str[24] = '\0';
-                    printf("%s |\n", binary_str);
+                /* Convert value (22 bits) */
+                for (k = 0; k < 22; k++) {
+                    binary_str[21-k] = (table[i].binary[j].extra_word.value & (1 << k)) ? '1' : '0';
                 }
+
+                /* Convert ARE bits */
+                binary_str[22] = table[i].binary[j].extra_word.a ? '1' : '0';
+                binary_str[23] = table[i].binary[j].extra_word.r ? '1' : '0';
+                binary_str[24] = table[i].binary[j].extra_word.e ? '1' : '0';
+                binary_str[25] = '\0';
+
+                printf("| %7s  | %-30s | %s |\n", "", "", binary_str);
             }
-        } else {
-            /* No binary data for this entry */
-            printf("%24s |\n", "");
         }
     }
 
@@ -293,7 +338,7 @@ void print_word_binary(word w) {
     unsigned int bits = 0;
 
     /* Determine which word format we're dealing with */
-    if (w.instruction.opcode != 0) {
+    if (w.instruction.opcode != -1) {
         /* It's likely an instruction word */
 
         /* Copy all fields to their correct bit positions */
@@ -362,7 +407,7 @@ void print_word_binary(word w) {
         bits |= (w.extra_word.e & 0x1) << 24;           /* 1 bit, position 24 */
 
         /* For extra word, print in a format that makes sense for its structure */
-        printf("Binary (extra word): ");
+        printf("Binary: ");
 
         /* Print the value bits (22 bits) */
         for (i = 0; i < 22; i++) {
@@ -406,6 +451,7 @@ int insert_extra_word(transTable *tb, int wordtype, int value, int word_index) {
     }
 
     if (wordtype == 0) { /* For a number */
+      printf(">>>>>>>GOT IMM NUMBER:%d\n", value);
         /* Store the number in the value field (22 bits) */
         tb->binary[word_index].extra_word.value = (unsigned)value & 0x3FFFFF;
         /* Set addressing flags */

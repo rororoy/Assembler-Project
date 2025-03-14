@@ -99,6 +99,8 @@ int first_pass(char *filename) {
     IC++;
     DC += prev_DC;
 
+    print_complete_transTable(my_table, tablepointer); /* Print just the first entry */
+
     printf("\n");
   }
 
@@ -146,10 +148,14 @@ void process_assembly_command(transTable *my_table, int *tablepointer, char **to
 
     if (operand_dst_type == 3) { /* Register addressing for destination */
         /* Extract register number - assuming format like "r3" */
-        if (tokens[command_start + 2] != NULL && tokens[command_start + 2][0] == 'r') {
-            dst_reg = tokens[command_start + 2][1] - '0';
+        if(tokens[command_start + 2] == NULL){ /* This is a case of a type 2 address */
+          dst_reg = tokens[command_start + 1][1] - '0';
+        }else if (tokens[command_start + 2] != NULL && tokens[command_start + 2][0] == 'r') {
+          dst_reg = tokens[command_start + 2][1] - '0';
         }
     }
+
+    printf("PUTTING THE COMMAND IN THE TABLE AT INDEX [%d]\n", *tablepointer);
 
     /* Insert the main instruction word */
     insert_command_entry(my_table, *tablepointer, IC, source_line,
@@ -181,11 +187,17 @@ void process_assembly_command(transTable *my_table, int *tablepointer, char **to
 
     /* Process destination operand extra word if needed */
     if (operand_dst_type == 0) { /* Immediate addressing */
-        if (tokens[command_start + 2] != NULL) {
-            int value = atoi(&tokens[command_start + 2][1]); /* Skip the '#' character */
-            insert_extra_word(&my_table[*tablepointer], 0, value, current_word++);
-            extra_words_count++;
-        }
+      int value;
+      /* If no 2nd operand but des is defnied then this is a type 2 command */
+      if(tokens[command_start + 2] == NULL){
+        value = atoi(&tokens[command_start + 1][1]); /* Skip the '#' character */
+      }
+      else if (tokens[command_start + 2] != NULL) {
+        value = atoi(&tokens[command_start + 2][1]); /* Skip the '#' character */
+      }
+      printf("PASSING VALUE:%d\n", value);
+      insert_extra_word(&my_table[*tablepointer], 0, value, current_word++);
+      extra_words_count++;
     }
     else if (operand_dst_type == 1) { /* Direct addressing */
         /* For now, using placeholder value */

@@ -113,7 +113,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
     switch (cmd_info->name) {
         case CMD_MOV:
           /* Correct syntax: mov <>, <> */
-          if(check_operands(command_start, tokens, 2, operands_adress)){
+          if(check_operands(command_start, tokens, 2, operands_adress, 1)){
             printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
             return 1;
           }else{
@@ -122,7 +122,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
         case CMD_CMP:
           /* Correct syntax: cmp <>, <> */
-          if(check_operands(command_start, tokens, 2, operands_adress)){
+          if(check_operands(command_start, tokens, 2, operands_adress, 1)){
             printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
             return 1;
           }else{
@@ -131,7 +131,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
         case CMD_ADD:
           /* Correct syntax: cmp <>, <> */
-          if(check_operands(command_start, tokens, 2, operands_adress)){
+          if(check_operands(command_start, tokens, 2, operands_adress, 1)){
             printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
             return 1;
           }else{
@@ -140,7 +140,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
         case CMD_SUB:
           /* Correct syntax: cmp <>, <> */
-          if(check_operands(command_start, tokens, 2, operands_adress)){
+          if(check_operands(command_start, tokens, 2, operands_adress, 1)){
             printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
             return 1;
           }else{
@@ -149,7 +149,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
         case CMD_LEA:
           /* Correct syntax: lea <>, <> */
-          if(check_operands(command_start, tokens, 2, operands_adress)){
+          if(check_operands(command_start, tokens, 2, operands_adress, 1)){
             printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
             return 1;
           }else{
@@ -159,7 +159,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
         case CMD_CLR:
           /* Correct syntax: clr <> */
           if(is_reg(tokens[command_start+1])){
-            if(check_operands(command_start, tokens, 1, operands_adress)){
+            if(check_operands(command_start, tokens, 1, operands_adress, 2)){
               printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
               return 1;
             }
@@ -171,7 +171,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
         case CMD_NOT:
           /* Correct syntax: not <> */
           if(is_reg(tokens[command_start+1])){
-            if(check_operands(command_start, tokens, 1, operands_adress)){
+            if(check_operands(command_start, tokens, 1, operands_adress, 2)){
               printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
               return 1;
             }
@@ -182,7 +182,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
         case CMD_INC:
           /* Correct syntax: inc <> */
-          if(check_operands(command_start, tokens, 1, operands_adress)){
+          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
             printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
             return 1;
           }
@@ -190,7 +190,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
         case CMD_DEC:
           /* Correct syntax: dec <> */
-          if(check_operands(command_start, tokens, 1, operands_adress)){
+          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
             printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
             return 1;
           }
@@ -198,8 +198,8 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
         case CMD_JMP:
           /* Correct syntax: jmp (&)<LABEL> */
-          if(check_operands(command_start, tokens, 1, operands_adress)){
-            if(operands_adress->destination_op == 2){
+          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
+            if(operands_adress->destination_op == 2 || operands_adress->destination_op == 1){
               printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
               return 1;
             }else{
@@ -210,8 +210,8 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
         case CMD_BNE:
           /* Correct syntax: jmp (&)<LABEL> */
-          if(check_operands(command_start, tokens, 1, operands_adress)){
-            if(operands_adress->destination_op == 2){
+          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
+            if(operands_adress->destination_op == 2 || operands_adress->destination_op == 1){
               printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
               return 1;
             }else{
@@ -222,8 +222,8 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
         case CMD_JSR:
           /* Correct syntax: jsr (&)<LABEL> */
-          if(check_operands(command_start, tokens, 1, operands_adress)){
-            if(operands_adress->destination_op == 2){
+          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
+            if(operands_adress->destination_op == 2 || operands_adress->destination_op == 1){
               printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
               return 1;
             }else{
@@ -235,7 +235,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
         case CMD_RED:
           /* Correct syntax: red <reg> */
           if(is_reg(tokens[command_start+1])){
-            if(check_operands(command_start, tokens, 1, operands_adress)){
+            if(check_operands(command_start, tokens, 1, operands_adress, 2)){
               printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
               return 1;
             }
@@ -245,7 +245,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
           return 0;
 
         case CMD_RTS:
-          if(check_operands(command_start, tokens, 0, operands_adress)){
+          if(check_operands(command_start, tokens, 0, operands_adress, 3)){
             printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
             return 1;
           }else{
@@ -254,14 +254,14 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
         case CMD_PRN:
           /* Correct syntax: prn <reg> */
-          if(check_operands(command_start, tokens, 1, operands_adress)){
+          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
             printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
             return 1;
           }
           return 0;
 
         case CMD_STOP:
-          if(check_operands(command_start, tokens, 0, operands_adress)){
+          if(check_operands(command_start, tokens, 0, operands_adress, 3)){
             printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
             return 1;
           }else{
@@ -269,7 +269,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
           }
 
         case CMD_EXTERN:
-          if(check_operands(command_start, tokens, 1, operands_adress)){
+          if(check_operands(command_start, tokens, 1, operands_adress, 1)){
             if(operands_adress->destination_op == 2){ /* if contains only a label as its only operand */
               printf("ADDRESSING SUCCESS MODES: target%d source%d FOUND LABEL IN EXTERN\n", operands_adress->destination_op, operands_adress->source_op);
               return 1;
@@ -280,7 +280,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
           return 0;
 
         case CMD_ENTRY:
-          if(check_operands(command_start, tokens, 1, operands_adress)){
+          if(check_operands(command_start, tokens, 1, operands_adress, 1)){
             if(operands_adress->destination_op == 2){ /* if contains only a label as its only operand */
               printf("ADDRESSING SUCCESS MODES: target%d source%d FOUND LABEL IN ENTRY\n", operands_adress->destination_op, operands_adress->source_op);
               return 1;
@@ -328,7 +328,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
     }
 }
 
-int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct_operands, addressModes *operands){
+int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct_operands, addressModes *operands, int command_type){
   int i; /* Position of the current operand */
   int current_operator = 0; /* 0 for target op, 1 for source op */
 
@@ -336,13 +336,23 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
      If there's a label definition at the beginning, the operands start at command_start+1. */
   for(i = command_start + 1; i < command_start + correct_operands + 1; i++){
     if(is_reg(tokens[i])){
-      current_operator ? (operands->destination_op = 3) : (operands->source_op = 3);
+      /* If the command is of type 2 (one operand) - only dest operator is used */
+      if(command_type == 2){
+        current_operator ? (operands->source_op = 3) : (operands->destination_op = 3);
+      }else{ /*If the command is of type 1 or 3 */
+        current_operator ? (operands->destination_op = 3) : (operands->source_op = 3);
+      }
       current_operator++;
     }
 
     else if(tokens[i][0] == '&'){ /* external label mentioned */
       if(valid_label(tokens[i]+1)){
-        operands->source_op = 2;
+        /* If the command is of type 2 (one operand) - only dest operator is used */
+        if(command_type == 2){
+          current_operator ? (operands->source_op = 2) : (operands->destination_op = 2);
+        }else{ /*If the command is of type 1 or 3 */
+          current_operator ? (operands->destination_op = 2) : (operands->source_op = 2);
+        }
         current_operator++;
       }
     }
@@ -366,7 +376,12 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
         }
         j++;
       }
-      current_operator ? (operands->destination_op) = 0 : (operands->source_op = 0);
+      /* If the command is of type 2 (one operand) - only dest operator is used */
+      if(command_type == 2){
+        current_operator ? (operands->source_op = 0) : (operands->destination_op = 0);
+      }else{ /*If the command is of type 1 or 3 */
+        current_operator ? (operands->destination_op = 0) : (operands->source_op = 0);
+      }
       current_operator++;
     }
 
@@ -381,7 +396,12 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
         }
         j++;
       }
-      current_operator ? (operands->destination_op = 1) : (operands->source_op = 1);
+      /* If the command is of type 2 (one operand) - only dest operator is used */
+      if(command_type == 2){
+        current_operator ? (operands->source_op = 1) : (operands->destination_op = 1);
+      }else{ /*If the command is of type 1 or 3 */
+        current_operator ? (operands->destination_op = 1) : (operands->source_op = 1);
+      }
       current_operator++;
     }
   }
