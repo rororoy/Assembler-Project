@@ -31,7 +31,7 @@ hash_table.o: ./Source/hash_table.c ./Headers/hash_table.h ./Headers/linked_list
 	$(CC) $(CFLAGS) -c ./Source/hash_table.c
 
 # Compile utils.o
-linked_list.o: ./Source/linked_list.c ./Headers/linked_list.h ./Headers/utils.h ./Headers/error.h
+linked_list.o: ./Source/linked_list.c ./Headers/linked_list.h ./Headers/utils.h ./Headers/error.h ./Headers/translate.h
 	$(CC) $(CFLAGS) -c ./Source/linked_list.c
 
 utils.o: ./Source/utils.c ./Headers/utils.h ./Headers/error.h ./Headers/global.h ./Headers/validate.h

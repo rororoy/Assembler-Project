@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "../Headers/linked_list.h"
 #include "../Headers/translate.h"
 #include "../Headers/utils.h"
 #include "../Headers/global.h"
@@ -14,6 +15,7 @@ commandSem command_table[] = {
     {CMD_ADD,  1,  2},
     {CMD_SUB,  2,  2},
     {CMD_LEA, -1,  4},
+
     {CMD_CLR,  1,  5},
     {CMD_NOT,  2,  5},
     {CMD_INC,  3,  5},
@@ -22,9 +24,11 @@ commandSem command_table[] = {
     {CMD_BNE,  2,  9},
     {CMD_JSR,  3,  9},
     {CMD_RED, -1, 12},
-    {CMD_RTS, -1, 14},
     {CMD_PRN, -1, 13},
+
+    {CMD_RTS, -1, 14},
     {CMD_STOP,-1, 15},
+
     {CMD_EXTERN, -1, -1},
     {CMD_ENTRY, -1, -1},
     {CMD_DATA, -1, -1},
@@ -46,8 +50,8 @@ char *allowed_commands[] = {
     "bne",
     "jsr",
     "red",
-    "rts",
     "prn",
+    "rts",
     "stop",
     ".extern",
     ".entry",
@@ -148,24 +152,25 @@ void initialize_transTable_entry(transTable *entry, int address, char *source_co
         entry->source_code = NULL;
     }
 
-    /* Initialize all binary words to zero */
-    memset(entry->binary, 0, sizeof(entry->binary));
+    /* Initialize word node pointer to NULL */
+    entry->node = NULL;
 }
 
 /* Create and initialize a dynamic array of transTable entries */
 transTable* create_transTable(int initial_size) {
   int i;
-    transTable *table = (transTable *)malloc(initial_size * sizeof(transTable));
-    if (!table) {
-        return NULL; /* Memory allocation failed */
-    }
+  transTable *table = (transTable *)malloc(initial_size * sizeof(transTable));
+  if (!table) {
+      return NULL; /* Memory allocation failed */
+  }
 
-    /* Initialize all entries */
-    for (i = 0; i < initial_size; i++) {
-        initialize_transTable_entry(&table[i], 0, NULL);
-    }
+  /* Initialize all entries */
+  for (i = 0; i < initial_size; i++) {
+      initialize_transTable_entry(&table[i], 0, NULL);
+      /* Now each entry has address=0, source_code=NULL, and node=NULL */
+  }
 
-    return table;
+  return table;
 }
 
 /* Clean up a transTable entry when it's no longer needed */
@@ -174,22 +179,29 @@ void free_transTable_entry(transTable *entry) {
         free(entry->source_code);
         entry->source_code = NULL;
     }
+
+    /* Free the linked list of words if it exists */
+    if (entry->node) {
+        free_word_list(entry->node);
+        entry->node = NULL;
+    }
 }
 
 /* Clean up the entire transTable array */
 void free_transTable(transTable *table, int size) {
   int i;
-    if (!table) return;
+  if (!table) return;
 
-    for (i = 0; i < size; i++) {
-        free_transTable_entry(&table[i]);
-    }
+  for (i = 0; i < size; i++) {
+    free_transTable_entry(&table[i]);
+  }
 
-    free(table);
+  free(table);
 }
 
 void print_complete_transTable(transTable *table, int size) {
     int i, j;
+    wordNode *current;
 
     /* Print table header */
     printf("+----------+--------------------------------+-------------------------+\n");
@@ -202,8 +214,17 @@ void print_complete_transTable(transTable *table, int size) {
         /* Print address in decimal, padded to 7 digits */
         printf("| %07d  | %-30s | ", table[i].address, table[i].source_code ? table[i].source_code : "");
 
+        current = table[i].node;
+
+        /* If there are no words, print empty cell */
+        if (current == NULL) {
+            printf("%24s |\n", "");
+            continue;
+        }
+
         /* Print first binary word */
-        if (*(unsigned int*)&table[i].binary[0] != 0) {
+        /* Assume first word is an instruction word */
+        {
             char binary_str[25];
 
             /* Convert each field to binary string representation */
@@ -211,51 +232,51 @@ void print_complete_transTable(transTable *table, int size) {
                  dst_reg_str[4], funct_str[6], are_str[4];
 
             /* Convert opcode (6 bits) */
-            int val = table[i].binary[0].instruction.opcode;
+            int val = current->data.instruction.opcode;
             for (j = 0; j < 6; j++) {
                 opcode_str[5-j] = (val & (1 << j)) ? '1' : '0';
             }
             opcode_str[6] = '\0';
 
             /* Convert src_mode (2 bits) */
-            val = table[i].binary[0].instruction.src_mode;
+            val = current->data.instruction.src_mode;
             for (j = 0; j < 2; j++) {
                 src_mode_str[1-j] = (val & (1 << j)) ? '1' : '0';
             }
             src_mode_str[2] = '\0';
 
             /* Convert src_reg (3 bits) */
-            val = table[i].binary[0].instruction.src_reg;
+            val = current->data.instruction.src_reg;
             for (j = 0; j < 3; j++) {
                 src_reg_str[2-j] = (val & (1 << j)) ? '1' : '0';
             }
             src_reg_str[3] = '\0';
 
             /* Convert dst_mode (2 bits) */
-            val = table[i].binary[0].instruction.dst_mode;
+            val = current->data.instruction.dst_mode;
             for (j = 0; j < 2; j++) {
                 dst_mode_str[1-j] = (val & (1 << j)) ? '1' : '0';
             }
             dst_mode_str[2] = '\0';
 
             /* Convert dst_reg (3 bits) */
-            val = table[i].binary[0].instruction.dst_reg;
+            val = current->data.instruction.dst_reg;
             for (j = 0; j < 3; j++) {
                 dst_reg_str[2-j] = (val & (1 << j)) ? '1' : '0';
             }
             dst_reg_str[3] = '\0';
 
             /* Convert funct (5 bits) */
-            val = table[i].binary[0].instruction.funct;
+            val = current->data.instruction.funct;
             for (j = 0; j < 5; j++) {
                 funct_str[4-j] = (val & (1 << j)) ? '1' : '0';
             }
             funct_str[5] = '\0';
 
             /* Convert ARE bits */
-            are_str[0] = table[i].binary[0].instruction.a ? '1' : '0';
-            are_str[1] = table[i].binary[0].instruction.r ? '1' : '0';
-            are_str[2] = table[i].binary[0].instruction.e ? '1' : '0';
+            are_str[0] = current->data.instruction.a ? '1' : '0';
+            are_str[1] = current->data.instruction.r ? '1' : '0';
+            are_str[2] = current->data.instruction.e ? '1' : '0';
             are_str[3] = '\0';
 
             /* Concatenate all parts */
@@ -264,29 +285,31 @@ void print_complete_transTable(transTable *table, int size) {
                     dst_reg_str, funct_str, are_str);
 
             printf("%s |\n", binary_str);
-        } else {
-            printf("%24s |\n", "");
         }
 
+        /* Move to the next word in the list */
+        current = current->next;
+
         /* Print additional binary words if they exist */
-        for (j = 1; j < 3; j++) {
-            if (*(unsigned int*)&table[i].binary[j] != 0) {
-                char binary_str[25];
-                int k;
+        while (current != NULL) {
+            char binary_str[26]; /* Increased size by 1 for null terminator */
+            int k;
 
-                /* Convert value (22 bits) */
-                for (k = 0; k < 22; k++) {
-                    binary_str[21-k] = (table[i].binary[j].extra_word.value & (1 << k)) ? '1' : '0';
-                }
-
-                /* Convert ARE bits */
-                binary_str[22] = table[i].binary[j].extra_word.a ? '1' : '0';
-                binary_str[23] = table[i].binary[j].extra_word.r ? '1' : '0';
-                binary_str[24] = table[i].binary[j].extra_word.e ? '1' : '0';
-                binary_str[25] = '\0';
-
-                printf("| %7s  | %-30s | %s |\n", "", "", binary_str);
+            /* Convert value (22 bits) */
+            for (k = 0; k < 22; k++) {
+                binary_str[21-k] = (current->data.extra_word.value & (1 << k)) ? '1' : '0';
             }
+
+            /* Convert ARE bits */
+            binary_str[22] = current->data.extra_word.a ? '1' : '0';
+            binary_str[23] = current->data.extra_word.r ? '1' : '0';
+            binary_str[24] = current->data.extra_word.e ? '1' : '0';
+            binary_str[25] = '\0';
+
+            printf("| %7s  | %-30s | %s |\n", "", "", binary_str);
+
+            /* Move to the next word */
+            current = current->next;
         }
     }
 
@@ -297,38 +320,41 @@ void print_complete_transTable(transTable *table, int size) {
 /* Insert a command entry in the transTable */
 void insert_command_entry(transTable *table, int index, int address, char *source_code,
                          int opcode, int src_mode, int src_reg, int dst_mode, int dst_reg, int funct) {
-    /* Initialize entry with address and source code */
-    initialize_transTable_entry(&table[index], address, source_code);
+  word new_word;
 
-    src_mode = src_mode == -1 ? 0 : src_mode;
-    dst_mode = dst_mode == -1 ? 0 : dst_mode;
+  /* Initialize entry with address and source code */
+  initialize_transTable_entry(&table[index], address, source_code);
 
-    printf("@[PUTTING src_mode:%d, dst_mode:%d, funct: %d]\n", src_mode, dst_mode, funct);
+  /* Handle invalid modes */
+  src_mode = src_mode == -1 ? 0 : src_mode;
+  dst_mode = dst_mode == -1 ? 0 : dst_mode;
 
-    /* Set up the instruction word */
-    table[index].binary[0].instruction.opcode = opcode;
+  printf("@[PUTTING src_mode:%d, dst_mode:%d, funct: %d]\n", src_mode, dst_mode, funct);
 
-    print_word_binary(table[index].binary[0]);
+  /* Set up the instruction word */
+  new_word.instruction.opcode = opcode;
+  print_word_binary(new_word);
 
-    table[index].binary[0].instruction.src_mode = src_mode;
-    print_word_binary(table[index].binary[0]);
+  new_word.instruction.src_mode = src_mode;
+  print_word_binary(new_word);
 
-    table[index].binary[0].instruction.src_reg = src_reg;
-    print_word_binary(table[index].binary[0]);
+  new_word.instruction.src_reg = src_reg;
+  print_word_binary(new_word);
 
-    table[index].binary[0].instruction.dst_mode = dst_mode;
-    print_word_binary(table[index].binary[0]);
+  new_word.instruction.dst_mode = dst_mode;
+  print_word_binary(new_word);
 
-    table[index].binary[0].instruction.dst_reg = dst_reg;
-    table[index].binary[0].instruction.funct = funct;
-    print_word_binary(table[index].binary[0]);
+  new_word.instruction.dst_reg = dst_reg;
+  new_word.instruction.funct = funct;
+  print_word_binary(new_word);
 
-    table[index].binary[0].instruction.a = 1; /* Typically absolute for instructions */
-    table[index].binary[0].instruction.r = 0;
-    table[index].binary[0].instruction.e = 0;
+  new_word.instruction.a = 1; /* Typically absolute for instructions */
+  new_word.instruction.r = 0;
+  new_word.instruction.e = 0;
+  print_word_binary(new_word);
 
-    print_word_binary(table[index].binary[0]);
-
+  /* Add the new word to the linked list */
+  add_word_node(&(table[index].node), new_word);
 }
 
 void print_word_binary(word w) {
@@ -444,20 +470,31 @@ void print_symbol_table(const symbolTable *table) {
 }
 
 
-int insert_extra_word(transTable *tb, int wordtype, int value, int word_index) {
-    /* Make sure we're only using valid indices (0, 1, or 2) */
-    if (word_index < 0 || word_index > 2) {
-        return 0; /* Invalid index */
-    }
+int insert_extra_word(transTable *table, int index, int address, char *source_code, int op_type, int value) {
+  word new_word = {0}; /* Initialize to all zeros */
 
-    if (wordtype == 0) { /* For a number */
-      printf(">>>>>>>GOT IMM NUMBER:%d\n", value);
-        /* Store the number in the value field (22 bits) */
-        tb->binary[word_index].extra_word.value = (unsigned)value & 0x3FFFFF;
-        /* Set addressing flags */
-        tb->binary[word_index].extra_word.a = 1; /* Absolute addressing for numbers */
-        tb->binary[word_index].extra_word.r = 0; /* Not relocatable */
-        tb->binary[word_index].extra_word.e = 0; /* Not external */
-    }
-    return 1; /* Success */
+  /* Check if this is the first word being added for cases such as .data .string*/
+  if (table[index].node == NULL) {
+    /* Initialize the table entry if it hasn't been initialized yet */
+    initialize_transTable_entry(&table[index], address, source_code);
+  }
+
+  if (op_type == 0) { /* For a number */
+    printf(">>>>>>>GOT IMM NUMBER:%d\n", value);
+    /* Set addressing flags */
+    new_word.extra_word.value = (unsigned)value & 0x1FFFFF; /* 0x1FFFFF = 21 bits of 1s */
+    new_word.extra_word.a = 1; /* Absolute addressing for numbers */
+    new_word.extra_word.r = 0; /* Not relocatable */
+    new_word.extra_word.e = 0; /* Not external */
+  }
+  else if (op_type == 4) { /* For a commands of data (.string .data) */
+    /* Store the value in the full 24-bit data_word */
+    printf(">>>>>>>GOT DATA VALUE:%d\n", value);
+    /* Ensure only the lower 24 bits are used */
+    new_word.data_word.value = (unsigned)value & 0xFFFFFF; /* 0xFFFFFF = 24 bits of 1s */
+  }
+
+  /* Always append the new word to the end of the list */
+  add_word_node(&(table[index].node), new_word);
+  return 1; /* Success */
 }

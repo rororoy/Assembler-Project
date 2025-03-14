@@ -415,7 +415,6 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
   return 1;
 }
 
-
 int is_reg(char *word) {
     int i;
     /* Loop through all registers */

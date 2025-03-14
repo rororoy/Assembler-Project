@@ -6,10 +6,15 @@
 #define INITIAL_TABLE_SIZE 10
 #define GROWTH_FACTOR 2
 
+typedef struct wordNode wordNode;
 
 typedef union {
   struct {
-    unsigned value : 22;  /* Stores the number/address (bits 0-21) */
+    unsigned value : 24;  /* Stores the data (bits 0-23) */
+  } data_word;  /* Used when storing a data component */
+
+  struct {
+    unsigned value : 21;  /* Stores the number/address (bits 0-21) */
     unsigned a     : 1;   /* Absolute flag (bit 22) */
     unsigned r     : 1;   /* Relocatable flag (bit 23) */
     unsigned e     : 1;   /* External flag (bit 24) */
@@ -56,7 +61,7 @@ typedef struct {
 typedef struct{
   int address;
   char *source_code;
-  word binary[3];
+  wordNode *node;
 } transTable;
 
 
@@ -95,7 +100,7 @@ void insert_command_entry(transTable *table, int index, int address, char *sourc
 void print_word_binary(word w);
 
 /* Insert extra word for a number or address - takes int value directly */
-int insert_extra_word(transTable *tb, int wordtype, int value, int operand);
+int insert_extra_word(transTable *table, int index, int address, char *source_code, int op_type, int value);
 
 /* Print the complete transTable */
 void print_complete_transTable(transTable *table, int size);

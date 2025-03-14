@@ -15,7 +15,6 @@ node *make_node(char *data){
   return new_node;
 }
 
-
 void add_node(node **head, char *data){
   node *new_node;
   if(head == NULL){ /* Verify that the head pointer is valid at all */
@@ -86,4 +85,96 @@ void free_list(node *head){
     free(temp->data);
     free(temp);
   }
+}
+
+/* Create a new word node */
+wordNode *make_word_node(word data) {
+  wordNode *new_node = malloc(sizeof(wordNode));
+  check_malloc(new_node);
+  new_node->data = data; /* Direct assignment of word struct */
+  new_node->next = NULL;
+  return new_node;
+}
+
+/* Add a word node to the end of the list */
+void add_word_node(wordNode **head, word data) {
+  wordNode *new_node;
+  if(head == NULL) { /* Verify that the head pointer is valid at all */
+    fprintf(stderr, "[!] Head pointer is NULL\n");
+    return;
+  }
+  new_node = make_word_node(data);
+  if(*head == NULL) { /* Check if head pointer is empty */
+    *head = new_node;
+  } else {
+    /* Loop until we reach the end - and append at the end */
+    wordNode *current = *head;
+    while(current->next != NULL) {
+      current = current->next;
+    }
+    current->next = new_node;
+  }
+}
+
+/* Print the word list (showing binary representation) */
+void print_word_list(wordNode *head) {
+  wordNode *current = head;
+  int count = 0;
+  printf("Printing word linked list:\n");
+
+  while(current != NULL) {
+    /* Print binary representation of the word */
+    printf("Word %d: ", count++);
+
+    /* Check if this is an instruction word or extra word based on usage pattern */
+    /* For simplicity, just print some key fields */
+    printf("opcode=%u, src_mode=%u, dst_mode=%u | OR | value=%u, are=%u%u%u\n",
+           current->data.instruction.opcode,
+           current->data.instruction.src_mode,
+           current->data.instruction.dst_mode,
+           current->data.extra_word.value,
+           current->data.extra_word.a,
+           current->data.extra_word.r,
+           current->data.extra_word.e);
+
+    current = current->next;
+  }
+  printf("\n");
+}
+
+/* Free the entire word list */
+void free_word_list(wordNode *head) {
+  wordNode *current = head;
+  while(current != NULL) {
+    wordNode *temp = current;
+    current = current->next;
+    /* No need to free the word data as it's not a pointer */
+    free(temp);
+  }
+}
+
+/* Get the length of the word list */
+int word_list_length(wordNode *head) {
+  wordNode *current = head;
+  int count = 0;
+
+  while(current != NULL) {
+    count++;
+    current = current->next;
+  }
+
+  return count;
+}
+
+/* Get word at specific index */
+wordNode *get_word_at_index(wordNode *head, int index) {
+  wordNode *current = head;
+  int count = 0;
+
+  while(current != NULL && count < index) {
+    current = current->next;
+    count++;
+  }
+
+  return current; /* Returns NULL if index is out of bounds */
 }
