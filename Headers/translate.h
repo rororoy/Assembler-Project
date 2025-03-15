@@ -64,10 +64,6 @@ typedef struct{
   wordNode *node;
 } transTable;
 
-typedef struct{
-  
-}
-
 extern char *allowed_commands[];
 
 extern commandSem command_table[];

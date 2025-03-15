@@ -18,10 +18,14 @@ hashTable *make_hash_table(int size){
 
   /* Initialize all buckets to NULL */
   for(i = 0; i < ht->size; i++){
+    ht->bucket[i].type = BUCKET_MACRO; /* Default type for backward compatibility */
+    ht->bucket[i].is_taken = 0;
     ht->bucket[i].macro_name = NULL;
     ht->bucket[i].code_nodes = NULL;
     ht->bucket[i].length = 0;
-    ht->bucket[i].is_taken = 0;
+    ht->bucket[i].label_name = NULL;
+    ht->bucket[i].command_index = 0;
+    ht->bucket[i].word_number = 0;
   }
 
   return ht;
@@ -67,7 +71,8 @@ hashBucket *insert_entry(hashTable *ht, char *name){
 
   /* Linear probing to find next empty bucket */
   while(ht->bucket[index].is_taken){
-    if(strcmp(ht->bucket[index].macro_name, name) == 0){ /* Macro exists */
+    if(ht->bucket[index].type == BUCKET_MACRO &&
+       strcmp(ht->bucket[index].macro_name, name) == 0){ /* Macro exists */
       return &(ht->bucket[index]); /* Macro already exists return it*/
     }
     index = (index+1)%ht->size;
@@ -77,6 +82,7 @@ hashBucket *insert_entry(hashTable *ht, char *name){
   }
 
   /* Macro isn't logged and found empty bucket */
+  ht->bucket[index].type = BUCKET_MACRO;
   ht->bucket[index].macro_name = strdup(name);
   if(ht->bucket[index].macro_name == NULL){
     /* Failed to copy macro name */
@@ -104,7 +110,8 @@ hashBucket *search_table(hashTable *ht, char *name){
 
   /* Linear probing to find next empty bucket */
   while(ht->bucket[index].is_taken){
-    if(strcmp(ht->bucket[index].macro_name, name) == 0){ /* Macro exists */
+    if(ht->bucket[index].type == BUCKET_MACRO &&
+       strcmp(ht->bucket[index].macro_name, name) == 0){ /* Macro exists */
       return &(ht->bucket[index]); /* Macro found return it*/
     }
     index = (index+1) % ht->size;
@@ -136,21 +143,35 @@ hashTable *resize_table(hashTable *old_ht){
   /* Loop for each bucket in the old table */
   for(i = 0; i < old_ht->size; i++){
     if(old_ht->bucket[i].is_taken){
-      char *old_name = old_ht->bucket[i].macro_name;
-      node *current = old_ht->bucket[i].code_nodes;
+      if(old_ht->bucket[i].type == BUCKET_MACRO){
+        /* Handle macro buckets */
+        char *old_name = old_ht->bucket[i].macro_name;
+        node *current = old_ht->bucket[i].code_nodes;
 
-      /* Try to insert a copied entry into a bucket in the new table */
-      if((new_bucket = insert_entry(new_ht, old_name)) != NULL){
-        /* Transfer and copy the old linked list that the bucket points to */
-        while(current != NULL){
-          /* For each node - copy it and append to the new list */
-          add_node(&(new_ht->bucket[i].code_nodes), current->data);
-          current = current->next;
+        /* Try to insert a copied entry into a bucket in the new table */
+        if((new_bucket = insert_entry(new_ht, old_name)) != NULL){
+          /* Transfer and copy the old linked list that the bucket points to */
+          while(current != NULL){
+            /* For each node - copy it and append to the new list */
+            add_node(&(new_bucket->code_nodes), current->data);
+            current = current->next;
+          }
+        }else{
+          /* Encountered problem in inserting entry */
+          print_error("Insert hash", "(resize)", 0); /* Error inserting entry */
+          return NULL;
         }
-      }else{
-        /* Encountered problem in inserting entry */
-        print_error("Insert hash", "(resize)", 0); /* Error inserting entry */
-        return NULL;
+      } else if(old_ht->bucket[i].type == BUCKET_PENDING_LABEL){
+        /* Handle pending label buckets */
+        char *label_name = old_ht->bucket[i].label_name;
+        int cmd_idx = old_ht->bucket[i].command_index;
+        int word_num = old_ht->bucket[i].word_number;
+
+        if(insert_pending_label(new_ht, label_name, cmd_idx, word_num) == NULL){
+          /* Encountered problem in inserting pending label */
+          print_error("Insert pending label", "(resize)", 0);
+          return NULL;
+        }
       }
     }
   }
@@ -166,12 +187,13 @@ hashBucket *get_entry(hashTable *ht, char *name){
     return NULL;
   }
 
-  index  = hash_function(name);
+  index = hash_function(name) % ht->size;
   original_index = index;
 
   /* Linear probing to find correct bucket */
   while(ht->bucket[index].is_taken){
-    if(strcmp(ht->bucket[index].macro_name, name) == 0){ /* Macro exists */
+    if(ht->bucket[index].type == BUCKET_MACRO &&
+       strcmp(ht->bucket[index].macro_name, name) == 0){ /* Macro exists */
       return &(ht->bucket[index]); /* Macro found return it*/
     }
     index = (index+1)%ht->size;
@@ -190,14 +212,128 @@ void free_hash_table(hashTable *ht){
     return;
   }
 
-
   for(i = 0; i < ht->size; i++){
     if(ht->bucket[i].is_taken){
-      free(ht->bucket[i].macro_name);
-      free_list(ht->bucket[i].code_nodes);
+      if(ht->bucket[i].type == BUCKET_MACRO){
+        /* Free macro bucket */
+        free(ht->bucket[i].macro_name);
+        free_list(ht->bucket[i].code_nodes);
+      } else if(ht->bucket[i].type == BUCKET_PENDING_LABEL){
+        /* Free pending label bucket */
+        free(ht->bucket[i].label_name);
+      }
     }
   }
 
   free(ht->bucket);
   free(ht);
+}
+
+/* New function for inserting pending labels */
+hashBucket *insert_pending_label(hashTable *ht, char *label_name, int command_index, int word_number){
+  double load_factor;
+  int index;
+  int original_index;
+
+  if(ht == NULL || label_name == NULL){
+    print_error("Missing argument", "(insert pending label)", 0);
+    return NULL;
+  }
+
+  load_factor = (double)(ht->count + 1) / ht->size;
+  if(load_factor > LOAD_FACTOR_THERSHOLD){
+    hashTable *new_ht = resize_table(ht);
+
+    if(new_ht == NULL){
+      return NULL;
+    }
+
+    /* Update hash table reference */
+    ht->bucket = new_ht->bucket;
+    ht->size = new_ht->size;
+    ht->count = new_ht->count;
+
+    free(new_ht);
+  }
+
+  index = hash_function(label_name) % ht->size;
+  original_index = index;
+
+  /* Linear probing to find next empty bucket */
+  while(ht->bucket[index].is_taken){
+    index = (index+1) % ht->size;
+    if(index == original_index){
+      return NULL; /* Table is full (should not happen due to resize) */
+    }
+  }
+
+  /* Initialize the bucket as a pending label */
+  ht->bucket[index].type = BUCKET_PENDING_LABEL;
+  ht->bucket[index].is_taken = 1;
+  ht->bucket[index].label_name = strdup(label_name);
+  if(ht->bucket[index].label_name == NULL){
+    return NULL; /* Failed to copy label name */
+  }
+
+  ht->bucket[index].command_index = command_index;
+  ht->bucket[index].word_number = word_number;
+
+  /* Set macro fields to NULL/0 for safety */
+  ht->bucket[index].macro_name = NULL;
+  ht->bucket[index].code_nodes = NULL;
+  ht->bucket[index].length = 0;
+
+  ht->count++;
+
+  return &(ht->bucket[index]);
+}
+
+/* Function to resolve pending labels */
+void resolve_pending_labels(hashTable *ht, char *label_name, int resolved_address,
+                          void (*update_command)(int cmd_idx, int word_num, int address)){
+  int i;
+
+  if(ht == NULL || label_name == NULL || update_command == NULL){
+    print_error("Missing argument", "(resolve pending labels)", 0);
+    return;
+  }
+
+  for(i = 0; i < ht->size; i++){
+    if(ht->bucket[i].is_taken &&
+       ht->bucket[i].type == BUCKET_PENDING_LABEL &&
+       strcmp(ht->bucket[i].label_name, label_name) == 0){
+
+      /* Call the callback to update the command with the resolved address */
+      update_command(
+        ht->bucket[i].command_index,
+        ht->bucket[i].word_number,
+        resolved_address
+      );
+
+      /* Optionally, mark the pending label as processed */
+      /* If you want to free the memory:
+      free(ht->bucket[i].label_name);
+      ht->bucket[i].is_taken = 0;
+      ht->count--;
+      */
+    }
+  }
+}
+
+/* Function to count pending labels */
+int get_pending_labels_count(hashTable *ht){
+  int i;
+  int count = 0;
+
+  if(ht == NULL){
+    return 0;
+  }
+
+  for(i = 0; i < ht->size; i++){
+    if(ht->bucket[i].is_taken && ht->bucket[i].type == BUCKET_PENDING_LABEL){
+      count++;
+    }
+  }
+
+  return count;
 }

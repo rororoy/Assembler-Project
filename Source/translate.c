@@ -202,6 +202,7 @@ void free_transTable(transTable *table, int size) {
 void print_complete_transTable(transTable *table, int size) {
     int i, j, k;
     wordNode *current;
+    int is_data_entry;
 
     /* Print table header */
     printf("+----------+--------------------------------+-------------------------+\n");
@@ -223,7 +224,7 @@ void print_complete_transTable(transTable *table, int size) {
         }
 
         /* Check if this is a command or data entry by looking at the source code */
-        int is_data_entry = (table[i].source_code &&
+        is_data_entry = (table[i].source_code &&
                             (strstr(table[i].source_code, ".data") ||
                              strstr(table[i].source_code, ".string")));
 

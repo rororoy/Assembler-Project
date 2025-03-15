@@ -57,6 +57,7 @@ int pre_assembler(char *filename) {
     }
 
     macro_table = make_hash_table(HASH_TABLE_INITIAL_SIZE);
+    /* No explicit type setting needed - make_hash_table now defaults to BUCKET_MACRO */
 
     while (fgets(line, sizeof(line), file) != NULL) {
       LINE_NUMBER++;
@@ -97,6 +98,7 @@ int pre_assembler(char *filename) {
           handle_exit(file, temp_file, macro_table, as_file, am_file);
           return 0;
         }
+        /* insert_entry now sets type to BUCKET_MACRO internally */
 
         /* Run through the macro and log all of it */
         if(!process_macro_definition(file, ht_bucket)){
@@ -109,6 +111,7 @@ int pre_assembler(char *filename) {
       /* Check for a macro call: if the first token matches a defined macro */
       ht_bucket = search_table(macro_table, tokens[0]);
       if (ht_bucket != NULL) {
+        /* search_table now only returns BUCKET_MACRO type buckets */
         if (!write_list_to_file(temp_file, ht_bucket->code_nodes, "temp.as")) {
           handle_exit(file, temp_file, macro_table, as_file, am_file);
           return 0;
@@ -133,6 +136,7 @@ int process_macro_definition(FILE *file, hashBucket *ht_bucket) {
   char *tokens[MAX_LINE_LENGTH];
   int found_macro_end = 0;  /* Flag to indicate that "mcroend" was encountered */
 
+  /* No changes needed here - backward compatibility macros handle the field access */
 
   while (fgets(line, sizeof(line), file) != NULL) {
     LINE_NUMBER++;

@@ -7,6 +7,11 @@ mcroend
  lea STR, r6
  inc r6
  mov r3, K
+mcro test_macro
+ add r1, r1
+ add r2, r2
+ add r3, r3
+mcroend
  sub r1, r4
  bne END
 a_mc
