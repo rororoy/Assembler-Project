@@ -9,30 +9,30 @@
 /* TODO MOVE THIS TO GLOBAL VVV */
 
 commandSem command_table[] = {
-    /*  CMD   funct op */
-    {CMD_MOV, -1,  0},
-    {CMD_CMP, -1,  1},
-    {CMD_ADD,  1,  2},
-    {CMD_SUB,  2,  2},
-    {CMD_LEA, -1,  4},
+    /* CMD  |funct|op|type */
+    {CMD_MOV, -1,  0, 1},
+    {CMD_CMP, -1,  1, 1},
+    {CMD_ADD,  1,  2, 1},
+    {CMD_SUB,  2,  2, 1},
+    {CMD_LEA, -1,  4, 1},
 
-    {CMD_CLR,  1,  5},
-    {CMD_NOT,  2,  5},
-    {CMD_INC,  3,  5},
-    {CMD_DEC,  4,  5},
-    {CMD_JMP,  1,  9},
-    {CMD_BNE,  2,  9},
-    {CMD_JSR,  3,  9},
-    {CMD_RED, -1, 12},
-    {CMD_PRN, -1, 13},
+    {CMD_CLR,  1,  5, 2},
+    {CMD_NOT,  2,  5, 2},
+    {CMD_INC,  3,  5, 2},
+    {CMD_DEC,  4,  5, 2},
+    {CMD_JMP,  1,  9, 2},
+    {CMD_BNE,  2,  9, 2},
+    {CMD_JSR,  3,  9, 2},
+    {CMD_RED, -1, 12, 2},
+    {CMD_PRN, -1, 13, 2},
 
-    {CMD_RTS, -1, 14},
-    {CMD_STOP,-1, 15},
+    {CMD_RTS, -1, 14, 3},
+    {CMD_STOP,-1, 15, 3},
 
-    {CMD_EXTERN, -1, -1},
-    {CMD_ENTRY, -1, -1},
-    {CMD_DATA, -1, -1},
-    {CMD_STRING, -1, -1}
+    {CMD_EXTERN, -1, -1, 4},
+    {CMD_ENTRY, -1, -1, 4},
+    {CMD_DATA, -1, -1, 4},
+    {CMD_STRING, -1, -1, 4}
 };
 
 /* This array must match the order of the enum exactly. */

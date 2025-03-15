@@ -60,4 +60,6 @@ void resolve_pending_labels(hashTable *ht, char *label_name, int resolved_addres
 
 int get_pending_labels_count(hashTable *ht);
 
+void print_pending_labels(hashTable *ht);
+
 #endif /* HASH_TABLE_H */

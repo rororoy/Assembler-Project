@@ -337,3 +337,32 @@ int get_pending_labels_count(hashTable *ht){
 
   return count;
 }
+
+/* Function to print all pending labels in a hash table */
+void print_pending_labels(hashTable *ht) {
+    int i;
+    int count = 0;
+
+    if (ht == NULL) {
+        printf("Error: NULL hash table provided to print_pending_labels\n");
+        return;
+    }
+
+    printf("\n=== PENDING LABELS TABLE ===\n");
+    printf("%-20s | %-15s | %-10s\n", "LABEL", "COMMAND INDEX", "WORD POS");
+    printf("-----------------------------------------------\n");
+
+    for (i = 0; i < ht->size; i++) {
+        if (ht->bucket[i].is_taken && ht->bucket[i].type == BUCKET_PENDING_LABEL) {
+            printf("%-20s | %-15d | %-10d\n",
+                   ht->bucket[i].label_name,
+                   ht->bucket[i].command_index,
+                   ht->bucket[i].word_number);
+            count++;
+        }
+    }
+
+    printf("-----------------------------------------------\n");
+    printf("Total pending labels: %d\n", count);
+    printf("==============================\n\n");
+}

@@ -37,7 +37,7 @@ linked_list.o: ./Source/linked_list.c ./Headers/linked_list.h ./Headers/utils.h 
 utils.o: ./Source/utils.c ./Headers/utils.h ./Headers/error.h ./Headers/global.h ./Headers/validate.h
 	$(CC) $(CFLAGS) -c ./Source/utils.c
 
-first_stage.o: ./Source/first_stage.c ./Headers/first_stage.h ./Headers/error.h ./Headers/utils.h ./Headers/global.h ./Headers/validate.h ./Headers/linked_list.h
+first_stage.o: ./Source/first_stage.c ./Headers/first_stage.h ./Headers/error.h ./Headers/utils.h ./Headers/global.h ./Headers/validate.h ./Headers/linked_list.h ./Headers/hash_table.h
 	$(CC) $(CFLAGS) -c ./Source/first_stage.c
 
 translate.o: ./Source/translate.c ./Headers/translate.h ./Headers/global.h ./Headers/linked_list.h ./Headers/utils.h

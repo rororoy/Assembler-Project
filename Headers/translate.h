@@ -39,6 +39,7 @@ typedef struct{
   commands name;
   int funct;
   int op_code;
+  int type;
 } commandSem;
 
 /* Define an enum for the supported assembly commands */

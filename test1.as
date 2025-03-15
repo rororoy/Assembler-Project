@@ -17,6 +17,8 @@ mcroend
 a_mc
  dec K
  jmp &LOOP
+ bne MAIN
+ add &MAIN, r2
 END: stop
 STR: .string "abcd"
 LIST: .data 6, -9

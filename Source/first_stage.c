@@ -9,6 +9,7 @@
 #include "../Headers/validate.h"
 #include "../Headers/translate.h"
 #include "../Headers/linked_list.h"
+#include "../Headers/hash_table.h"
 
 int first_pass(char *filename) {
   FILE *file;
@@ -22,16 +23,22 @@ int first_pass(char *filename) {
   char *am_file = append_extension(filename, ".am");
   int DC = 0, IC = 100, prev_DC = 0;
   int command_start = 0;
-  symbolTable *symbol_table = create_symbol_table();
-  transTable *my_table = create_transTable(50);
-
-
   int tablepointer = 0;
 
-  LINE_NUMBER = 0;
+  symbolTable *symbol_table = create_symbol_table();
+  transTable *my_table = create_transTable(50);
+  hashTable *pending_labels = make_hash_table(HASH_TABLE_INITIAL_SIZE);
+
+  LINE_NUMBER = 0; /* Zero the global variable */
 
   if (symbol_table == NULL) {
     printf("Failed to create symbol table\n");
+    return 0;
+  }
+
+  /* Create a hash table for pending labels */
+  if (pending_labels == NULL) {
+    printf("Failed to create pending hash table\n");
     return 0;
   }
 
@@ -63,7 +70,7 @@ int first_pass(char *filename) {
     command_start = tokens_mode == 2 ? 1 : 0;
     addressing_mode = is_valid_command(command_start, tokens, &operands_adress);
 
-    process_assembly_command(my_table, &tablepointer, tokens, IC+DC, operands_adress.source_op, operands_adress.destination_op, command_start);
+    process_assembly_command(pending_labels, my_table, &tablepointer, tokens, IC+DC, operands_adress.source_op, operands_adress.destination_op, command_start, symbol_table);
 
     /* If ecnountered a label definition at the start of the line */
     if (tokens_mode == 2) {
@@ -123,23 +130,24 @@ int first_pass(char *filename) {
   free_transTable(my_table, tablepointer);
   printf("\n\nSYMBOL TABLE \n\n\n");
   print_symbol_table(symbol_table);
+
+
+  printf("\n\n\nPENDING TABLE \n");
+  print_pending_labels(pending_labels);
   return 1;
 }
 
-void process_assembly_command(transTable *my_table, int *tablepointer, char **tokens, int IC,
-                               int operand_src_type, int operand_dst_type, int command_start) {
+void process_assembly_command(hashTable *pending_labels, transTable *my_table, int *tablepointer, char **tokens, int IC,
+                               int operand_src_type, int operand_dst_type, int command_start, symbolTable *symbol_table) {
     int src_reg = 0;
     int dst_reg = 0;
-    int opcode; /* Default opcode - will be updated based on actual command */
-    int funct;  /* Default function code - will be updated based on actual command */
     char *source_line;
-    int extra_words_count = 0;
-
     commandSem *cmnd = command_lookup(tokens[command_start]);
+    int opcode = cmnd->op_code == -1 ? 0 : cmnd->op_code;
+    int funct = cmnd->funct == -1 ? 0 : cmnd->funct;
+
 
     /* Define the opcode and funct - if dont exist - put 0 */
-    opcode = cmnd->op_code == -1 ? 0 : cmnd->op_code;
-    funct = cmnd->funct == -1 ? 0 : cmnd->funct;
 
     /* Join tokens to create the source line */
     source_line = join_tokens(tokens);
@@ -165,7 +173,7 @@ void process_assembly_command(transTable *my_table, int *tablepointer, char **to
           insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i]);
           i++;
         }
-        insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i]);
+        insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i]); /* For '\0' */
       }
       (*tablepointer)++;
       free(source_line);
@@ -203,21 +211,37 @@ void process_assembly_command(transTable *my_table, int *tablepointer, char **to
         if (tokens[command_start + 1] != NULL) {
             int value = atoi(&tokens[command_start + 1][1]); /* Skip the '#' character */
             insert_extra_word(my_table, *tablepointer, IC, source_line, 0, value);
-            extra_words_count++;
         }
     }
     else if (operand_src_type == 1) { /* Direct addressing (variable name) */
         /* Here you would look up the address of the label in your symbol table */
-        
-        /* For now, using placeholder value */
-        insert_extra_word(my_table, *tablepointer, IC, source_line, 0, IC);
-        extra_words_count++;
+        char *src_lbl = tokens[command_start+1];
+        symbol *symbol_entry = find_symbol(symbol_table, src_lbl);
+
+        if(symbol_entry != NULL){
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, symbol_entry->address);
+        }else{
+          int word_place = 2;
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1);
+          handle_undefined_label(pending_labels, src_lbl, *tablepointer, word_place);
+
+        }
     }
     else if (operand_src_type == 2) { /* Relative addressing (&label) */
         /* Calculate relative distance - would require symbol table lookup */
-        /* For now, using placeholder value */
-        insert_extra_word(my_table, *tablepointer, IC, source_line, 0, IC);
-        extra_words_count++;
+        char *src_lbl = tokens[command_start+1];
+        symbol *symbol_entry = find_symbol(symbol_table, src_lbl+1);
+
+        if(symbol_entry != NULL){
+          int relative_jump = symbol_entry->address - IC;
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, relative_jump);
+        }else{
+          int word_place = 2;
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1);
+          handle_undefined_label(pending_labels, src_lbl, *tablepointer, word_place);
+        }
+
+
     }
 
     /* Process destination operand extra word if needed */
@@ -231,17 +255,39 @@ void process_assembly_command(transTable *my_table, int *tablepointer, char **to
         value = atoi(&tokens[command_start + 2][1]); /* Skip the '#' character */
       }
       insert_extra_word(my_table, *tablepointer, IC, source_line, 0, value);
-      extra_words_count++;
+
     }
+
     else if (operand_dst_type == 1) { /* Direct addressing */
         /* For now, using placeholder value */
-        insert_extra_word(my_table, *tablepointer, IC, source_line, 0, IC);
-        extra_words_count++;
+        char *dest_lbl = command_lookup(tokens[command_start])->type == 1 ? tokens[command_start+2] : tokens[command_start+1];
+        symbol *symbol_entry = find_symbol(symbol_table, dest_lbl);
+
+
+        if(symbol_entry != NULL){
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, symbol_entry->address);
+        }else{
+          int word_place = command_lookup(tokens[command_start])->type == 1 ? 3 : 2;
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1);
+          handle_undefined_label(pending_labels, dest_lbl, *tablepointer, word_place);
+        }
+
+
     }
     else if (operand_dst_type == 2) { /* Relative addressing */
         /* For now, using placeholder value */
-        insert_extra_word(my_table, *tablepointer, IC, source_line, 0, IC);
-        extra_words_count++;
+        /* Here you would look up the address of the label in your symbol table */
+        char *dest_lbl = command_lookup(tokens[command_start])->type == 1 ? tokens[command_start+2] : tokens[command_start+1];
+        symbol *symbol_entry = find_symbol(symbol_table, dest_lbl+1);
+
+        if(symbol_entry != NULL){
+          int relative_jump = symbol_entry->address - IC;
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, relative_jump);
+        }else{
+          int word_place = command_lookup(tokens[command_start])->type == 1 ? 3 : 2;
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1);
+          handle_undefined_label(pending_labels, dest_lbl, *tablepointer, word_place);
+        }
     }
 
     /* Increment table pointer and update IC based on words used */
@@ -249,4 +295,26 @@ void process_assembly_command(transTable *my_table, int *tablepointer, char **to
 
     /* Free the source line memory */
     free(source_line);
+}
+
+int handle_undefined_label(hashTable *pending_labels, char *label_name, int current_command_index, int word_position) {
+    hashBucket *result;
+
+    /* Validate parameters */
+    if (pending_labels == NULL || label_name == NULL) {
+        print_error("Invalid parameters", "handle_undefined_label", LINE_NUMBER);
+        return 0;
+    }
+
+    /* Add the pending label to our hash table without modifying the label */
+    result = insert_pending_label(pending_labels, label_name, current_command_index, word_position);
+
+    if (result == NULL) {
+      print_error("Failed to insert pending label", label_name, LINE_NUMBER);
+      return 0;
+    }else{
+      printf("ADDED %s to pending table\n", label_name);
+    }
+
+    return 1; /* Success */
 }
