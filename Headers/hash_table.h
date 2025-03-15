@@ -20,6 +20,7 @@ typedef struct {
   int size;
 }hashTable;
 
+
 hashTable *make_hash_table(int size);
 
 unsigned int hash_function(char *name);

@@ -48,6 +48,7 @@ int first_pass(char *filename) {
     if (!(tokens_mode = tokanize_line(line, tokens, 0)))
         return 0;
 
+    /* Printing of tokanization */
     printf("Tokanized-->");
     for (i = 0; i < MAX_LINE_LENGTH; i++) {
         if (tokens[i] == NULL) {
@@ -58,8 +59,7 @@ int first_pass(char *filename) {
     printf("\n");
 
 
-
-    /* Encountered a decleration of a label in the line */
+    /* If encountered a decleration of a label in the line */
     command_start = tokens_mode == 2 ? 1 : 0;
     addressing_mode = is_valid_command(command_start, tokens, &operands_adress);
 
@@ -67,7 +67,6 @@ int first_pass(char *filename) {
 
     /* If ecnountered a label definition at the start of the line */
     if (tokens_mode == 2) {
-      printf(">>>>>>>>>>>>>>>>>>Entered with %s\n", tokens[command_start]);
       if ((tokens[command_start] != NULL) && (strcmp(tokens[command_start], ".data") == 0 || strcmp(tokens[command_start], ".string") == 0)) {
         /* Incase of .data and .string - special DC treatment is needed */
         if (!insert_symbol(symbol_table, tokens[0], IC+DC, LBL_DATA)) {
@@ -80,38 +79,37 @@ int first_pass(char *filename) {
         } else { /* .data */
           /* Count reserved space in memory for each data type declared */
           prev_DC = addressing_mode - 1;
-          printf("PREV DEC PASSED:%d\n", prev_DC);
         }
-        /* TODO FIX THIS DUMB FIX */
-        IC--;
 
       } else {
         if (!insert_symbol(symbol_table, tokens[0], IC+DC, LBL_CODE)) {
           printf("ERROR INSERTING %s", tokens[0]);
           return 0;
         }
+        IC++;
       }
     }else{
       /* Incase of any other regular commands without a label defined */
       if (strcmp(tokens[command_start], ".string") == 0) {
         prev_DC = strlen(tokens[command_start+1]) + 1;
-        IC--;
+
       } else if (strcmp(tokens[command_start], ".data") == 0){ /* .data */
         /* Count reserved space in memory for each data type declared */
         prev_DC = addressing_mode - 1;
-        printf("PREV DEC PASSED:%d\n", prev_DC);
-        IC--;
+
+      }else{
+        /* Count the command with IC */
+        IC++;
       }
     }
 
-    printf("[[[[[[[[CHECK: DEST:%d, SRC:%d IC:%d, DC:%d}}}}}}}}}}\n", operands_adress.destination_op, operands_adress.source_op, IC, DC);
 
     IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
     IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
     DC += prev_DC;
-    IC++;
     prev_DC = 0;
 
+    printf("[[[[[[[[CHECK: DEST:%d, SRC:%d IC:%d, DC:%d}}}}}}}}}}\n", operands_adress.destination_op, operands_adress.source_op, IC, DC);
     print_complete_transTable(my_table, tablepointer); /* Print just the first entry */
 
     printf("\n");
@@ -175,7 +173,7 @@ void process_assembly_command(transTable *my_table, int *tablepointer, char **to
     }
 
     /* Determine register numbers if register addressing is used */
-    if (operand_src_type == 3) { /* Register addressing for source */
+    if (operand_src_type == 3) { /* Register addressing for src */
         /* Extract register number - assuming format like "r3" */
         if (tokens[command_start + 1] != NULL && tokens[command_start + 1][0] == 'r') {
             src_reg = tokens[command_start + 1][1] - '0';
@@ -210,6 +208,7 @@ void process_assembly_command(transTable *my_table, int *tablepointer, char **to
     }
     else if (operand_src_type == 1) { /* Direct addressing (variable name) */
         /* Here you would look up the address of the label in your symbol table */
+        
         /* For now, using placeholder value */
         insert_extra_word(my_table, *tablepointer, IC, source_line, 0, IC);
         extra_words_count++;
