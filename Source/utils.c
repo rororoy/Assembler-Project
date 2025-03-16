@@ -94,7 +94,6 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     int token_count = 0;
     char *token_start;
     int label_encountered = 0;  /* Flag if a label was defined in the line */
-    int command_start = 0; /* Used to tell (in cases of labels) where the command starts */
     int in_string = 0;
     char *string_start = NULL;  /* Added to track start of string content */
 
@@ -166,7 +165,6 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
                     return 0;
                 }
                 label_encountered = 1;
-                command_start = 1;
                 *p = '\0';
                 tokens[token_count++] = strdup(token_start);
                 p++;
@@ -268,4 +266,12 @@ char* join_tokens(char **tokens) {
     }
 
     return result;
+}
+
+/* Extract register number from a register operand */
+int get_register_number(char *reg_token) {
+    if (reg_token != NULL && reg_token[0] == 'r') {
+        return reg_token[1] - '0';
+    }
+    return 0;  /* Default to r0 if not properly formatted */
 }

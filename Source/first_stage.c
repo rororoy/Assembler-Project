@@ -52,8 +52,9 @@ int first_pass(char *filename) {
   /* Loop through the line checking for different cases */
   while (fgets(line, sizeof(line), file) != NULL) {
     LINE_NUMBER++;
-    if (!(tokens_mode = tokanize_line(line, tokens, 0)))
-        return 0;
+    if (!(tokens_mode = tokanize_line(line, tokens, 0))){
+      return 0;
+    }
 
     /* Printing of tokanization */
     printf("Tokanized-->");
@@ -64,6 +65,7 @@ int first_pass(char *filename) {
         printf("%s|", tokens[i]);
     }
     printf("\n");
+
 
 
     /* If encountered a decleration of a label in the line */
@@ -209,8 +211,8 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
     if (operand_src_type == 0) { /* Immediate addressing (#value) */
         /* Extract the immediate value, assuming format like "#123" */
         if (tokens[command_start + 1] != NULL) {
-            int value = atoi(&tokens[command_start + 1][1]); /* Skip the '#' character */
-            insert_extra_word(my_table, *tablepointer, IC, source_line, 0, value);
+          int value = atoi(&tokens[command_start + 1][1]); /* Skip the '#' character */
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, value);
         }
     }
     else if (operand_src_type == 1) { /* Direct addressing (variable name) */
@@ -240,8 +242,6 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
           insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1);
           handle_undefined_label(pending_labels, src_lbl, *tablepointer, word_place);
         }
-
-
     }
 
     /* Process destination operand extra word if needed */

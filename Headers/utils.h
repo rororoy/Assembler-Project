@@ -17,4 +17,6 @@ int tokanize_line(char *line, char *tokens[MAX_LINE_LENGTH], int macro_scan);
 
 char *join_tokens(char **tokens);
 
+int get_register_number(char *reg_token);
+
 #endif

@@ -89,7 +89,9 @@ int valid_label(char *label) {
 
 int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressModes *operands_adress) {
     commandSem *cmd_info;
-    int i;
+    char *label_msg;
+    int i, success = 0;
+    int num_operands = 0;
 
     /* Check if the token at command_start is not NULL */
     if (tokens[command_start] == NULL) {
@@ -106,226 +108,114 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
         return 0;
     }
 
+    /* Initialize addressing modes to invalid */
     operands_adress->destination_op = -1;
     operands_adress->source_op = -1;
 
-    /* Process the command based on its type - assuming cmd_info has a 'type' field of type 'commands' */
-    switch (cmd_info->name) {
-        case CMD_MOV:
-          /* Correct syntax: mov <>, <> */
-          if(check_operands(command_start, tokens, 2, operands_adress, 1)){
-            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-            return 1;
-          }else{
-            return 0;
-          }
-
-        case CMD_CMP:
-          /* Correct syntax: cmp <>, <> */
-          if(check_operands(command_start, tokens, 2, operands_adress, 1)){
-            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-            return 1;
-          }else{
-            return 0;
-          }
-
-        case CMD_ADD:
-          /* Correct syntax: cmp <>, <> */
-          if(check_operands(command_start, tokens, 2, operands_adress, 1)){
-            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-            return 1;
-          }else{
-            return 0;
-          }
-
-        case CMD_SUB:
-          /* Correct syntax: cmp <>, <> */
-          if(check_operands(command_start, tokens, 2, operands_adress, 1)){
-            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-            return 1;
-          }else{
-            return 0;
-          }
-
-        case CMD_LEA:
-          /* Correct syntax: lea <>, <> */
-          if(check_operands(command_start, tokens, 2, operands_adress, 1)){
-            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-            return 1;
-          }else{
-            return 0;
-          }
-
-        case CMD_CLR:
-          /* Correct syntax: clr <> */
-          if(is_reg(tokens[command_start+1])){
-            if(check_operands(command_start, tokens, 1, operands_adress, 2)){
-              printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-              return 1;
-            }
-          }else{
-            print_error("Unexpected operand", "operand should be a register", LINE_NUMBER);
-          }
-          return 0;
-
-        case CMD_NOT:
-          /* Correct syntax: not <> */
-          if(is_reg(tokens[command_start+1])){
-            if(check_operands(command_start, tokens, 1, operands_adress, 2)){
-              printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-              return 1;
-            }
-          }else{
-            print_error("Unexpected operand", "operand should be a register", LINE_NUMBER);
-          }
-          return 0;
-
-        case CMD_INC:
-          /* Correct syntax: inc <> */
-          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
-            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-            return 1;
-          }
-          return 0;
-
-        case CMD_DEC:
-          /* Correct syntax: dec <> */
-          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
-            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-            return 1;
-          }
-          return 0;
-
-        case CMD_JMP:
-          /* Correct syntax: jmp (&)<LABEL> */
-          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
-            if(operands_adress->destination_op == 2 || operands_adress->destination_op == 1){
-              printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-              return 1;
-            }else{
-              print_error("Unexpected operand", "operand should be of label", LINE_NUMBER);
-            }
-          }
-          return 0;
-
-        case CMD_BNE:
-          /* Correct syntax: jmp (&)<LABEL> */
-          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
-            if(operands_adress->destination_op == 2 || operands_adress->destination_op == 1){
-              printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-              return 1;
-            }else{
-              print_error("Unexpected operand", "operand should be of label", LINE_NUMBER);
-            }
-          }
-          return 0;
-
-        case CMD_JSR:
-          /* Correct syntax: jsr (&)<LABEL> */
-          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
-            if(operands_adress->destination_op == 2 || operands_adress->destination_op == 1){
-              printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-              return 1;
-            }else{
-              print_error("Unexpected operand", "operand should be of label", LINE_NUMBER);
-            }
-          }
-          return 0;
-
-        case CMD_RED:
-          /* Correct syntax: red <reg> */
-          if(is_reg(tokens[command_start+1])){
-            if(check_operands(command_start, tokens, 1, operands_adress, 2)){
-              printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-              return 1;
-            }
-          }else{
-            print_error("Unexpected operand", "operand should be a register", LINE_NUMBER);
-          }
-          return 0;
-
-        case CMD_RTS:
-          if(check_operands(command_start, tokens, 0, operands_adress, 3)){
-            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-            return 1;
-          }else{
-            return 0;
-          }
-
-        case CMD_PRN:
-          /* Correct syntax: prn <reg> */
-          if(check_operands(command_start, tokens, 1, operands_adress, 2)){
-            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-            return 1;
-          }
-          return 0;
-
-        case CMD_STOP:
-          if(check_operands(command_start, tokens, 0, operands_adress, 3)){
-            printf("ADDRESSING SUCCESS MODES: target%d source%d\n", operands_adress->destination_op, operands_adress->source_op);
-            return 1;
-          }else{
-            return 0;
-          }
-
-        case CMD_EXTERN:
-          if(check_operands(command_start, tokens, 1, operands_adress, 1)){
-            if(operands_adress->destination_op == 2){ /* if contains only a label as its only operand */
-              printf("ADDRESSING SUCCESS MODES: target%d source%d FOUND LABEL IN EXTERN\n", operands_adress->destination_op, operands_adress->source_op);
-              return 1;
-            }else{
-              print_error("Unexpected operand", "extern command should contain a label name as an operand to extern", LINE_NUMBER);
-            }
-          }
-          return 0;
-
-        case CMD_ENTRY:
-          if(check_operands(command_start, tokens, 1, operands_adress, 1)){
-            if(operands_adress->destination_op == 2){ /* if contains only a label as its only operand */
-              printf("ADDRESSING SUCCESS MODES: target%d source%d FOUND LABEL IN ENTRY\n", operands_adress->destination_op, operands_adress->source_op);
-              return 1;
-            }else{
-              print_error("Unexpected operand", "entry command should contain a label name as an operand to define as entry", LINE_NUMBER);
-            }
-          }
-          return 0;
-
-        case CMD_DATA:
-          i = command_start + 1;
-
-          while (tokens[i] != NULL) {
+    /* Special handling for DATA and STRING directives */
+    if (cmd_info->name == CMD_DATA) {
+        i = command_start + 1;
+        while (tokens[i] != NULL) {
             char *endptr;
             strtol(tokens[i], &endptr, 10);
-
-            /* Check if conversion was successful and the entire string was used */
             if (*endptr != '\0') {
-              print_error("Unexpected operand", "expected only numbers in a data decleration", LINE_NUMBER);
-              return 0;  /* Not a valid number */
+                print_error("Unexpected operand", "expected only numbers in a data decleration", LINE_NUMBER);
+                return 0;
             }
-
-            /* Check for overflow/underflow (though in a 32-bit environment,
-              we might need to be careful about range)
-            if ((value == LONG_MAX || value == LONG_MIN) && errno == ERANGE) {
-                return 0;   Overflow or underflow
-            }
-            */
-
             i++;
-          }
-          printf("DATA COMMAND: TOTAL %d ITEMS\n", i - (command_start));
-
-          return i - (command_start);  /* All tokens are valid numbers */
-
-        case CMD_STRING:
-          /* All validation is done in the tokanize function no reason to validate */
-          printf("STRING COMMAND\n");
-
-          return 1;
-
-        default:
-            printf("[UNKNOWN COMMAND]\n");
-            return 0;
+        }
+        printf("DATA COMMAND: TOTAL %d ITEMS\n", i - (command_start));
+        return i - (command_start);
     }
+    else if (cmd_info->name == CMD_STRING) {
+        printf("STRING COMMAND\n");
+        return 1;
+    }
+
+    /* Determine number of operands based on command type */
+    switch (cmd_info->type) {
+        case 1: num_operands = 2; break; /* Two-operand commands */
+        case 2: num_operands = 1; break; /* One-operand commands */
+        case 3: num_operands = 0; break; /* Zero-operand commands */
+        case 4: num_operands = 1; break; /* Directive commands */
+    }
+
+    /* Check if operands are syntactically valid */
+    success = check_operands(command_start, tokens, num_operands, operands_adress, cmd_info->type);
+
+    if (success) {
+        /* Additional validation for specific commands */
+        switch (cmd_info->name) {
+            case CMD_MOV:
+            case CMD_CMP:
+            case CMD_ADD:
+            case CMD_SUB:
+            case CMD_LEA:
+            case CMD_INC:
+            case CMD_DEC:
+            case CMD_PRN:
+            case CMD_RTS:
+            case CMD_STOP:
+                /* These commands don't need additional validation beyond what check_operands does */
+                break;
+
+            case CMD_CLR:
+            case CMD_NOT:
+            case CMD_RED:
+                if (!is_reg(tokens[command_start+1])) {
+                    print_error("Unexpected operand", "operand should be a register", LINE_NUMBER);
+                    return 0;
+                }
+                break;
+
+            case CMD_JMP:
+            case CMD_BNE:
+            case CMD_JSR:
+                if (!(operands_adress->destination_op == 2 || operands_adress->destination_op == 1)) {
+                    print_error("Unexpected operand", "operand should be of label", LINE_NUMBER);
+                    return 0;
+                }
+                break;
+
+            case CMD_EXTERN:
+            case CMD_ENTRY:
+                if (operands_adress->destination_op != 2) {
+                    char *error_msg = (cmd_info->name == CMD_EXTERN) ?
+                        "extern command should contain a label name as an operand to extern" :
+                        "entry command should contain a label name as an operand to define as entry";
+                    print_error("Unexpected operand", error_msg, LINE_NUMBER);
+                    return 0;
+                }
+                break;
+
+            default:
+                printf("[UNHANDLED COMMAND TYPE]\n");
+                return 0;
+        }
+
+        /* Check if addressing modes are allowed for this command type using bit flags */
+        if (cmd_info->type != 3 && cmd_info->type != 4) { /* Skip for zero-operand and directive commands */
+            int src_bit = (operands_adress->source_op >= 0) ? (1 << operands_adress->source_op) : 0;
+            int dest_bit = (operands_adress->destination_op >= 0) ? (1 << operands_adress->destination_op) : 0;
+
+            if ((cmd_info->type == 1 && (!(src_bit & cmd_info->allowed_src_add_mode) ||
+                                         !(dest_bit & cmd_info->allowed_dest_add_mode))) ||
+                (cmd_info->type == 2 && !(dest_bit & cmd_info->allowed_dest_add_mode))) {
+                print_error("Invalid addressing mode", "The specified addressing modes are not allowed for this command", LINE_NUMBER);
+                return 0;
+            }
+        }
+
+        /* Success message */
+        label_msg = (cmd_info->name == CMD_EXTERN || cmd_info->name == CMD_ENTRY) ?
+            " FOUND LABEL IN EXTERN/ENTRY" : "";
+        printf("ADDRESSING SUCCESS MODES: target%d source%d%s\n",
+               operands_adress->destination_op,
+               operands_adress->source_op,
+               label_msg);
+    }
+
+    return success;
 }
 
 int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct_operands, addressModes *operands, int command_type){
@@ -425,4 +315,47 @@ int is_reg(char *word) {
     }
 
     return 0;  /* No match found */
+}
+
+int is_valid_addressing_modes(char *cmd_name, addressModes *modes) {
+  int src_bit, dest_bit;
+    /* Get the command semantics using the provided lookup function */
+    commandSem *cmd_sem = command_lookup(cmd_name);
+
+    /* If command not found, return invalid */
+    if (cmd_sem == NULL) {
+        return 0;
+    }
+
+    /* Convert addressing modes to bit flags for elegant checking */
+    src_bit = (modes->source_op >= 0) ? (1 << modes->source_op) : 0;
+    dest_bit = (modes->destination_op >= 0) ? (1 << modes->destination_op) : 0;
+
+    /* Check validity based on the command type */
+    switch (cmd_sem->type) {
+        case 1: /* Two-operand commands */
+            /* Both source and destination must be valid */
+            return (src_bit & cmd_sem->allowed_src_add_mode) &&
+                   (dest_bit & cmd_sem->allowed_dest_add_mode);
+
+        case 2: /* One-operand commands */
+            /* No source operand allowed, and destination must be valid */
+            return (modes->source_op == -1) &&
+                   (dest_bit & cmd_sem->allowed_dest_add_mode);
+
+        case 3: /* Zero-operand commands */
+            /* Neither source nor destination operands allowed */
+            return (modes->source_op == -1 && modes->destination_op == -1);
+
+        case 4: /* Directive commands */
+            /* For directives like .extern and .entry, only direct addressing is valid */
+            if (strcmp(cmd_name, "extern") == 0 || strcmp(cmd_name, "entry") == 0) {
+                return modes->destination_op == ADDR_DIRECT;
+            }
+            /* For other directives, addressing modes don't apply the same way */
+            return 1;
+
+        default:
+            return 0; /* Unknown command type */
+    }
 }
