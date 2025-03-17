@@ -24,6 +24,7 @@ int first_pass(char *filename) {
   int DC = 0, IC = 100, prev_DC = 0;
   int command_start = 0;
   int tablepointer = 0;
+  int IGNORE_LABEL = 0; /* Flag used when a label was already defined and should be ignored */
 
   symbolTable *symbol_table = create_symbol_table();
   transTable *my_table = create_transTable(50);
@@ -72,13 +73,27 @@ int first_pass(char *filename) {
     command_start = tokens_mode == 2 ? 1 : 0;
     addressing_mode = is_valid_command(command_start, tokens, &operands_adress);
 
+
     process_assembly_command(pending_labels, my_table, &tablepointer, tokens, IC+DC, operands_adress.source_op, operands_adress.destination_op, command_start, symbol_table);
 
     /* If ecnountered a label definition at the start of the line */
     if (tokens_mode == 2) {
+      /* First check if the label was already defined somewhere */
+      symbol *symbol_entry = find_symbol(symbol_table, tokens[0]);
+      if(symbol_entry != NULL){
+        IGNORE_LABEL = 1; /* Turn the flag on so that well know to ignore inserting the label twice */
+        if(symbol_entry->address == -1){ /* Update previous .entry decleration of the label */
+          symbol_entry->address = IC+DC;
+        }else if(symbol_entry->address == 0){ /* A label with the same name was already defined */
+          print_error("Label already seen", "as external", LINE_NUMBER);
+        }else{
+          print_error("Label already seen", "", LINE_NUMBER);
+        }
+      }
+
       if ((tokens[command_start] != NULL) && (strcmp(tokens[command_start], ".data") == 0 || strcmp(tokens[command_start], ".string") == 0)) {
         /* Incase of .data and .string - special DC treatment is needed */
-        if (!insert_symbol(symbol_table, tokens[0], IC+DC, LBL_DATA)) {
+        if (!IGNORE_LABEL && !insert_symbol(symbol_table, tokens[0], IC+DC, LBL_DATA, CONTEXT_NORMAL)) {
           printf("ERROR INSERTING %s", tokens[0]);
           return 0;
         }
@@ -91,12 +106,13 @@ int first_pass(char *filename) {
         }
 
       } else {
-        if (!insert_symbol(symbol_table, tokens[0], IC+DC, LBL_CODE)) {
+        if (!IGNORE_LABEL && !insert_symbol(symbol_table, tokens[0], IC+DC, LBL_CODE, CONTEXT_NORMAL)) {
           printf("ERROR INSERTING %s", tokens[0]);
           return 0;
         }
         IC++;
       }
+
     }else{
       /* Incase of any other regular commands without a label defined */
       if (strcmp(tokens[command_start], ".string") == 0) {
@@ -106,20 +122,22 @@ int first_pass(char *filename) {
         /* Count reserved space in memory for each data type declared */
         prev_DC = addressing_mode - 1;
 
-      }else{
+      }else if((strcmp(tokens[command_start], ".extern") != 0) && (strcmp(tokens[command_start], ".entry") != 0)){
         /* Count the command with IC */
         IC++;
       }
     }
 
-
-    IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
-    IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
-    DC += prev_DC;
+    if((strcmp(tokens[command_start], ".extern") != 0) && (strcmp(tokens[command_start], ".entry") != 0)){
+      IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
+      IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
+      DC += prev_DC;
+    }
     prev_DC = 0;
+    IGNORE_LABEL = 0;
 
     printf("[[[[[[[[CHECK: DEST:%d, SRC:%d IC:%d, DC:%d}}}}}}}}}}\n", operands_adress.destination_op, operands_adress.source_op, IC, DC);
-    print_complete_transTable(my_table, tablepointer); /* Print just the first entry */
+    print_complete_transTable(my_table, tablepointer); /* Print the table so far */
 
     printf("\n");
   }
@@ -136,6 +154,14 @@ int first_pass(char *filename) {
 
   printf("\n\n\nPENDING TABLE \n");
   print_pending_labels(pending_labels);
+
+  printf("\n\n ERRORS IN LABEL DEFINITONS: \n\n");
+  if(is_missing_symbols(symbol_table)){
+    print_error("Label missing", "", 0);
+  }else{
+    printf("No undefined labels found\n");
+  }
+
   return 1;
 }
 
@@ -176,7 +202,48 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
           i++;
         }
         insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i]); /* For '\0' */
+
+      }else{ /* .extern or .entry */
+        char *lbl = tokens[command_start+1];
+        symbol *symbol_entry = find_symbol(symbol_table, lbl);
+
+        if(symbol_entry == NULL){ /* Not logged yet in the symbol table */
+          if(strcmp(tokens[command_start], ".extern") == 0){
+            if (!insert_symbol(symbol_table, lbl, 0, LBL_CODE, CONTEXT_EXTERN)) {
+              printf("ERROR INSERTING EXTERN %s", lbl);
+            }
+
+          }else{ /* .entry */
+            /* insert with -1 as flag because label was not yet seen */
+            if (!insert_symbol(symbol_table, lbl, -1, LBL_CODE, CONTEXT_ENTRY)) {
+              printf("ERROR INSERTING ENTRY %s", lbl);
+            }
+          }
+
+        }else{ /* Was already declared previously */
+          /* If a .extern label was already seen defined localy */
+          /* If a .extern command repeats it self with the same label we dont care */
+          /* If a .entry command mentions a label we already saw we dont update anything - it is already logged */
+          if(strcmp(tokens[command_start], ".extern") == 0){
+            if(symbol_entry->address == -1){
+              print_error("Label type error", "in an entry command as local", LINE_NUMBER);
+            }
+            else if(symbol_entry->address != 0){
+              print_error("Label already seen", "localy in this file", LINE_NUMBER);
+            }
+          }else if(strcmp(tokens[command_start], ".entry") == 0){
+            if(symbol_entry->address == 0){
+              print_error("Label type error", "in an extern command as external", LINE_NUMBER);
+            }else{
+              /* Since it was mentioned in an entry once - tag symbol as entry */
+              symbol_entry->context = CONTEXT_ENTRY;
+            }
+          }
+        }
+        free(source_line);
+        return;
       }
+
       (*tablepointer)++;
       free(source_line);
       return;
@@ -226,7 +293,6 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
           int word_place = 2;
           insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1);
           handle_undefined_label(pending_labels, src_lbl, *tablepointer, word_place);
-
         }
     }
     else if (operand_src_type == 2) { /* Relative addressing (&label) */
@@ -271,9 +337,8 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
           insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1);
           handle_undefined_label(pending_labels, dest_lbl, *tablepointer, word_place);
         }
-
-
     }
+
     else if (operand_dst_type == 2) { /* Relative addressing */
         /* For now, using placeholder value */
         /* Here you would look up the address of the label in your symbol table */

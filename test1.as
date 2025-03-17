@@ -12,6 +12,7 @@ mcro test_macro
  add r2, r2
  add r3, r3
 mcroend
+.extern L3
  sub r1, r4
  bne END
 a_mc
@@ -19,6 +20,7 @@ a_mc
  jmp &LOOP
 END: stop
 STR: .string "abcd"
+.entry K
 LIST: .data 6, -9
 .data -100
 K: .data 31

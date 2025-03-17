@@ -3,6 +3,7 @@ LOOP: prn #48
  lea STR, r6
  inc r6
  mov r3, K
+.extern L3
  sub r1, r4
  bne END
 cmp K, #-6
@@ -11,6 +12,7 @@ cmp K, #-6
  jmp &LOOP
 END: stop
 STR: .string "abcd"
+.entry K
 LIST: .data 6, -9
 .data -100
 K: .data 31

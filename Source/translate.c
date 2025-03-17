@@ -96,7 +96,7 @@ int resize_symbol_table(symbolTable *table) {
 }
 
 /* Insert a symbol into the table */
-int insert_symbol(symbolTable *table, char *name, int address, labelType type) {
+int insert_symbol(symbolTable *table, char *name, int address, labelType type, labelContext context) {
     /* Check if we need to resize */
     if (table->size >= table->capacity) {
         if (!resize_symbol_table(table)) {
@@ -112,6 +112,7 @@ int insert_symbol(symbolTable *table, char *name, int address, labelType type) {
     strcpy(table->symbols[table->size].name, name);
     table->symbols[table->size].address = address;
     table->symbols[table->size].type = type;
+    table->symbols[table->size].context = context;
 
     table->size++;
     return 1;  /* Success */
@@ -120,11 +121,6 @@ int insert_symbol(symbolTable *table, char *name, int address, labelType type) {
 /* Search for a symbol by name in the symbol table */
 symbol *find_symbol(symbolTable *table, char *name) {
     int i;
-
-    /* Check if table is valid */
-    if (table == NULL || name == NULL) {
-        return NULL;
-    }
 
     /* Linear search through the table */
     for (i = 0; i < table->size; i++) {
@@ -137,6 +133,22 @@ symbol *find_symbol(symbolTable *table, char *name) {
     /* Symbol not found */
     return NULL;
 }
+
+int is_missing_symbols(symbolTable *table){
+  int i;
+
+  /* Linear search through the table */
+  for (i = 0; i < table->size; i++) {
+      if (table->symbols[i].address == -1) {
+          /* Found the symbol */
+          return 1;
+      }
+  }
+
+  /* Symbol not found */
+  return 0;
+}
+
 
 /* Initialize a single transTable entry */
 void initialize_transTable_entry(transTable *entry, int address, char *source_code) {
@@ -420,11 +432,13 @@ void print_symbol_table(const symbolTable *table) {
     printf("\nSymbol Table Contents:\n");
     printf("---------------------\n");
     for (i = 0; i < table->size; i++) {
-        printf("[%d] Name: %-20s Address: %-6d Type: %s\n",
+        printf("[%d] Name: %-20s Address: %-6d Type: %-4s   Context: %s\n",
                i,
                table->symbols[i].name,
                table->symbols[i].address,
-               table->symbols[i].type == LBL_CODE ? "CODE" : "DATA");
+               table->symbols[i].type == LBL_CODE ? "CODE" : "DATA",
+               table->symbols[i].context == CONTEXT_EXTERN ? "EXTERNAL" :
+               (table->symbols[i].context == CONTEXT_ENTRY ? "ENTRY" : ""));
     }
     printf("---------------------\n");
     printf("Total symbols: %d (Capacity: %d)\n", table->size, table->capacity);

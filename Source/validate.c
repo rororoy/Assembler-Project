@@ -137,7 +137,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
         case 1: num_operands = 2; break; /* Two-operand commands */
         case 2: num_operands = 1; break; /* One-operand commands */
         case 3: num_operands = 0; break; /* Zero-operand commands */
-        case 4: num_operands = 1; break; /* Directive commands */
+        case 4: num_operands = 1; break; /* Directive commands .entry .extern */
     }
 
     /* Check if operands are syntactically valid */
@@ -179,7 +179,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
             case CMD_EXTERN:
             case CMD_ENTRY:
-                if (operands_adress->destination_op != 2) {
+                if (operands_adress->source_op != 1) {
                     char *error_msg = (cmd_info->name == CMD_EXTERN) ?
                         "extern command should contain a label name as an operand to extern" :
                         "entry command should contain a label name as an operand to define as entry";

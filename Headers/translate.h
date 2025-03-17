@@ -59,11 +59,16 @@ typedef struct{
 /* Define an enum for the supported assembly commands */
 typedef enum {LBL_CODE, LBL_DATA} labelType;
 
+/* Define an enum with the context of the label defined */
+typedef enum {CONTEXT_EXTERN, CONTEXT_ENTRY, CONTEXT_NORMAL} labelContext;
+
+
 /* Entry in the symbol table */
 typedef struct{
   char *name;
   int address;
   labelType type;
+  labelContext context;
 } symbol;
 
 /* Structure to hold the symbol table and its metadata */
@@ -91,9 +96,11 @@ symbolTable* create_symbol_table();
 
 int resize_symbol_table(symbolTable *table);
 
-int insert_symbol(symbolTable *table, char *name, int address, labelType type);
+int insert_symbol(symbolTable *table, char *name, int address, labelType type, labelContext context);
 
 symbol* find_symbol(symbolTable *table, char *name);
+
+int is_missing_symbols(symbolTable *table);
 
 /* Initialize a single transTable entry */
 void initialize_transTable_entry(transTable *entry, int address, char *source_code);
