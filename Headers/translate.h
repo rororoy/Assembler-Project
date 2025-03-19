@@ -62,6 +62,9 @@ typedef enum {LBL_CODE, LBL_DATA} labelType;
 /* Define an enum with the context of the label defined */
 typedef enum {CONTEXT_EXTERN, CONTEXT_ENTRY, CONTEXT_NORMAL} labelContext;
 
+/* Define a num for the flags ARE that should be turned on in the command translation */
+typedef enum {A, R, E, ARE_NONE} commandARE;
+
 
 /* Entry in the symbol table */
 typedef struct{
@@ -121,7 +124,7 @@ void insert_command_entry(transTable *table, int index, int address, char *sourc
 void print_word_binary(word w);
 
 /* Insert extra word for a number or address - takes int value directly */
-int insert_extra_word(transTable *table, int index, int address, char *source_code, int op_type, int value);
+int insert_extra_word(transTable *table, int index, int address, char *source_code, int op_type, int value, commandARE are_fields);
 
 /* Print the complete transTable */
 void print_complete_transTable(transTable *table, int size);

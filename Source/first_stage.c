@@ -192,16 +192,16 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
         int i = command_start + 1;
 
         while(tokens[i] != NULL){
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 4, atoi(tokens[i]));
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 4, atoi(tokens[i]), ARE_NONE);
           i++;
         }
       }else if(strcmp(tokens[command_start], ".string") == 0){
         int i = 0;
         while(tokens[command_start+1][i] != '\0'){
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i]);
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE);
           i++;
         }
-        insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i]); /* For '\0' */
+        insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE); /* For '\0' */
 
       }else{ /* .extern or .entry */
         char *lbl = tokens[command_start+1];
@@ -279,19 +279,33 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
         /* Extract the immediate value, assuming format like "#123" */
         if (tokens[command_start + 1] != NULL) {
           int value = atoi(&tokens[command_start + 1][1]); /* Skip the '#' character */
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, value);
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, value, ARE_NONE);
         }
     }
+
     else if (operand_src_type == 1) { /* Direct addressing (variable name) */
         /* Here you would look up the address of the label in your symbol table */
         char *src_lbl = tokens[command_start+1];
         symbol *symbol_entry = find_symbol(symbol_table, src_lbl);
 
         if(symbol_entry != NULL){
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, symbol_entry->address);
+          int address = symbol_entry->address;
+
+          if(address == -1){
+            /* Incase a label was declared but the address is missing */
+            int word_place = 2;
+            handle_undefined_label(pending_labels, src_lbl, *tablepointer, word_place);
+          }
+
+          if(symbol_entry->context == CONTEXT_EXTERN){
+            insert_extra_word(my_table, *tablepointer, IC, source_line, 0, address, E);
+          }else{
+            insert_extra_word(my_table, *tablepointer, IC, source_line, 0, address, R);
+          }
         }else{
+            /* If the label was not yet encountered - put placeholder in table */
           int word_place = 2;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1);
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1, ARE_NONE);
           handle_undefined_label(pending_labels, src_lbl, *tablepointer, word_place);
         }
     }
@@ -302,10 +316,10 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
 
         if(symbol_entry != NULL){
           int relative_jump = symbol_entry->address - IC;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, relative_jump);
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, relative_jump, A);
         }else{
           int word_place = 2;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1);
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1, ARE_NONE);
           handle_undefined_label(pending_labels, src_lbl, *tablepointer, word_place);
         }
     }
@@ -320,7 +334,7 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
       else if (tokens[command_start + 2] != NULL) {
         value = atoi(&tokens[command_start + 2][1]); /* Skip the '#' character */
       }
-      insert_extra_word(my_table, *tablepointer, IC, source_line, 0, value);
+      insert_extra_word(my_table, *tablepointer, IC, source_line, 0, value, ARE_NONE);
 
     }
 
@@ -329,12 +343,27 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
         char *dest_lbl = command_lookup(tokens[command_start])->type == 1 ? tokens[command_start+2] : tokens[command_start+1];
         symbol *symbol_entry = find_symbol(symbol_table, dest_lbl);
 
-
         if(symbol_entry != NULL){
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, symbol_entry->address);
+          int address = symbol_entry->address;
+
+          if(address == -1){
+            /* Incase a label was declared but the address is missing */
+            if(operand_src_type == 0){
+              handle_undefined_label(pending_labels, dest_lbl, *tablepointer, 2);
+            }else{
+              int word_place = command_lookup(tokens[command_start])->type == 1 ? 3 : 2;
+              handle_undefined_label(pending_labels, dest_lbl, *tablepointer, word_place);
+            }
+          }
+
+          if(symbol_entry->context == CONTEXT_EXTERN){
+            insert_extra_word(my_table, *tablepointer, IC, source_line, 0, address, E);
+          }else{
+            insert_extra_word(my_table, *tablepointer, IC, source_line, 0, address, R);
+          }
         }else{
           int word_place = command_lookup(tokens[command_start])->type == 1 ? 3 : 2;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1);
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1, ARE_NONE);
           handle_undefined_label(pending_labels, dest_lbl, *tablepointer, word_place);
         }
     }
@@ -347,10 +376,10 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
 
         if(symbol_entry != NULL){
           int relative_jump = symbol_entry->address - IC;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, relative_jump);
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, relative_jump, A);
         }else{
           int word_place = command_lookup(tokens[command_start])->type == 1 ? 3 : 2;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1);
+          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1, ARE_NONE);
           handle_undefined_label(pending_labels, dest_lbl, *tablepointer, word_place);
         }
     }

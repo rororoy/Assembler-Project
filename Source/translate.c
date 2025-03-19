@@ -445,7 +445,7 @@ void print_symbol_table(const symbolTable *table) {
 }
 
 
-int insert_extra_word(transTable *table, int index, int address, char *source_code, int op_type, int value) {
+int insert_extra_word(transTable *table, int index, int address, char *source_code, int op_type, int value, commandARE are_fields) {
   word new_word = {0}; /* Initialize to all zeros */
 
   /* Check if this is the first word being added for cases such as .data .string*/
@@ -454,13 +454,16 @@ int insert_extra_word(transTable *table, int index, int address, char *source_co
     initialize_transTable_entry(&table[index], address, source_code);
   }
 
+  /* Set the A R E flags incase of NONE - set nothing */
+  if      (are_fields == A) new_word.extra_word.a = 1;
+  else if (are_fields == R) new_word.extra_word.r = 1;
+  else if (are_fields == E) new_word.extra_word.e = 1;
+
+
   if (op_type == 0) { /* For a number */
     printf(">>>>>>>GOT IMM NUMBER:%d\n", value);
     /* Set addressing flags */
     new_word.extra_word.value = (unsigned)value & 0x1FFFFF; /* 0x1FFFFF = 21 bits of 1s */
-    new_word.extra_word.a = 1; /* Absolute addressing for numbers */
-    new_word.extra_word.r = 0; /* Not relocatable */
-    new_word.extra_word.e = 0; /* Not external */
   }
   else if (op_type == 4) { /* For a commands of data (.string .data) */
     /* Store the value in the full 24-bit data_word */
