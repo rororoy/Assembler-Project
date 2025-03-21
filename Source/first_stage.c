@@ -162,6 +162,8 @@ int first_pass(char *filename) {
     printf("No undefined labels found\n");
   }
 
+  printf("\nDC:%d\nICF:%d\n\n", DC, IC-100);
+
   return 1;
 }
 
