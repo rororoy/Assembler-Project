@@ -430,25 +430,77 @@ void insert_command_entry(transTable *table, int index, int address, char *sourc
 }
 
 void print_word_binary(word w) {
-  int i;
-    /* Check if this is likely a data word (all high bits are 0) */
+    int j;
+    char binary_str[25];
+    char opcode_str[7], src_mode_str[3], src_reg_str[4], dst_mode_str[3],
+         dst_reg_str[4], funct_str[6], are_str[4];
+
+    /* Check if this is likely a data word */
     if (w.instruction.opcode == 0 && w.instruction.src_mode == 0 &&
         w.instruction.src_reg == 0 && w.instruction.dst_mode == 0 &&
         w.instruction.dst_reg == 0 && w.instruction.funct < 0x10) {
 
-        /* It's probably a data word, print all 24 bits */
-        printf("Binary (data): ");
-        for (i = 23; i >= 0; i--) {
-            printf("%d", (w.data_word.data & (1 << i)) ? 1 : 0);
+        /* Print as data word (24 bits) */
+        for (j = 0; j < 24; j++) {
+            binary_str[23-j] = (w.data_word.data & (1 << j)) ? '1' : '0';
         }
-        printf("\n");
+        binary_str[24] = '\0';
+        printf("%s\n", binary_str);
     } else {
-        /* Print as instruction word with field groupings */
-        printf("Binary (instruction): %06u %02u %03u %02u %03u %05u %u %u %u\n",
-               w.instruction.opcode, w.instruction.src_mode,
-               w.instruction.src_reg, w.instruction.dst_mode,
-               w.instruction.dst_reg, w.instruction.funct,
-               w.instruction.a, w.instruction.r, w.instruction.e);
+        /* Convert opcode (6 bits) */
+        int val = w.instruction.opcode;
+        for (j = 0; j < 6; j++) {
+            opcode_str[5-j] = (val & (1 << j)) ? '1' : '0';
+        }
+        opcode_str[6] = '\0';
+
+        /* Convert src_mode (2 bits) */
+        val = w.instruction.src_mode;
+        for (j = 0; j < 2; j++) {
+            src_mode_str[1-j] = (val & (1 << j)) ? '1' : '0';
+        }
+        src_mode_str[2] = '\0';
+
+        /* Convert src_reg (3 bits) */
+        val = w.instruction.src_reg;
+        for (j = 0; j < 3; j++) {
+            src_reg_str[2-j] = (val & (1 << j)) ? '1' : '0';
+        }
+        src_reg_str[3] = '\0';
+
+        /* Convert dst_mode (2 bits) */
+        val = w.instruction.dst_mode;
+        for (j = 0; j < 2; j++) {
+            dst_mode_str[1-j] = (val & (1 << j)) ? '1' : '0';
+        }
+        dst_mode_str[2] = '\0';
+
+        /* Convert dst_reg (3 bits) */
+        val = w.instruction.dst_reg;
+        for (j = 0; j < 3; j++) {
+            dst_reg_str[2-j] = (val & (1 << j)) ? '1' : '0';
+        }
+        dst_reg_str[3] = '\0';
+
+        /* Convert funct (5 bits) */
+        val = w.instruction.funct;
+        for (j = 0; j < 5; j++) {
+            funct_str[4-j] = (val & (1 << j)) ? '1' : '0';
+        }
+        funct_str[5] = '\0';
+
+        /* Convert ARE bits */
+        are_str[0] = w.instruction.a ? '1' : '0';
+        are_str[1] = w.instruction.r ? '1' : '0';
+        are_str[2] = w.instruction.e ? '1' : '0';
+        are_str[3] = '\0';
+
+        /* Concatenate all parts */
+        sprintf(binary_str, "%s%s%s%s%s%s%s",
+                opcode_str, src_mode_str, src_reg_str, dst_mode_str,
+                dst_reg_str, funct_str, are_str);
+
+        printf("%s\n", binary_str);
     }
 }
 

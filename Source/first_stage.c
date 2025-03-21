@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "../Headers/first_stage.h"
+#include "../Headers/second_stage.h"
 #include "../Headers/error.h"
 #include "../Headers/utils.h"
 #include "../Headers/global.h"
@@ -29,7 +30,7 @@ int first_pass(char *filename, hashTable *macro_table) {
   int IGNORE_LABEL = 0; /* Flag used when a label was already defined and should be ignored */
 
   symbolTable *symbol_table = create_symbol_table();
-  transTable *my_table = create_transTable(50);
+  transTable *translation_table = create_transTable(50);
   hashTable *pending_labels = make_hash_table(HASH_TABLE_INITIAL_SIZE);
 
   LINE_NUMBER = 0; /* Zero the global variable */
@@ -73,7 +74,7 @@ int first_pass(char *filename, hashTable *macro_table) {
     command_start = tokens_mode == 2 ? 1 : 0;
     addressing_mode = is_valid_command(command_start, tokens, &operands_adress);
 
-    process_assembly_command(pending_labels, my_table, &tablepointer, tokens, IC+DC, operands_adress.source_op, operands_adress.destination_op, command_start, symbol_table);
+    process_assembly_command(pending_labels, translation_table, &tablepointer, tokens, IC+DC, operands_adress.source_op, operands_adress.destination_op, command_start, symbol_table);
 
     /* Get command semantics to avoid repetitive string comparisons */
     cmnd = command_lookup(tokens[command_start]);
@@ -141,17 +142,16 @@ int first_pass(char *filename, hashTable *macro_table) {
     IGNORE_LABEL = 0;
 
     printf("[[[[[[[[CHECK: DEST:%d, SRC:%d IC:%d, DC:%d}}}}}}}}}}\n", operands_adress.destination_op, operands_adress.source_op, IC, DC);
-    print_complete_transTable(my_table, tablepointer); /* Print the table so far */
+    print_complete_transTable(translation_table, tablepointer); /* Print the table so far */
 
     printf("\n");
   }
 
   /* Print the table */
   printf("TransTable contents:\n");
-  print_complete_transTable(my_table, tablepointer); /* Print just the first entry */
+  print_complete_transTable(translation_table, tablepointer); /* Print just the first entry */
 
   /* Free the allocated memory */
-  free_transTable(my_table, tablepointer);
   printf("\n\nSYMBOL TABLE \n\n\n");
   print_symbol_table(symbol_table);
 
@@ -169,11 +169,16 @@ int first_pass(char *filename, hashTable *macro_table) {
 
   printf("\nDC:%d\nICF:%d\n\n", DC, IC-100);
 
+  /***************        Second assembler stage            *******************/
+  printf("[*] Starting the second assembler stage on %s\n", filename);
+  second_pass(filename, pending_labels, translation_table, symbol_table);
+
+  free_transTable(translation_table, tablepointer);
   return 1;
 }
 
 /* Main function to process assembly commands */
-void process_assembly_command(hashTable *pending_labels, transTable *my_table, int *tablepointer,
+void process_assembly_command(hashTable *pending_labels, transTable *translation_table, int *tablepointer,
                               char **tokens, int IC, int operand_src_type, int operand_dst_type,
                               int command_start, symbolTable *symbol_table) {
     int src_reg = 0;
@@ -197,7 +202,7 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
 
     /* This is the case for .data, .string .extern, .entry only */
     if (cmnd->op_code == -1 && cmnd->funct == -1) {
-        process_directive(pending_labels, my_table, tablepointer, tokens, IC,
+        process_directive(pending_labels, translation_table, tablepointer, tokens, IC,
                           command_start, symbol_table, source_line);
         free(source_line);
         return;
@@ -219,31 +224,31 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
     printf("PUTTING THE COMMAND IN THE TABLE AT INDEX [%d]\n", *tablepointer);
 
     /* Insert the main instruction word */
-    insert_command_entry(my_table, *tablepointer, IC, source_line,
+    insert_command_entry(translation_table, *tablepointer, IC, source_line,
                          opcode, operand_src_type, src_reg,
                          operand_dst_type, dst_reg, funct);
 
     /* Process source operand extra word if needed */
     if (operand_src_type == 0) { /* Immediate addressing */
-        process_immediate_addressing(my_table, *tablepointer, IC, tokens,
+        process_immediate_addressing(translation_table, *tablepointer, IC, tokens,
                                      command_start, 1, source_line);
     } else if (operand_src_type == 1) { /* Direct addressing */
-        process_direct_addressing(pending_labels, my_table, *tablepointer, IC, tokens,
+        process_direct_addressing(pending_labels, translation_table, *tablepointer, IC, tokens,
                                   command_start, 1, symbol_table, cmnd, source_line, operand_src_type);
     } else if (operand_src_type == 2) { /* Relative addressing */
-        process_relative_addressing(pending_labels, my_table, *tablepointer, IC, tokens,
+        process_relative_addressing(pending_labels, translation_table, *tablepointer, IC, tokens,
                                     command_start, 1, symbol_table, cmnd, source_line, operand_src_type);
     }
 
     /* Process destination operand extra word if needed */
     if (operand_dst_type == 0) { /* Immediate addressing */
-        process_immediate_addressing(my_table, *tablepointer, IC, tokens,
+        process_immediate_addressing(translation_table, *tablepointer, IC, tokens,
                                      command_start, 0, source_line);
     } else if (operand_dst_type == 1) { /* Direct addressing */
-        process_direct_addressing(pending_labels, my_table, *tablepointer, IC, tokens,
+        process_direct_addressing(pending_labels, translation_table, *tablepointer, IC, tokens,
                                   command_start, 0, symbol_table, cmnd, source_line, operand_src_type);
     } else if (operand_dst_type == 2) { /* Relative addressing */
-        process_relative_addressing(pending_labels, my_table, *tablepointer, IC, tokens,
+        process_relative_addressing(pending_labels, translation_table, *tablepointer, IC, tokens,
                                     command_start, 0, symbol_table, cmnd, source_line, operand_src_type);
     }
 
@@ -255,7 +260,7 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
 }
 
 /* Helper function to process directive commands (.data, .string, .extern, .entry) */
- void process_directive(hashTable *pending_labels, transTable *my_table, int *tablepointer,
+ void process_directive(hashTable *pending_labels, transTable *translation_table, int *tablepointer,
                              char **tokens, int IC, int command_start, symbolTable *symbol_table,
                              char *source_line) {
     /* Handle .data directive */
@@ -263,7 +268,7 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
         int i = command_start + 1;
 
         while (tokens[i] != NULL) {
-            insert_extra_word(my_table, *tablepointer, IC, source_line, 4, atoi(tokens[i]), ARE_NONE);
+            insert_extra_word(translation_table, *tablepointer, IC, source_line, 4, atoi(tokens[i]), ARE_NONE);
             i++;
         }
     }
@@ -272,11 +277,11 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
         int i = 0;
 
         while (tokens[command_start+1][i] != '\0') {
-            insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE);
+            insert_extra_word(translation_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE);
             i++;
         }
         /* For '\0' */
-        insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE);
+        insert_extra_word(translation_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE);
     }
     /* Handle .extern or .entry directive */
     else {
@@ -322,7 +327,7 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
 }
 
 /* Helper function to process immediate addressing mode (#value) */
- void process_immediate_addressing(transTable *my_table, int tablepointer, int IC,
+ void process_immediate_addressing(transTable *translation_table, int tablepointer, int IC,
                                          char **tokens, int command_start, int is_source,
                                          char *source_line) {
     int value;
@@ -335,11 +340,11 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
         value = atoi(&tokens[command_start + 2][1]); /* Skip the '#' character */
     }
 
-    insert_extra_word(my_table, tablepointer, IC, source_line, 0, value, A);
+    insert_extra_word(translation_table, tablepointer, IC, source_line, 0, value, A);
 }
 
 /* Helper function to process direct addressing mode (label) */
- void process_direct_addressing(hashTable *pending_labels, transTable *my_table,
+ void process_direct_addressing(hashTable *pending_labels, transTable *translation_table,
                                       int tablepointer, int IC, char **tokens, int command_start,
                                       int is_source, symbolTable *symbol_table, commandSem *cmnd,
                                       char *source_line, int operand_src_type) {
@@ -368,25 +373,25 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
 
         if (address == -1) {
             /* Label declared but address missing */
-            insert_extra_word(my_table, tablepointer, IC, source_line, 0, -1, ARE_NONE);
+            insert_extra_word(translation_table, tablepointer, IC, source_line, 0, -1, R);
             handle_undefined_label(pending_labels, label, tablepointer, word_place);
         } else {
             /* Label found with valid address */
             if (symbol_entry->context == CONTEXT_EXTERN) {
-                insert_extra_word(my_table, tablepointer, IC, source_line, 0, address, E);
+                insert_extra_word(translation_table, tablepointer, IC, source_line, 0, address, E);
             } else {
-                insert_extra_word(my_table, tablepointer, IC, source_line, 0, address, R);
+                insert_extra_word(translation_table, tablepointer, IC, source_line, 0, address, R);
             }
         }
     } else {
         /* Label not yet encountered - put placeholder in table */
-        insert_extra_word(my_table, tablepointer, IC, source_line, 0, -1, ARE_NONE);
+        insert_extra_word(translation_table, tablepointer, IC, source_line, 0, -1, A);
         handle_undefined_label(pending_labels, label, tablepointer, word_place);
     }
 }
 
 /* Helper function to process relative addressing mode (&label) */
- void process_relative_addressing(hashTable *pending_labels, transTable *my_table,
+ void process_relative_addressing(hashTable *pending_labels, transTable *translation_table,
                                         int tablepointer, int IC, char **tokens, int command_start,
                                         int is_source, symbolTable *symbol_table, commandSem *cmnd,
                                         char *source_line, int operand_src_type) {
@@ -412,10 +417,10 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
 
     if (symbol_entry != NULL) {
         int relative_jump = symbol_entry->address - IC;
-        insert_extra_word(my_table, tablepointer, IC, source_line, 0, relative_jump, A);
+        insert_extra_word(translation_table, tablepointer, IC, source_line, 0, relative_jump, A);
     } else {
-        insert_extra_word(my_table, tablepointer, IC, source_line, 0, -1, ARE_NONE);
-        handle_undefined_label(pending_labels, label, tablepointer, word_place);
+        insert_extra_word(translation_table, tablepointer, IC, source_line, 0, -1, A);
+        handle_undefined_label(pending_labels, label+1, tablepointer, word_place);
     }
 }
 
