@@ -6,6 +6,7 @@
 #include "../Headers/error.h"
 #include "../Headers/global.h"
 #include "../Headers/validate.h"
+#include "../Headers/translate.h"
 
 /*
  * skip_ws
@@ -274,4 +275,25 @@ int get_register_number(char *reg_token) {
         return reg_token[1] - '0';
     }
     return 0;  /* Default to r0 if not properly formatted */
+}
+
+int calculate_word_position(int is_source, commandSem *cmnd, int operand_src_type) {
+    int word_pos = 0; /* Start counting from 0 as requested */
+
+    /* If we're handling a source operand */
+    if (is_source) {
+        return 1; /* Source operand is always the first extra word */
+    }
+
+    /* If we're handling a destination operand */
+    if (cmnd->type == 1) { /* Command has two operands */
+        /* If source operand uses register addressing, it doesn't need an extra word */
+        if (operand_src_type == 3) {
+            return 1; /* Dest is the first extra word */
+        } else {
+            return 2; /* Dest is the second extra word (after source) */
+        }
+    } else { /* Command has one operand (destination only) */
+        return 1; /* The only extra word is for the destination */
+    }
 }

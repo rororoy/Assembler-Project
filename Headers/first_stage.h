@@ -4,126 +4,112 @@
 
 int first_pass(char *filename);
 
-int handle_undefined_label(hashTable *pending_labels, char *label_name, int current_command_index, int word_position);
 
-/**
- * Process an assembly command and update the translation table
- * @param pending_labels Hash table of pending label references
- * @param my_table Translation table for code generation
- * @param tablepointer Pointer to current index in translation table
- * @param tokens Array of tokens from the assembly line
- * @param IC Current instruction counter
- * @param operand_src_type Addressing type of source operand
- * @param operand_dst_type Addressing type of destination operand
- * @param command_start Index of command token in tokens array
- * @param symbol_table Symbol table for label lookups
+/*
+ * Main function to process assembly commands
+ *
+ * Parameters:
+ * pending_labels - Hash table of labels referenced but not yet defined
+ * my_table - Translation table for machine code
+ * tablepointer - Pointer to the next available position in the translation table
+ * tokens - Array of tokenized command strings
+ * IC - Current instruction counter
+ * operand_src_type - Source operand addressing mode (0=immediate, 1=direct, 2=relative, 3=register)
+ * operand_dst_type - Destination operand addressing mode (0=immediate, 1=direct, 2=relative, 3=register)
+ * command_start - Index in tokens where the command starts (to handle labels)
+ * symbol_table - Table of all symbols (labels) and their addresses
  */
-void process_assembly_command(hashTable *pending_labels, transTable *my_table,
-                             int *tablepointer, char **tokens, int IC,
-                             int operand_src_type, int operand_dst_type,
+void process_assembly_command(hashTable *pending_labels, transTable *my_table, int *tablepointer,
+                             char **tokens, int IC, int operand_src_type, int operand_dst_type,
                              int command_start, symbolTable *symbol_table);
 
-/**
- * Process directive commands (.data, .string, etc.)
- * @param my_table Translation table for code generation
- * @param tablepointer Pointer to current index in translation table
- * @param tokens Array of tokens from the assembly line
- * @param command_start Index of directive token in tokens array
- * @param IC Current instruction counter
- * @param source_line Complete source line as a string
+/*
+ * Helper function to calculate correct word position based on command structure
+ *
+ * Parameters:
+ * is_source - Flag indicating if this is a source operand (1) or destination operand (0)
+ * cmnd - Command semantics information
+ * operand_src_type - Source operand addressing mode
+ *
+ * Returns:
+ * int - The correct word position (0-based index)
  */
-void process_directive(transTable *my_table, int *tablepointer, char **tokens,
-                       int command_start, int IC, char *source_line);
+int calculate_word_position(int is_source, commandSem *cmnd, int operand_src_type);
 
-/**
- * Process an instruction (non-directive) command
- * @param pending_labels Hash table of pending label references
- * @param my_table Translation table for code generation
- * @param tablepointer Pointer to current index in translation table
- * @param tokens Array of tokens from the assembly line
- * @param IC Current instruction counter
- * @param operand_src_type Addressing type of source operand
- * @param operand_dst_type Addressing type of destination operand
- * @param command_start Index of command token in tokens array
- * @param cmnd Command semantics structure
- * @param source_line Complete source line as a string
- * @param symbol_table Symbol table for label lookups
+/*
+ * Helper function to process directive commands (.data, .string, .extern, .entry)
+ *
+ * Parameters:
+ * pending_labels - Hash table of labels referenced but not yet defined
+ * my_table - Translation table for machine code
+ * tablepointer - Pointer to the next available position in the translation table
+ * tokens - Array of tokenized command strings
+ * IC - Current instruction counter
+ * command_start - Index in tokens where the command starts
+ * symbol_table - Table of all symbols (labels) and their addresses
+ * source_line - Original source line as a string
  */
-void process_instruction(hashTable *pending_labels, transTable *my_table,
-                         int *tablepointer, char **tokens, int IC,
-                         int operand_src_type, int operand_dst_type,
-                         int command_start, commandSem *cmnd,
-                         char *source_line, symbolTable *symbol_table);
+void process_directive(hashTable *pending_labels, transTable *my_table, int *tablepointer,
+                             char **tokens, int IC, int command_start, symbolTable *symbol_table,
+                             char *source_line);
 
-/**
- * Process source operand and add extra words as needed
- * @param pending_labels Hash table of pending label references
- * @param my_table Translation table for code generation
- * @param tablepointer Current index in translation table
- * @param tokens Array of tokens from the assembly line
- * @param command_start Index of command token in tokens array
- * @param IC Current instruction counter
- * @param operand_type Addressing type of the operand
- * @param source_line Complete source line as a string
- * @param symbol_table Symbol table for label lookups
+/*
+ * Helper function to process immediate addressing mode (#value)
+ *
+ * Parameters:
+ * my_table - Translation table for machine code
+ * tablepointer - Current position in the translation table
+ * IC - Current instruction counter
+ * tokens - Array of tokenized command strings
+ * command_start - Index in tokens where the command starts
+ * is_source - Flag indicating if this is a source operand (1) or destination operand (0)
+ * source_line - Original source line as a string
  */
-void process_source_operand(hashTable *pending_labels, transTable *my_table,
-                           int tablepointer, char **tokens, int command_start,
-                           int IC, int operand_type, char *source_line,
-                           symbolTable *symbol_table);
+void process_immediate_addressing(transTable *my_table, int tablepointer, int IC,
+                                        char **tokens, int command_start, int is_source,
+                                        char *source_line);
 
-/**
- * Process destination operand and add extra words as needed
- * @param pending_labels Hash table of pending label references
- * @param my_table Translation table for code generation
- * @param tablepointer Current index in translation table
- * @param tokens Array of tokens from the assembly line
- * @param command_start Index of command token in tokens array
- * @param IC Current instruction counter
- * @param operand_type Addressing type of the operand
- * @param source_line Complete source line as a string
- * @param symbol_table Symbol table for label lookups
- * @param command_type Type of command (affects operand positioning)
+/*
+ * Helper function to process direct addressing mode (label)
+ *
+ * Parameters:
+ * pending_labels - Hash table of labels referenced but not yet defined
+ * my_table - Translation table for machine code
+ * tablepointer - Current position in the translation table
+ * IC - Current instruction counter
+ * tokens - Array of tokenized command strings
+ * command_start - Index in tokens where the command starts
+ * is_source - Flag indicating if this is a source operand (1) or destination operand (0)
+ * symbol_table - Table of all symbols (labels) and their addresses
+ * cmnd - Command semantics information
+ * source_line - Original source line as a string
+ * operand_src_type - Source operand addressing mode
  */
-void process_destination_operand(hashTable *pending_labels, transTable *my_table,
-                                int tablepointer, char **tokens, int command_start,
-                                int IC, int operand_type, char *source_line,
-                                symbolTable *symbol_table, int command_type);
+void process_direct_addressing(hashTable *pending_labels, transTable *my_table,
+                                     int tablepointer, int IC, char **tokens, int command_start,
+                                     int is_source, symbolTable *symbol_table, commandSem *cmnd,
+                                     char *source_line, int operand_src_type);
 
-/**
- * Handle label references and update translation table
- * @param pending_labels Hash table of pending label references
- * @param my_table Translation table for code generation
- * @param tablepointer Current index in translation table
- * @param IC Current instruction counter
- * @param source_line Complete source line as a string
- * @param label Label text to process
- * @param is_relative Flag indicating if this is a relative addressing mode
- * @param word_place Position of the word in the instruction
- * @param symbol_table Symbol table for label lookups
+/*
+ * Helper function to process relative addressing mode (&label)
+ *
+ * Parameters:
+ * pending_labels - Hash table of labels referenced but not yet defined
+ * my_table - Translation table for machine code
+ * tablepointer - Current position in the translation table
+ * IC - Current instruction counter
+ * tokens - Array of tokenized command strings
+ * command_start - Index in tokens where the command starts
+ * is_source - Flag indicating if this is a source operand (1) or destination operand (0)
+ * symbol_table - Table of all symbols (labels) and their addresses
+ * cmnd - Command semantics information
+ * source_line - Original source line as a string
+ * operand_src_type - Source operand addressing mode
  */
-void handle_label_reference(hashTable *pending_labels, transTable *my_table,
-                           int tablepointer, int IC, char *source_line,
-                           char *label, int is_relative, int word_place,
-                           symbolTable *symbol_table);
+void process_relative_addressing(hashTable *pending_labels, transTable *my_table,
+                                       int tablepointer, int IC, char **tokens, int command_start,
+                                       int is_source, symbolTable *symbol_table, commandSem *cmnd,
+                                       char *source_line, int operand_src_type);
 
-/**
- * Extract register number from a register operand token
- * @param reg_token Token containing register reference (format: "rN")
- * @return Register number (0-7) or 0 if invalid
- */
-int get_register_number(char *reg_token);
 
-/**
- * Log debug information about command insertion
- * @param tablepointer Current index in translation table
- * @param IC Current instruction counter
- * @param opcode Operation code
- * @param src_type Source operand addressing type
- * @param src_reg Source register number (if applicable)
- * @param dst_type Destination operand addressing type
- * @param dst_reg Destination register number (if applicable)
- * @param funct Function code
- */
-void debug_command_insert(int tablepointer, int IC, int opcode,
-                         int src_type, int src_reg, int dst_type, int dst_reg, int funct);
+int handle_undefined_label(hashTable *pending_labels, char *label_name, int current_command_index, int word_position);

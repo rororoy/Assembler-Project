@@ -65,7 +65,6 @@ typedef enum {CONTEXT_EXTERN, CONTEXT_ENTRY, CONTEXT_NORMAL} labelContext;
 /* Define a num for the flags ARE that should be turned on in the command translation */
 typedef enum {A, R, E, ARE_NONE} commandARE;
 
-
 /* Entry in the symbol table */
 typedef struct{
   char *name;
@@ -102,6 +101,8 @@ int resize_symbol_table(symbolTable *table);
 int insert_symbol(symbolTable *table, char *name, int address, labelType type, labelContext context);
 
 symbol* find_symbol(symbolTable *table, char *name);
+
+int update_symbol_address(symbolTable *symbol_table, char *symbol_name, int new_address, int new_context);
 
 int is_missing_symbols(symbolTable *table);
 

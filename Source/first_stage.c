@@ -18,6 +18,7 @@ int first_pass(char *filename) {
   char *tokens[MAX_LINE_LENGTH];
   int tokens_mode;
   addressModes operands_adress;
+  commandSem *cmnd;
   /* Define the addressing type - 0 IMM, 1 DIRECT, 2 RELATIVE, 3 IMM REG, -1 ERR */
   int addressing_mode;
   char *am_file = append_extension(filename, ".am");
@@ -67,23 +68,23 @@ int first_pass(char *filename) {
     }
     printf("\n");
 
-
-
     /* If encountered a decleration of a label in the line */
     command_start = tokens_mode == 2 ? 1 : 0;
     addressing_mode = is_valid_command(command_start, tokens, &operands_adress);
 
-
     process_assembly_command(pending_labels, my_table, &tablepointer, tokens, IC+DC, operands_adress.source_op, operands_adress.destination_op, command_start, symbol_table);
 
-    /* If ecnountered a label definition at the start of the line */
+    /* Get command semantics to avoid repetitive string comparisons */
+    cmnd = command_lookup(tokens[command_start]);
+
+    /* If encountered a label definition at the start of the line */
     if (tokens_mode == 2) {
       /* First check if the label was already defined somewhere */
       symbol *symbol_entry = find_symbol(symbol_table, tokens[0]);
       if(symbol_entry != NULL){
-        IGNORE_LABEL = 1; /* Turn the flag on so that well know to ignore inserting the label twice */
-        if(symbol_entry->address == -1){ /* Update previous .entry decleration of the label */
-          symbol_entry->address = IC+DC;
+        IGNORE_LABEL = 1; /* Turn the flag on so that we know to ignore inserting the label twice */
+        if(symbol_entry->address == -1){ /* Update previous .entry declaration of the label */
+          update_symbol_address(symbol_table, tokens[0], IC+DC, -1);
         }else if(symbol_entry->address == 0){ /* A label with the same name was already defined */
           print_error("Label already seen", "as external", LINE_NUMBER);
         }else{
@@ -91,20 +92,13 @@ int first_pass(char *filename) {
         }
       }
 
-      if ((tokens[command_start] != NULL) && (strcmp(tokens[command_start], ".data") == 0 || strcmp(tokens[command_start], ".string") == 0)) {
-        /* Incase of .data and .string - special DC treatment is needed */
+      /* Handle label insertion based on directive type */
+      if (cmnd->name == CMD_DATA || cmnd->name == CMD_STRING) {
+        /* Case of .data and .string - special DC treatment is needed */
         if (!IGNORE_LABEL && !insert_symbol(symbol_table, tokens[0], IC+DC, LBL_DATA, CONTEXT_NORMAL)) {
           printf("ERROR INSERTING %s", tokens[0]);
           return 0;
         }
-
-        if (strcmp(tokens[command_start], ".string") == 0) {
-          prev_DC = strlen(tokens[command_start+1]) + 1;
-        } else { /* .data */
-          /* Count reserved space in memory for each data type declared */
-          prev_DC = addressing_mode - 1;
-        }
-
       } else {
         if (!IGNORE_LABEL && !insert_symbol(symbol_table, tokens[0], IC+DC, LBL_CODE, CONTEXT_NORMAL)) {
           printf("ERROR INSERTING %s", tokens[0]);
@@ -112,23 +106,25 @@ int first_pass(char *filename) {
         }
         IC++;
       }
-
-    }else{
-      /* Incase of any other regular commands without a label defined */
-      if (strcmp(tokens[command_start], ".string") == 0) {
-        prev_DC = strlen(tokens[command_start+1]) + 1;
-
-      } else if (strcmp(tokens[command_start], ".data") == 0){ /* .data */
-        /* Count reserved space in memory for each data type declared */
-        prev_DC = addressing_mode - 1;
-
-      }else if((strcmp(tokens[command_start], ".extern") != 0) && (strcmp(tokens[command_start], ".entry") != 0)){
-        /* Count the command with IC */
-        IC++;
+    } else {
+      /* Case of any other regular commands without a label defined */
+      if (cmnd->name != CMD_EXTERN && cmnd->name != CMD_ENTRY) {
+        /* Commands other than .extern and .entry increment IC */
+        if (cmnd->name != CMD_DATA && cmnd->name != CMD_STRING) {
+          IC++;
+        }
       }
     }
 
-    if((strcmp(tokens[command_start], ".extern") != 0) && (strcmp(tokens[command_start], ".entry") != 0)){
+    /* Calculate data size for directives - consolidated for both label and non-label cases */
+    if (cmnd->name == CMD_STRING) {
+      prev_DC = strlen(tokens[command_start+1]) + 1;
+    } else if (cmnd->name == CMD_DATA) {
+      prev_DC = addressing_mode - 1;
+    }
+
+    /* Update counters if not extern or entry */
+    if (cmnd->name != CMD_EXTERN && cmnd->name != CMD_ENTRY) {
       IC += (operands_adress.destination_op != 3 && operands_adress.destination_op != -1) ? 1 : 0;
       IC += (operands_adress.source_op != 3 && operands_adress.source_op != -1) ? 1 : 0;
       DC += prev_DC;
@@ -156,6 +152,7 @@ int first_pass(char *filename) {
   print_pending_labels(pending_labels);
 
   printf("\n\n ERRORS IN LABEL DEFINITONS: \n\n");
+  
   if(is_missing_symbols(symbol_table)){
     print_error("Label missing", "", 0);
   }else{
@@ -167,17 +164,21 @@ int first_pass(char *filename) {
   return 1;
 }
 
-void process_assembly_command(hashTable *pending_labels, transTable *my_table, int *tablepointer, char **tokens, int IC,
-                               int operand_src_type, int operand_dst_type, int command_start, symbolTable *symbol_table) {
+/* Main function to process assembly commands */
+void process_assembly_command(hashTable *pending_labels, transTable *my_table, int *tablepointer,
+                              char **tokens, int IC, int operand_src_type, int operand_dst_type,
+                              int command_start, symbolTable *symbol_table) {
     int src_reg = 0;
     int dst_reg = 0;
     char *source_line;
-    commandSem *cmnd = command_lookup(tokens[command_start]);
-    int opcode = cmnd->op_code == -1 ? 0 : cmnd->op_code;
-    int funct = cmnd->funct == -1 ? 0 : cmnd->funct;
+    commandSem *cmnd;
+    int opcode;
+    int funct;
 
-
-    /* Define the opcode and funct - if dont exist - put 0 */
+    /* Get command information */
+    cmnd = command_lookup(tokens[command_start]);
+    opcode = cmnd->op_code == -1 ? 0 : cmnd->op_code;
+    funct = cmnd->funct == -1 ? 0 : cmnd->funct;
 
     /* Join tokens to create the source line */
     source_line = join_tokens(tokens);
@@ -186,211 +187,228 @@ void process_assembly_command(hashTable *pending_labels, transTable *my_table, i
         return;
     }
 
-    /* This is the case for .data, .string .extern. entry only */
-    if(cmnd->op_code == -1 && cmnd->funct == -1){
-
-      /* Loop through all of the the data components of the commands and insert */
-      if(strcmp(tokens[command_start], ".data") == 0){
-        int i = command_start + 1;
-
-        while(tokens[i] != NULL){
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 4, atoi(tokens[i]), ARE_NONE);
-          i++;
-        }
-      }else if(strcmp(tokens[command_start], ".string") == 0){
-        int i = 0;
-        while(tokens[command_start+1][i] != '\0'){
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE);
-          i++;
-        }
-        insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE); /* For '\0' */
-
-      }else{ /* .extern or .entry */
-        char *lbl = tokens[command_start+1];
-        symbol *symbol_entry = find_symbol(symbol_table, lbl);
-
-        if(symbol_entry == NULL){ /* Not logged yet in the symbol table */
-          if(strcmp(tokens[command_start], ".extern") == 0){
-            if (!insert_symbol(symbol_table, lbl, 0, LBL_CODE, CONTEXT_EXTERN)) {
-              printf("ERROR INSERTING EXTERN %s", lbl);
-            }
-
-          }else{ /* .entry */
-            /* insert with -1 as flag because label was not yet seen */
-            if (!insert_symbol(symbol_table, lbl, -1, LBL_CODE, CONTEXT_ENTRY)) {
-              printf("ERROR INSERTING ENTRY %s", lbl);
-            }
-          }
-
-        }else{ /* Was already declared previously */
-          /* If a .extern label was already seen defined localy */
-          /* If a .extern command repeats it self with the same label we dont care */
-          /* If a .entry command mentions a label we already saw we dont update anything - it is already logged */
-          if(strcmp(tokens[command_start], ".extern") == 0){
-            if(symbol_entry->address == -1){
-              print_error("Label type error", "in an entry command as local", LINE_NUMBER);
-            }
-            else if(symbol_entry->address != 0){
-              print_error("Label already seen", "localy in this file", LINE_NUMBER);
-            }
-          }else if(strcmp(tokens[command_start], ".entry") == 0){
-            if(symbol_entry->address == 0){
-              print_error("Label type error", "in an extern command as external", LINE_NUMBER);
-            }else{
-              /* Since it was mentioned in an entry once - tag symbol as entry */
-              symbol_entry->context = CONTEXT_ENTRY;
-            }
-          }
-        }
+    /* This is the case for .data, .string .extern, .entry only */
+    if (cmnd->op_code == -1 && cmnd->funct == -1) {
+        process_directive(pending_labels, my_table, tablepointer, tokens, IC,
+                          command_start, symbol_table, source_line);
         free(source_line);
         return;
-      }
-
-      (*tablepointer)++;
-      free(source_line);
-      return;
     }
 
     /* Determine register numbers if register addressing is used */
     if (operand_src_type == 3) { /* Register addressing for src */
-        /* Extract register number - assuming format like "r3" */
-        if (tokens[command_start + 1] != NULL && tokens[command_start + 1][0] == 'r') {
-            src_reg = tokens[command_start + 1][1] - '0';
-        }
+        src_reg = get_register_number(tokens[command_start + 1]);
     }
 
     if (operand_dst_type == 3) { /* Register addressing for destination */
-        /* Extract register number - assuming format like "r3" */
-        if(tokens[command_start + 2] == NULL){ /* This is a case of a type 2 address */
-          dst_reg = tokens[command_start + 1][1] - '0';
-        }else if (tokens[command_start + 2] != NULL && tokens[command_start + 2][0] == 'r') {
-          dst_reg = tokens[command_start + 2][1] - '0';
+        if (tokens[command_start + 2] == NULL) { /* This is a case of a type 2 address */
+            dst_reg = get_register_number(tokens[command_start + 1]);
+        } else {
+            dst_reg = get_register_number(tokens[command_start + 2]);
         }
     }
 
     printf("PUTTING THE COMMAND IN THE TABLE AT INDEX [%d]\n", *tablepointer);
+
     /* Insert the main instruction word */
     insert_command_entry(my_table, *tablepointer, IC, source_line,
-      opcode, operand_src_type, src_reg,
-      operand_dst_type, dst_reg, funct);
+                         opcode, operand_src_type, src_reg,
+                         operand_dst_type, dst_reg, funct);
 
-
-    /* Handle extra words based on addressing types */
     /* Process source operand extra word if needed */
-    if (operand_src_type == 0) { /* Immediate addressing (#value) */
-        /* Extract the immediate value, assuming format like "#123" */
-        if (tokens[command_start + 1] != NULL) {
-          int value = atoi(&tokens[command_start + 1][1]); /* Skip the '#' character */
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, value, ARE_NONE);
-        }
-    }
-
-    else if (operand_src_type == 1) { /* Direct addressing (variable name) */
-        /* Here you would look up the address of the label in your symbol table */
-        char *src_lbl = tokens[command_start+1];
-        symbol *symbol_entry = find_symbol(symbol_table, src_lbl);
-
-        if(symbol_entry != NULL){
-          int address = symbol_entry->address;
-
-          if(address == -1){
-            /* Incase a label was declared but the address is missing */
-            int word_place = 2;
-            handle_undefined_label(pending_labels, src_lbl, *tablepointer, word_place);
-          }
-
-          if(symbol_entry->context == CONTEXT_EXTERN){
-            insert_extra_word(my_table, *tablepointer, IC, source_line, 0, address, E);
-          }else{
-            insert_extra_word(my_table, *tablepointer, IC, source_line, 0, address, R);
-          }
-        }else{
-            /* If the label was not yet encountered - put placeholder in table */
-          int word_place = 2;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1, ARE_NONE);
-          handle_undefined_label(pending_labels, src_lbl, *tablepointer, word_place);
-        }
-    }
-    else if (operand_src_type == 2) { /* Relative addressing (&label) */
-        /* Calculate relative distance - would require symbol table lookup */
-        char *src_lbl = tokens[command_start+1];
-        symbol *symbol_entry = find_symbol(symbol_table, src_lbl+1);
-
-        if(symbol_entry != NULL){
-          int relative_jump = symbol_entry->address - IC;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, relative_jump, A);
-        }else{
-          int word_place = 2;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1, ARE_NONE);
-          handle_undefined_label(pending_labels, src_lbl, *tablepointer, word_place);
-        }
+    if (operand_src_type == 0) { /* Immediate addressing */
+        process_immediate_addressing(my_table, *tablepointer, IC, tokens,
+                                     command_start, 1, source_line);
+    } else if (operand_src_type == 1) { /* Direct addressing */
+        process_direct_addressing(pending_labels, my_table, *tablepointer, IC, tokens,
+                                  command_start, 1, symbol_table, cmnd, source_line, operand_src_type);
+    } else if (operand_src_type == 2) { /* Relative addressing */
+        process_relative_addressing(pending_labels, my_table, *tablepointer, IC, tokens,
+                                    command_start, 1, symbol_table, cmnd, source_line, operand_src_type);
     }
 
     /* Process destination operand extra word if needed */
     if (operand_dst_type == 0) { /* Immediate addressing */
-      int value;
-      /* If no 2nd operand but des is defnied then this is a type 2 command */
-      if(tokens[command_start + 2] == NULL){
-        value = atoi(&tokens[command_start + 1][1]); /* Skip the '#' character */
-      }
-      else if (tokens[command_start + 2] != NULL) {
-        value = atoi(&tokens[command_start + 2][1]); /* Skip the '#' character */
-      }
-      insert_extra_word(my_table, *tablepointer, IC, source_line, 0, value, ARE_NONE);
-
+        process_immediate_addressing(my_table, *tablepointer, IC, tokens,
+                                     command_start, 0, source_line);
+    } else if (operand_dst_type == 1) { /* Direct addressing */
+        process_direct_addressing(pending_labels, my_table, *tablepointer, IC, tokens,
+                                  command_start, 0, symbol_table, cmnd, source_line, operand_src_type);
+    } else if (operand_dst_type == 2) { /* Relative addressing */
+        process_relative_addressing(pending_labels, my_table, *tablepointer, IC, tokens,
+                                    command_start, 0, symbol_table, cmnd, source_line, operand_src_type);
     }
 
-    else if (operand_dst_type == 1) { /* Direct addressing */
-        /* For now, using placeholder value */
-        char *dest_lbl = command_lookup(tokens[command_start])->type == 1 ? tokens[command_start+2] : tokens[command_start+1];
-        symbol *symbol_entry = find_symbol(symbol_table, dest_lbl);
-
-        if(symbol_entry != NULL){
-          int address = symbol_entry->address;
-
-          if(address == -1){
-            /* Incase a label was declared but the address is missing */
-            if(operand_src_type == 0){
-              handle_undefined_label(pending_labels, dest_lbl, *tablepointer, 2);
-            }else{
-              int word_place = command_lookup(tokens[command_start])->type == 1 ? 3 : 2;
-              handle_undefined_label(pending_labels, dest_lbl, *tablepointer, word_place);
-            }
-          }
-
-          if(symbol_entry->context == CONTEXT_EXTERN){
-            insert_extra_word(my_table, *tablepointer, IC, source_line, 0, address, E);
-          }else{
-            insert_extra_word(my_table, *tablepointer, IC, source_line, 0, address, R);
-          }
-        }else{
-          int word_place = command_lookup(tokens[command_start])->type == 1 ? 3 : 2;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1, ARE_NONE);
-          handle_undefined_label(pending_labels, dest_lbl, *tablepointer, word_place);
-        }
-    }
-
-    else if (operand_dst_type == 2) { /* Relative addressing */
-        /* For now, using placeholder value */
-        /* Here you would look up the address of the label in your symbol table */
-        char *dest_lbl = command_lookup(tokens[command_start])->type == 1 ? tokens[command_start+2] : tokens[command_start+1];
-        symbol *symbol_entry = find_symbol(symbol_table, dest_lbl+1);
-
-        if(symbol_entry != NULL){
-          int relative_jump = symbol_entry->address - IC;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, relative_jump, A);
-        }else{
-          int word_place = command_lookup(tokens[command_start])->type == 1 ? 3 : 2;
-          insert_extra_word(my_table, *tablepointer, IC, source_line, 0, -1, ARE_NONE);
-          handle_undefined_label(pending_labels, dest_lbl, *tablepointer, word_place);
-        }
-    }
-
-    /* Increment table pointer and update IC based on words used */
+    /* Increment table pointer */
     (*tablepointer)++;
 
     /* Free the source line memory */
     free(source_line);
+}
+
+/* Helper function to process directive commands (.data, .string, .extern, .entry) */
+ void process_directive(hashTable *pending_labels, transTable *my_table, int *tablepointer,
+                             char **tokens, int IC, int command_start, symbolTable *symbol_table,
+                             char *source_line) {
+    /* Handle .data directive */
+    if (strcmp(tokens[command_start], ".data") == 0) {
+        int i = command_start + 1;
+
+        while (tokens[i] != NULL) {
+            insert_extra_word(my_table, *tablepointer, IC, source_line, 4, atoi(tokens[i]), ARE_NONE);
+            i++;
+        }
+    }
+    /* Handle .string directive */
+    else if (strcmp(tokens[command_start], ".string") == 0) {
+        int i = 0;
+
+        while (tokens[command_start+1][i] != '\0') {
+            insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE);
+            i++;
+        }
+        /* For '\0' */
+        insert_extra_word(my_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE);
+    }
+    /* Handle .extern or .entry directive */
+    else {
+        char *lbl = tokens[command_start+1];
+        symbol *symbol_entry = find_symbol(symbol_table, lbl);
+
+        if (symbol_entry == NULL) { /* Not logged yet in the symbol table */
+            if (strcmp(tokens[command_start], ".extern") == 0) {
+                if (!insert_symbol(symbol_table, lbl, 0, LBL_CODE, CONTEXT_EXTERN)) {
+                    printf("ERROR INSERTING EXTERN %s", lbl);
+                }
+            }
+            else { /* .entry */
+                /* insert with -1 as flag because label was not yet seen */
+                if (!insert_symbol(symbol_table, lbl, -1, LBL_CODE, CONTEXT_ENTRY)) {
+                    printf("ERROR INSERTING ENTRY %s", lbl);
+                }
+            }
+        }
+        else { /* Was already declared previously */
+            if (strcmp(tokens[command_start], ".extern") == 0) {
+                if (symbol_entry->address == -1) {
+                    print_error("Label type error", "in an entry command as local", LINE_NUMBER);
+                }
+                else if (symbol_entry->address != 0) {
+                    print_error("Label already seen", "localy in this file", LINE_NUMBER);
+                }
+            }
+            else if (strcmp(tokens[command_start], ".entry") == 0) {
+                if (symbol_entry->address == 0) {
+                    print_error("Label type error", "in an extern command as external", LINE_NUMBER);
+                }
+                else {
+                    /* Since it was mentioned in an entry once - tag symbol as entry */
+                    symbol_entry->context = CONTEXT_ENTRY;
+                }
+            }
+        }
+        return;
+    }
+
+    (*tablepointer)++;
+}
+
+/* Helper function to process immediate addressing mode (#value) */
+ void process_immediate_addressing(transTable *my_table, int tablepointer, int IC,
+                                         char **tokens, int command_start, int is_source,
+                                         char *source_line) {
+    int value;
+
+    if (is_source || tokens[command_start + 2] == NULL) {
+        /* Source operand or type 2 command with single operand */
+        value = atoi(&tokens[command_start + 1][1]); /* Skip the '#' character */
+    } else {
+        /* Destination operand */
+        value = atoi(&tokens[command_start + 2][1]); /* Skip the '#' character */
+    }
+
+    insert_extra_word(my_table, tablepointer, IC, source_line, 0, value, A);
+}
+
+/* Helper function to process direct addressing mode (label) */
+ void process_direct_addressing(hashTable *pending_labels, transTable *my_table,
+                                      int tablepointer, int IC, char **tokens, int command_start,
+                                      int is_source, symbolTable *symbol_table, commandSem *cmnd,
+                                      char *source_line, int operand_src_type) {
+    char *label;
+    symbol *symbol_entry;
+    int word_place;
+
+    /* Determine which token contains the label */
+    if (is_source) {
+        label = tokens[command_start + 1];
+    } else {
+        if (cmnd->type == 1 && tokens[command_start + 2] != NULL) {
+            label = tokens[command_start + 2];
+        } else {
+            label = tokens[command_start + 1];
+        }
+    }
+
+    /* Calculate the correct word position using our helper function */
+    word_place = calculate_word_position(is_source, cmnd, operand_src_type);
+
+    symbol_entry = find_symbol(symbol_table, label);
+
+    if (symbol_entry != NULL) {
+        int address = symbol_entry->address;
+
+        if (address == -1) {
+            /* Label declared but address missing */
+            insert_extra_word(my_table, tablepointer, IC, source_line, 0, -1, ARE_NONE);
+            handle_undefined_label(pending_labels, label, tablepointer, word_place);
+        } else {
+            /* Label found with valid address */
+            if (symbol_entry->context == CONTEXT_EXTERN) {
+                insert_extra_word(my_table, tablepointer, IC, source_line, 0, address, E);
+            } else {
+                insert_extra_word(my_table, tablepointer, IC, source_line, 0, address, R);
+            }
+        }
+    } else {
+        /* Label not yet encountered - put placeholder in table */
+        insert_extra_word(my_table, tablepointer, IC, source_line, 0, -1, ARE_NONE);
+        handle_undefined_label(pending_labels, label, tablepointer, word_place);
+    }
+}
+
+/* Helper function to process relative addressing mode (&label) */
+ void process_relative_addressing(hashTable *pending_labels, transTable *my_table,
+                                        int tablepointer, int IC, char **tokens, int command_start,
+                                        int is_source, symbolTable *symbol_table, commandSem *cmnd,
+                                        char *source_line, int operand_src_type) {
+    char *label;
+    symbol *symbol_entry;
+    int word_place;
+
+    /* Determine which token contains the label */
+    if (is_source) {
+        label = tokens[command_start + 1];
+    } else {
+        if (cmnd->type == 1 && tokens[command_start + 2] != NULL) {
+            label = tokens[command_start + 2];
+        } else {
+            label = tokens[command_start + 1];
+        }
+    }
+
+    /* Calculate the correct word position using our helper function */
+    word_place = calculate_word_position(is_source, cmnd, operand_src_type);
+
+    symbol_entry = find_symbol(symbol_table, label + 1); /* Skip the '&' character */
+
+    if (symbol_entry != NULL) {
+        int relative_jump = symbol_entry->address - IC;
+        insert_extra_word(my_table, tablepointer, IC, source_line, 0, relative_jump, A);
+    } else {
+        insert_extra_word(my_table, tablepointer, IC, source_line, 0, -1, ARE_NONE);
+        handle_undefined_label(pending_labels, label, tablepointer, word_place);
+    }
 }
 
 int handle_undefined_label(hashTable *pending_labels, char *label_name, int current_command_index, int word_position) {

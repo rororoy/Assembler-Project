@@ -134,6 +134,32 @@ symbol *find_symbol(symbolTable *table, char *name) {
     return NULL;
 }
 
+int update_symbol_address(symbolTable *symbol_table, char *symbol_name, int new_address, int new_context) {
+    symbol *symbol_entry;
+
+    if (symbol_table == NULL || symbol_name == NULL) {
+        return 0;
+    }
+
+    /* Use the existing find_symbol function to locate the symbol */
+    symbol_entry = find_symbol(symbol_table, symbol_name);
+
+    if (symbol_entry != NULL) {
+        /* Symbol found, update its address */
+        symbol_entry->address = new_address;
+
+        /* Update context if a new one was specified (not -1) */
+        if (new_context != -1) {
+            symbol_entry->context = new_context;
+        }
+
+        return 1; /* Success */
+    }
+
+    /* Symbol not found */
+    return 0;
+}
+
 int is_missing_symbols(symbolTable *table){
   int i;
 
