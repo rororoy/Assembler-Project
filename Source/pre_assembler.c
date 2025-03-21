@@ -14,8 +14,7 @@
   TODO ADD A TOKANIZE FUNCTION THAT RUNS THROUGH A LINE AND RETURN AN ARRAY OF MAX 5-4 TOKENS
 */
 
-void handle_exit(FILE *in_file, FILE *temp_file, hashTable *ht, char *filename1, char *filename2){
-  free_hash_table(ht);
+void handle_exit(FILE *in_file, FILE *temp_file, char *filename1, char *filename2){
   if(in_file) { fclose(in_file); }
   if(temp_file) { fclose(temp_file); }
   free(filename1);
@@ -26,14 +25,14 @@ void handle_exit(FILE *in_file, FILE *temp_file, hashTable *ht, char *filename1,
   @param
   @return 0 if encountered error 1 if ok
 */
-int pre_assembler(char *filename) {
+int pre_assembler(char *filename, hashTable *macro_table) {
     FILE *file, *temp_file;
     char line[MAX_LINE_LENGTH + 2]; /* Buffer for a line: MAX_LINE_LENGTH + '\n' + '\0' */
     char *macro_name;
     char *as_file, *am_file;
-    hashTable *macro_table;
     hashBucket *ht_bucket;
     char *tokens[MAX_LINE_LENGTH];
+    int token_mode;
 
     LINE_NUMBER = 0; /* Make sure to zero the line count */
 
@@ -44,7 +43,7 @@ int pre_assembler(char *filename) {
     file = fopen(as_file, "r");
     if (file == NULL) {
       print_error("File read", filename, LINE_NUMBER);
-      handle_exit(NULL, NULL, NULL, as_file, am_file);
+      handle_exit(NULL, NULL, as_file, am_file);
       return 0;
     }
 
@@ -52,19 +51,17 @@ int pre_assembler(char *filename) {
     temp_file = fopen(am_file, "w");
     if (temp_file == NULL) {
       print_error("File write", "temp.as", LINE_NUMBER);
-      handle_exit(file, NULL, NULL, as_file, am_file);
+      handle_exit(file, NULL, as_file, am_file);
       return 0;
     }
 
-    macro_table = make_hash_table(HASH_TABLE_INITIAL_SIZE);
-    /* No explicit type setting needed - make_hash_table now defaults to BUCKET_MACRO */
 
     while (fgets(line, sizeof(line), file) != NULL) {
       LINE_NUMBER++;
 
       if (!valid_length_line(line)) {
         print_error("Line length", "", LINE_NUMBER);
-        handle_exit(file, temp_file, macro_table, as_file, am_file);
+        handle_exit(file, temp_file, as_file, am_file);
         return 0;
       }
 
@@ -72,9 +69,11 @@ int pre_assembler(char *filename) {
       if (empty_line(line))
         continue;
 
-      if (!tokanize_line(line, tokens, 1)) {
+      token_mode = tokanize_line(line, tokens, 1);
+
+      if (!token_mode) {
         /* Encountered an error in the pre-proc stage - terminate */
-        handle_exit(file, temp_file, macro_table, as_file, am_file);
+        handle_exit(file, temp_file, as_file, am_file);
         return 0;
       }
 
@@ -84,25 +83,25 @@ int pre_assembler(char *filename) {
 
         if (macro_name == NULL){ /* No macro name provided */
           print_error("No macro", "", LINE_NUMBER);
-          handle_exit(file, temp_file, macro_table, as_file, am_file);
+          handle_exit(file, temp_file, as_file, am_file);
           return 0;
 
         }else if(is_saved_word(macro_name)) { /* Macro is a saved word */
           print_error("Saved word", "", LINE_NUMBER);
-          handle_exit(file, temp_file, macro_table, as_file, am_file);
+          handle_exit(file, temp_file, as_file, am_file);
           return 0;
         }
 
         ht_bucket = insert_entry(macro_table, macro_name); /* Log the macro */
         if(ht_bucket == NULL){ /* If failed inserting */
-          handle_exit(file, temp_file, macro_table, as_file, am_file);
+          handle_exit(file, temp_file, as_file, am_file);
           return 0;
         }
         /* insert_entry now sets type to BUCKET_MACRO internally */
 
         /* Run through the macro and log all of it */
         if(!process_macro_definition(file, ht_bucket)){
-          handle_exit(file, temp_file, macro_table, as_file, am_file);
+          handle_exit(file, temp_file, as_file, am_file);
           return 0;
         }
         continue;
@@ -110,10 +109,11 @@ int pre_assembler(char *filename) {
 
       /* Check for a macro call: if the first token matches a defined macro */
       ht_bucket = search_table(macro_table, tokens[0]);
-      if (ht_bucket != NULL) {
+      if (ht_bucket != NULL && token_mode != 2) {
+        /* We also checked if the first token isnt a label - used for the first pass*/
         /* search_table now only returns BUCKET_MACRO type buckets */
         if (!write_list_to_file(temp_file, ht_bucket->code_nodes, "temp.as")) {
-          handle_exit(file, temp_file, macro_table, as_file, am_file);
+          handle_exit(file, temp_file, as_file, am_file);
           return 0;
         }
 
@@ -121,13 +121,13 @@ int pre_assembler(char *filename) {
         /* A normal line: write it to the output file */
         if (fprintf(temp_file, "%s", line) < 0) {
           print_error("Failed writing", "temp.as", LINE_NUMBER);
-          handle_exit(file, temp_file, macro_table, as_file, am_file);
+          handle_exit(file, temp_file, as_file, am_file);
           return 0;
         }
       }
     }
 
-    handle_exit(file, temp_file, macro_table, as_file, am_file);
+    handle_exit(file, temp_file, as_file, am_file);
     return 1;
 }
 

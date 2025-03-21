@@ -11,7 +11,7 @@
 #include "../Headers/linked_list.h"
 #include "../Headers/hash_table.h"
 
-int first_pass(char *filename) {
+int first_pass(char *filename, hashTable *macro_table) {
   FILE *file;
   int i;
   char line[MAX_LINE_LENGTH + 2]; /* Buffer for a line: MAX_LINE_LENGTH + '\n' + '\0' */
@@ -19,6 +19,7 @@ int first_pass(char *filename) {
   int tokens_mode;
   addressModes operands_adress;
   commandSem *cmnd;
+  hashBucket *ht_bucket;
   /* Define the addressing type - 0 IMM, 1 DIRECT, 2 RELATIVE, 3 IMM REG, -1 ERR */
   int addressing_mode;
   char *am_file = append_extension(filename, ".am");
@@ -82,14 +83,21 @@ int first_pass(char *filename) {
       /* First check if the label was already defined somewhere */
       symbol *symbol_entry = find_symbol(symbol_table, tokens[0]);
       if(symbol_entry != NULL){
-        IGNORE_LABEL = 1; /* Turn the flag on so that we know to ignore inserting the label twice */
-        if(symbol_entry->address == -1){ /* Update previous .entry declaration of the label */
+        IGNORE_LABEL = 1;
+        if(symbol_entry->address == -1){
           update_symbol_address(symbol_table, tokens[0], IC+DC, -1);
-        }else if(symbol_entry->address == 0){ /* A label with the same name was already defined */
+        }else if(symbol_entry->address == 0){
           print_error("Label already seen", "as external", LINE_NUMBER);
         }else{
           print_error("Label already seen", "", LINE_NUMBER);
         }
+
+      }
+
+      /* Check if the label is a macro name */
+      ht_bucket = search_table(macro_table, tokens[0]);
+      if (ht_bucket != NULL) {
+        print_error("Label macro name", tokens[0], LINE_NUMBER);
       }
 
       /* Handle label insertion based on directive type */
@@ -152,7 +160,7 @@ int first_pass(char *filename) {
   print_pending_labels(pending_labels);
 
   printf("\n\n ERRORS IN LABEL DEFINITONS: \n\n");
-  
+
   if(is_missing_symbols(symbol_table)){
     print_error("Label missing", "", 0);
   }else{

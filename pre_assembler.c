@@ -15,7 +15,6 @@
 */
 
 void handle_exit(FILE *in_file, FILE *temp_file, hashTable *ht, char *filename1, char *filename2){
-  free_hash_table(ht);
   if(in_file) { fclose(in_file); }
   if(temp_file) { fclose(temp_file); }
   free(filename1);

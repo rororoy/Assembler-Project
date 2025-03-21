@@ -22,6 +22,7 @@ error errors[] = {
   {EXTERNAL, "Label already seen", "The label was already declared previously"},
   {INTERNAL, "Label missing", "A label that was declared with an entry was never defined"},
   {EXTERNAL, "Label type error", "Error in label decleration, label was already declared"},
+  {EXTERNAL, "Label macro name", "Defined label can't share the same name with an already defined macro"},
   {EXTERNAL, "Unterminated string", "A decleration of a string wasn't closed with parentheses"},
   {EXTERNAL, "Too many operands", "Too many operands for the command"},
   {EXTERNAL, "Invalid dig op", "Digits in a command should be preceded by a '#'"},
@@ -37,11 +38,13 @@ void print_error(char *name, char *additional_arg, int line_number){
   int i = 0;
   while(errors[i].name != NULL){
     if(strcmp(errors[i].name, name) == 0){
-      printf("[!] ERROR: %s %s", errors[i].description, additional_arg);
+      printf("[!] ERROR");
 
       if(errors[i].context == EXTERNAL){
-        printf(" on line %d", line_number);
+        printf(" [on line %d] - ", line_number);
       }
+
+      printf("%s %s", errors[i].description, additional_arg);
 
       printf("\n");
       return;

@@ -2,7 +2,7 @@
 #include "./linked_list.h"
 #include "./hash_table.h"
 
-int first_pass(char *filename);
+int first_pass(char *filename, hashTable *macro_table);
 
 
 /*

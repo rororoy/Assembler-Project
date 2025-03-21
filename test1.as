@@ -1,5 +1,7 @@
 MAIN: add r3, LIST
 LOOP: prn #48
+mcro label
+mcroend
 mcro a_mc
 cmp K, #-6
  bne &END
