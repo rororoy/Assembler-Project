@@ -134,5 +134,18 @@ int is_valid_command();
 
 void print_symbol_table(const symbolTable *table);
 
+void update_word(wordNode *node_ptr, int value, commandARE are_flags);
+
+/**
+ * Converts a word to a 6-character hexadecimal string
+ *
+ * @param w The word to convert
+ * @param hex_str The output string buffer (must be at least 7 bytes long)
+ * @return Pointer to the hex string (same as hex_str)
+ *
+ * This function takes a word union and returns a representation
+ * as a 6-character hex string (24 bits = 6 hex digits).
+ */
+char* word_to_hex(word w, char* hex_str);
 
 #endif

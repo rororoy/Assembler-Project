@@ -173,6 +173,10 @@ int first_pass(char *filename, hashTable *macro_table) {
   printf("[*] Starting the second assembler stage on %s\n", filename);
   second_pass(filename, pending_labels, translation_table, symbol_table);
 
+  /* Print the table */
+  printf("\n\nTransTable contents:\n");
+  print_complete_transTable(translation_table, tablepointer); /* Print just the first entry */
+
   free_transTable(translation_table, tablepointer);
   return 1;
 }
@@ -385,7 +389,7 @@ void process_assembly_command(hashTable *pending_labels, transTable *translation
         }
     } else {
         /* Label not yet encountered - put placeholder in table */
-        insert_extra_word(translation_table, tablepointer, IC, source_line, 0, -1, A);
+        insert_extra_word(translation_table, tablepointer, IC, source_line, 0, -1, ARE_NONE);
         handle_undefined_label(pending_labels, label, tablepointer, word_place);
     }
 }
@@ -410,17 +414,26 @@ void process_assembly_command(hashTable *pending_labels, transTable *translation
         }
     }
 
-    /* Calculate the correct word position using our helper function */
+    /* Calculate the correct word position */
     word_place = calculate_word_position(is_source, cmnd, operand_src_type);
 
     symbol_entry = find_symbol(symbol_table, label + 1); /* Skip the '&' character */
 
     if (symbol_entry != NULL) {
+      if(symbol_entry->address == 0){ /* If the label is a delcared .extern type */
+        insert_extra_word(translation_table, tablepointer, IC, source_line, 0, 0, E);
+      }else if(symbol_entry->address == -1){ /* If the label is a delcared .entry type */
+        insert_extra_word(translation_table, tablepointer, IC, source_line, 0, -1, A);
+      }else{
+        /* In the other case that the label was seen already and has address */
         int relative_jump = symbol_entry->address - IC;
         insert_extra_word(translation_table, tablepointer, IC, source_line, 0, relative_jump, A);
+      }
+
     } else {
-        insert_extra_word(translation_table, tablepointer, IC, source_line, 0, -1, A);
-        handle_undefined_label(pending_labels, label+1, tablepointer, word_place);
+      /* In the case that the label wasn't yet seen */
+      insert_extra_word(translation_table, tablepointer, IC, source_line, 0, -1, ARE_NONE);
+      handle_undefined_label(pending_labels, label, tablepointer, word_place);
     }
 }
 
