@@ -10,7 +10,7 @@
 #include "../Headers/utils.h"
 #include "../Headers/error.h"
 
-int second_pass(char *filename, hashTable *pending_labels, transTable *translation_table, symbolTable *symbol_table) {
+int second_pass(char *filename, hashTable *pending_labels, transTable *translation_table, symbolTable *symbol_table, int IC, int DC) {
   int i;
   hashBucket *pending_entry;
   symbol *symbol_entry;
@@ -37,7 +37,7 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
     symbol_entry = find_symbol(symbol_table, label);
 
     if(!symbol_entry){
-      printf("THE PENDING LABEL WASNT FOUND IN THE SYMBOLS COULDNT RESOLVE\n");
+      print_error("Label didnt reolve", label, translation_table[pending_entry->command_index].address);
 
     } else {
       /* Get the pointer to the word we need to resolbe first */
@@ -47,9 +47,8 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
         printf("DIDNT FIND WORD\n");
       } else {
         /* Access the data field through the pointer */
-        word current_word = node_ptr->data;
         printf("FOUND WORD:\n");
-        print_word_binary(current_word);
+        print_word_binary(node_ptr->data);
 
         /* RESOLVING PENDING PLACEHOLDER WORDS: */
         /* If the ARE = ARE_NONE (000) THEN CHECK SYMBOL TABLE FOR THE CONTEXT */
@@ -58,22 +57,26 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
         /* IF THE ARE = ARE_A ()  */
 
         if(!resolve_word(pending_entry, translation_table, symbol_entry, node_ptr, IS_RELATIVE_LABEL)){
-          printf("FAILED TO RESOLVE\n");
+          print_error("Label didnt reolve", label, translation_table[pending_entry->command_index].address);
           return 0;
         }
 
       }
     }
   }
-  create_output_files(filename, translation_table, symbol_table);
-  return 1;
+
+  if(!ERROR_ENCOUNTERED){
+    create_output_files(filename, translation_table, symbol_table, IC, DC);
+  }
+
+  /* TODO FREE STUFF HERE */
+  return !ERROR_ENCOUNTERED;
 }
 
 
 int resolve_word(hashBucket *pending_entry, transTable *translation_table, symbol *symbol_entry, wordNode *node_ptr, int IS_RELATIVE_LABEL){
   int symbol_IC = symbol_entry->address;
   int command_IC = translation_table[pending_entry->command_index].address;
-  word current_word = node_ptr->data;
   labelContext context = symbol_entry->context;
 
   if(IS_RELATIVE_LABEL){ /* Is the addressing type - relative (type 2) unrelated to R bit */
@@ -100,7 +103,7 @@ int resolve_word(hashBucket *pending_entry, transTable *translation_table, symbo
  * @param symbol_table The symbol table for resolving labels.
  * @return 1 if successful, 0 if an error occurred.
  */
-int create_output_files(char *filename, transTable *translation_table, symbolTable *symbol_table) {
+int create_output_files(char *filename, transTable *translation_table, symbolTable *symbol_table, int IC, int DC) {
     FILE *file;
     char *ob_file = append_extension(filename, ".ob");
     char *ext_file = append_extension(filename, ".ext");
@@ -118,7 +121,7 @@ int create_output_files(char *filename, transTable *translation_table, symbolTab
     }
 
     /* Generate the object file */
-    if (!generate_ob_file(file, translation_table)) {
+    if (!generate_ob_file(file, translation_table, IC, DC)) {
         success = 0;
     }
 
@@ -133,22 +136,6 @@ int create_output_files(char *filename, transTable *translation_table, symbolTab
     return success;
 }
 
-/**
- * Generates the object (.ob) file from the translation table.
- * The file format is: IC and DC on first line, followed by addresses and hex words.
- *
- * @param file The output file pointer.
- * @param translation_table The translation table containing the assembled code.
- * @return 1 if successful, 0 if an error occurred.
- */
- /**
-  * Generates the object (.ob) file from the translation table.
-  * The file format is: IC and DC on first line, followed by addresses and hex words.
-  *
-  * @param file The output file pointer.
-  * @param translation_table The translation table containing the assembled code.
-  * @return 1 if successful, 0 if an error occurred.
-  */
   /**
   * Converts a word to a hexadecimal string based on its type
   * (determined by position in the linked list and source code).
@@ -201,17 +188,17 @@ int create_output_files(char *filename, transTable *translation_table, symbolTab
   * @param translation_table The translation table containing the assembled code.
   * @return 1 if successful, 0 if an error occurred.
   */
- int generate_ob_file(FILE *file, transTable *translation_table) {
+ int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC) {
      int i;
      wordNode *current_node;
      int word_index;
      char hex_str[7]; /* 6 hex chars + null terminator */
      int is_data_entry;
-     int IC = 25; /* Placeholder value for IC */
-     int DC = 9;  /* Placeholder value for DC */
+
+     /* TODO CONVERT IC-100 TO A STRING AND CALCULATE HOW MUCH PADDING USING A STRING OF SPACES TO PAD */
 
      /* Write the IC and DC values at the top of the file */
-     fprintf(file, "%d %d\n", IC, DC);
+     fprintf(file, "     %d %d\n", (IC-100), DC);
 
      /* Iterate through the translation table */
      for (i = 0; translation_table[i].node != NULL; i++) {

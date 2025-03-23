@@ -74,7 +74,13 @@ int first_pass(char *filename, hashTable *macro_table) {
     command_start = tokens_mode == 2 ? 1 : 0;
     addressing_mode = is_valid_command(command_start, tokens, &operands_adress);
 
+    if(!addressing_mode){
+      continue;
+    }
+
+    printf("%d\n", addressing_mode);
     process_assembly_command(pending_labels, translation_table, &tablepointer, tokens, IC+DC, operands_adress.source_op, operands_adress.destination_op, command_start, symbol_table);
+
 
     /* Get command semantics to avoid repetitive string comparisons */
     cmnd = command_lookup(tokens[command_start]);
@@ -171,7 +177,7 @@ int first_pass(char *filename, hashTable *macro_table) {
 
   /***************        Second assembler stage            *******************/
   printf("[*] Starting the second assembler stage on %s\n", filename);
-  second_pass(filename, pending_labels, translation_table, symbol_table);
+  second_pass(filename, pending_labels, translation_table, symbol_table, IC, DC);
 
   /* Print the table */
   printf("\n\nTransTable contents:\n");

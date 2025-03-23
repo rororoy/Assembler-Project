@@ -12,7 +12,7 @@ all: $(TARGET)
 $(TARGET): assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o global.o second_stage.o
 	$(CC) $(CFLAGS) -o $(TARGET) assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o global.o second_stage.o
 
-assembler.o: ./Source/assembler.c ./Headers/assembler.h ./Headers/pre_assembler.h ./Headers/utils.h ./Headers/error.h ./Headers/first_stage.h ./Headers/translate.h ./Headers/linked_list.h ./Headers/hash_table.h
+assembler.o: ./Source/assembler.c ./Headers/assembler.h ./Headers/pre_assembler.h ./Headers/utils.h ./Headers/error.h ./Headers/first_stage.h ./Headers/translate.h ./Headers/linked_list.h ./Headers/hash_table.h ./Headers/global.h
 	$(CC) $(CFLAGS) -c ./Source/assembler.c
 
 # Compile mycomp.o
@@ -20,7 +20,7 @@ pre_assembler.o: ./Source/pre_assembler.c ./Headers/pre_assembler.h ./Headers/er
 	$(CC) $(CFLAGS) -c ./Source/pre_assembler.c
 
 # Compile utils.o
-error.o: ./Source/error.c ./Headers/error.h
+error.o: ./Source/error.c ./Headers/error.h ./Headers/global.h
 	$(CC) $(CFLAGS) -c ./Source/error.c
 
 validate.o: ./Source/validate.c ./Headers/validate.h ./Headers/global.h ./Headers/translate.h

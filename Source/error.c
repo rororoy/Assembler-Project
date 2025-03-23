@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../Headers/error.h"
+#include "../Headers/global.h"
 
 error errors[] = {
   {INTERNAL, "File write", "Error opening file for writing on"},
@@ -21,6 +22,7 @@ error errors[] = {
   {EXTERNAL, "Label not first", "A decleration of a label must be only at the begining of a line"},
   {EXTERNAL, "Label already seen", "The label was already declared previously"},
   {INTERNAL, "Label missing", "A label that was declared with an entry was never defined"},
+  {EXTERNAL, "Label didnt reolve", "A label mentioned was never declared - couldn't resolve translation of the label"},
   {EXTERNAL, "Label type error", "Error in label decleration, label was already declared"},
   {EXTERNAL, "Label macro name", "Defined label can't share the same name with an already defined macro"},
   {EXTERNAL, "Unterminated string", "A decleration of a string wasn't closed with parentheses"},
@@ -29,6 +31,7 @@ error errors[] = {
   {EXTERNAL, "Too few operands", "More operands expected for the command"},
   {EXTERNAL, "No number after #", "Expected a number as an operand after usage of # in"},
   {EXTERNAL, "Invalid digit in immediate operand", "Expected a number operand but got something else than a digit in"},
+  {EXTERNAL, "Invalid addressing mode", "The specified addressing modes are not allowed for this command"},
   {EXTERNAL, "Unexpected operand", "Encountered an unexpected operand for a command:"},
 
   {EXTERNAL, NULL, NULL}
@@ -36,12 +39,13 @@ error errors[] = {
 
 void print_error(char *name, char *additional_arg, int line_number){
   int i = 0;
+  ERROR_ENCOUNTERED = 1;
   while(errors[i].name != NULL){
     if(strcmp(errors[i].name, name) == 0){
-      printf("[!] ERROR");
+      printf("[!] ERROR ");
 
       if(errors[i].context == EXTERNAL){
-        printf(" [on line %d] - ", line_number);
+        printf("[on line %d] - ", line_number);
       }
 
       printf("%s %s", errors[i].description, additional_arg);

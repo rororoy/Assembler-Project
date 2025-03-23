@@ -6,6 +6,7 @@
 #include "../Headers/first_stage.h"
 #include "../Headers/linked_list.h"
 #include "../Headers/hash_table.h"
+#include "../Headers/global.h"
 
 /*
   TODO ADD WRAPPER FUNCTION TO FGETS WHEN READING NEW LINES - TO HANDLE STUFF LIKE SKIPPING NEW LINES AND CHECKING FOR ERRORS
@@ -44,6 +45,11 @@ int main(int argc, char *argv[]){
       printf("[*] Finished the assembler stage on %s\n\n", argv[f_count]);
     }else{
       printf("[!] Failed the assembler stage on %s\n\n", argv[f_count]);
+    }
+
+    if(ERROR_ENCOUNTERED){
+      printf("[!] No output files were generated for %s\n\n", argv[f_count]);
+      ERROR_ENCOUNTERED = 0;
     }
 
     f_count++;

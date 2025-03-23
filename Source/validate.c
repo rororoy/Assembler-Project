@@ -104,7 +104,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 
     /* Check if command was found */
     if (cmd_info == NULL) {
-        printf("[UNKNOWN COMMAND]\n");
+      print_error("Unkown command", tokens[command_start], LINE_NUMBER);
         return 0;
     }
 
@@ -189,7 +189,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
                 break;
 
             default:
-                printf("[UNHANDLED COMMAND TYPE]\n");
+                print_error("Unkown command", tokens[command_start], LINE_NUMBER);
                 return 0;
         }
 
@@ -201,7 +201,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
             if ((cmd_info->type == 1 && (!(src_bit & cmd_info->allowed_src_add_mode) ||
                                          !(dest_bit & cmd_info->allowed_dest_add_mode))) ||
                 (cmd_info->type == 2 && !(dest_bit & cmd_info->allowed_dest_add_mode))) {
-                print_error("Invalid addressing mode", "The specified addressing modes are not allowed for this command", LINE_NUMBER);
+                print_error("Invalid addressing mode", "", LINE_NUMBER);
                 return 0;
             }
         }

@@ -9,6 +9,8 @@
 
 extern int LINE_NUMBER;
 
+extern int ERROR_ENCOUNTERED;
+
 extern char *RESERVED_WORDS[];
 
 /* Define an enum for the supported assembly commands */

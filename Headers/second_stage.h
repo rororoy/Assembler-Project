@@ -12,7 +12,7 @@
  * @param symbol_table The symbol table containing all defined symbols.
  * @return 1 if successful, 0 if an error occurred.
  */
-int second_pass(char *filename, hashTable *pending_labels, transTable *translation_table, symbolTable *symbol_table);
+int second_pass(char *filename, hashTable *pending_labels, transTable *translation_table, symbolTable *symbol_table, int IC, int DC);
 
 /**
  * Resolves a word in the translation table based on symbol information.
@@ -34,7 +34,7 @@ int resolve_word(hashBucket *pending_entry, transTable *translation_table, symbo
  * @param symbol_table The symbol table for resolving labels.
  * @return 1 if successful, 0 if an error occurred.
  */
-int create_output_files(char *filename, transTable *translation_table, symbolTable *symbol_table);
+int create_output_files(char *filename, transTable *translation_table, symbolTable *symbol_table, int IC, int DC);
 
 /**
  * Generates the object (.ob) file from the translation table.
@@ -44,7 +44,7 @@ int create_output_files(char *filename, transTable *translation_table, symbolTab
  * @param translation_table The translation table containing the assembled code.
  * @return 1 if successful, 0 if an error occurred.
  */
-int generate_ob_file(FILE *file, transTable *translation_table);
+int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC);
 
 /**
  * Generates the externals (.ext) file listing all external references.
