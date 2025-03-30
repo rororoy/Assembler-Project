@@ -95,20 +95,24 @@ int resolve_word(hashBucket *pending_entry, transTable *translation_table, symbo
   return 1;
 }
 
-/**
- * Creates the output files (.ob, .ext, .ent) for the assembled program.
- *
- * @param filename Base filename for output files.
- * @param translation_table The translation table containing the assembled code.
- * @param symbol_table The symbol table for resolving labels.
- * @return 1 if successful, 0 if an error occurred.
- */
 int create_output_files(char *filename, transTable *translation_table, symbolTable *symbol_table, int IC, int DC) {
     FILE *file;
     char *ob_file = append_extension(filename, ".ob");
     char *ext_file = append_extension(filename, ".ext");
     char *ent_file = append_extension(filename, ".ent");
     int success = 1;
+    int has_externals = 0;
+    int has_entries = 0;
+    int i;
+
+    /* Check if there are any external or entry symbols */
+    for (i = 0; i < symbol_table->size; i++) {
+        if (symbol_table->symbols[i].context == CONTEXT_EXTERN) {
+            has_externals = 1;
+        } else if (symbol_table->symbols[i].context == CONTEXT_ENTRY) {
+            has_entries = 1;
+        }
+    }
 
     /* Open the ob file for writing */
     file = fopen(ob_file, "w");
@@ -127,7 +131,33 @@ int create_output_files(char *filename, transTable *translation_table, symbolTab
 
     fclose(file);
 
-    /* Will implement ext and ent file generation later */
+    /* Generate the ext file if there are external symbols */
+    if (has_externals && success) {
+        file = fopen(ext_file, "w");
+        if (file == NULL) {
+            print_error("File write", ext_file, 0);
+            success = 0;
+        } else {
+            if (!generate_ext_file(file, symbol_table)) {
+                success = 0;
+            }
+            fclose(file);
+        }
+    }
+
+    /* Generate the ent file if there are entry symbols */
+    if (has_entries && success) {
+        file = fopen(ent_file, "w");
+        if (file == NULL) {
+            print_error("File write", ent_file, 0);
+            success = 0;
+        } else {
+            if (!generate_ent_file(file, symbol_table)) {
+                success = 0;
+            }
+            fclose(file);
+        }
+    }
 
     free(ob_file);
     free(ext_file);
@@ -145,7 +175,7 @@ int create_output_files(char *filename, transTable *translation_table, symbolTab
   * @param is_data_entry Flag indicating if this is a data entry
   * @param hex_str The output buffer for the hex string (at least 7 bytes)
   */
- void word_to_hex_by_type(word word_data, int is_first_word, int is_data_entry, char *hex_str) {
+void word_to_hex_by_type(word word_data, int is_first_word, int is_data_entry, char *hex_str) {
      unsigned int value = 0;
      int i;
 
@@ -188,7 +218,8 @@ int create_output_files(char *filename, transTable *translation_table, symbolTab
   * @param translation_table The translation table containing the assembled code.
   * @return 1 if successful, 0 if an error occurred.
   */
- int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC) {
+
+int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC) {
      int i;
      wordNode *current_node;
      int word_index;
@@ -234,14 +265,138 @@ int create_output_files(char *filename, transTable *translation_table, symbolTab
      return 1;
  }
 
-/**
- * Wrapper function to test word_to_hex on a small set of example words
- * to check if the conversion works as expected.
- */
-int generate_ext_file(FILE *file, symbolTable *symbol_table){
-  return 1;
+ int generate_ext_file(FILE *file, symbolTable *symbol_table) {
+    int i, j;
+    char **ext_names = NULL;
+    int *ext_addresses = NULL;
+    int num_external = 0;
+
+    /* First pass: count the number of external symbols */
+    for (i = 0; i < symbol_table->size; i++) {
+        if (symbol_table->symbols[i].context == CONTEXT_EXTERN) {
+            num_external++;
+        }
+    }
+
+    if (num_external == 0) {
+        return 1;  /* No external symbols, return success */
+    }
+
+    /* Allocate memory for external symbol names and addresses */
+    ext_names = (char **)malloc(num_external * sizeof(char *));
+    ext_addresses = (int *)malloc(num_external * sizeof(int));
+
+    if (!ext_names || !ext_addresses) {
+        if (ext_names) free(ext_names);
+        if (ext_addresses) free(ext_addresses);
+        return 0;
+    }
+
+    /* Second pass: record external symbols */
+    int index = 0;
+    for (i = 0; i < symbol_table->size; i++) {
+        if (symbol_table->symbols[i].context == CONTEXT_EXTERN) {
+            ext_names[index] = symbol_table->symbols[i].name;
+            ext_addresses[index] = symbol_table->symbols[i].address;
+            index++;
+        }
+    }
+
+    /* Sort external symbols by address */
+    for (i = 0; i < num_external - 1; i++) {
+        for (j = 0; j < num_external - i - 1; j++) {
+            if (ext_addresses[j] > ext_addresses[j + 1]) {
+                int temp_addr = ext_addresses[j];
+                ext_addresses[j] = ext_addresses[j + 1];
+                ext_addresses[j + 1] = temp_addr;
+
+                char *temp_name = ext_names[j];
+                ext_names[j] = ext_names[j + 1];
+                ext_names[j + 1] = temp_name;
+            }
+        }
+    }
+
+    /* Write sorted external symbols to file */
+    for (i = 0; i < num_external; i++) {
+        fprintf(file, "%-6s %07d\n", ext_names[i], ext_addresses[i]);
+    }
+
+    /* Clean up */
+    free(ext_names);
+    free(ext_addresses);
+
+    return 1;
 }
 
-int generate_ent_file(FILE *file, symbolTable *symbol_table){
-  return 1;
+/**
+ * Generates the entry (.ent) file from the symbol table.
+ * Lists all entry symbols sorted by address.
+ *
+ * @param file The output file pointer.
+ * @param symbol_table The symbol table containing entry symbols.
+ * @return 1 if successful, 0 if an error occurred.
+ */
+int generate_ent_file(FILE *file, symbolTable *symbol_table) {
+    int i, j;
+    char **ent_names = NULL;
+    int *ent_addresses = NULL;
+    int num_entries = 0;
+
+    /* First pass: count the number of entry symbols */
+    for (i = 0; i < symbol_table->size; i++) {
+        if (symbol_table->symbols[i].context == CONTEXT_ENTRY) {
+            num_entries++;
+        }
+    }
+
+    if (num_entries == 0) {
+        return 1;  /* No entry symbols, return success */
+    }
+
+    /* Allocate memory for entry symbol names and addresses */
+    ent_names = (char **)malloc(num_entries * sizeof(char *));
+    ent_addresses = (int *)malloc(num_entries * sizeof(int));
+
+    if (!ent_names || !ent_addresses) {
+        if (ent_names) free(ent_names);
+        if (ent_addresses) free(ent_addresses);
+        return 0;
+    }
+
+    /* Second pass: record entry symbols */
+    int index = 0;
+    for (i = 0; i < symbol_table->size; i++) {
+        if (symbol_table->symbols[i].context == CONTEXT_ENTRY) {
+            ent_names[index] = symbol_table->symbols[i].name;
+            ent_addresses[index] = symbol_table->symbols[i].address;
+            index++;
+        }
+    }
+
+    /* Sort entry symbols by address */
+    for (i = 0; i < num_entries - 1; i++) {
+        for (j = 0; j < num_entries - i - 1; j++) {
+            if (ent_addresses[j] > ent_addresses[j + 1]) {
+                int temp_addr = ent_addresses[j];
+                ent_addresses[j] = ent_addresses[j + 1];
+                ent_addresses[j + 1] = temp_addr;
+
+                char *temp_name = ent_names[j];
+                ent_names[j] = ent_names[j + 1];
+                ent_names[j + 1] = temp_name;
+            }
+        }
+    }
+
+    /* Write sorted entry symbols to file */
+    for (i = 0; i < num_entries; i++) {
+        fprintf(file, "%-6s %07d\n", ent_names[i], ent_addresses[i]);
+    }
+
+    /* Clean up */
+    free(ent_names);
+    free(ent_addresses);
+
+    return 1;
 }
