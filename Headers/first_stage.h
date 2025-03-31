@@ -113,3 +113,5 @@ void process_relative_addressing(hashTable *pending_labels, transTable *translat
 
 
 int handle_undefined_label(hashTable *pending_labels, char *label_name, int current_command_index, int word_position);
+
+void process_external_references(hashTable *pending_labels, symbolTable *symbol_table, transTable *translation_table);

@@ -354,13 +354,14 @@ void process_assembly_command(hashTable *pending_labels, transTable *translation
 }
 
 /* Helper function to process direct addressing mode (label) */
- void process_direct_addressing(hashTable *pending_labels, transTable *translation_table,
+void process_direct_addressing(hashTable *pending_labels, transTable *translation_table,
                                       int tablepointer, int IC, char **tokens, int command_start,
                                       int is_source, symbolTable *symbol_table, commandSem *cmnd,
                                       char *source_line, int operand_src_type) {
     char *label;
     symbol *symbol_entry;
     int word_place;
+    char *address_str;
 
     /* Determine which token contains the label */
     if (is_source) {
@@ -388,8 +389,19 @@ void process_assembly_command(hashTable *pending_labels, transTable *translation
         } else {
             /* Label found with valid address */
             if (symbol_entry->context == CONTEXT_EXTERN) {
+                /* For external labels, track their usage by adding to the labelAddresses list */
+                address_str = int_to_str(IC);
+                if (symbol_entry->labelAddresses == NULL) {
+                    symbol_entry->labelAddresses = make_node(address_str);
+                } else {
+                    add_node(&(symbol_entry->labelAddresses), address_str);
+                }
+                free(address_str);
+
+                /* Insert the external word */
                 insert_extra_word(translation_table, tablepointer, IC, source_line, 0, address, E);
             } else {
+                /* For regular relocatable labels */
                 insert_extra_word(translation_table, tablepointer, IC, source_line, 0, address, R);
             }
         }
@@ -463,4 +475,58 @@ int handle_undefined_label(hashTable *pending_labels, char *label_name, int curr
     }
 
     return 1; /* Success */
+}
+
+/*
+ * Process pending labels to identify those that turned out to be external
+ * Updates the symbol table with references to external labels
+ */
+void process_external_references(hashTable *pending_labels, symbolTable *symbol_table, transTable *translation_table) {
+    int i;
+    hashBucket *bucket;
+    pendingLabelUse *pending_use;
+    symbol *sym;
+    char *address_str;
+
+    /* No work to do if there are no pending labels */
+    if (pending_labels == NULL || symbol_table == NULL) {
+        return;
+    }
+
+    /* Iterate through all buckets in the hash table */
+    for (i = 0; i < pending_labels->table_size; i++) {
+        for (bucket = pending_labels->buckets[i]; bucket != NULL; bucket = bucket->next) {
+            /* Check if this label is external */
+            sym = find_symbol(symbol_table, bucket->key);
+
+            if (sym != NULL && sym->context == CONTEXT_EXTERN) {
+                /* Get all references to this label */
+                pending_use = (pendingLabelUse*)bucket->value;
+
+                /* Process each reference */
+                while (pending_use != NULL) {
+                    /* Get the address where this label is used */
+                    int word_address = get_word_address(translation_table,
+                                                      pending_use->command_index,
+                                                      pending_use->word_position);
+
+                    /* Set the ARE field to E for external */
+                    set_word_are(translation_table, pending_use->command_index,
+                               pending_use->word_position, E);
+
+                    /* Add this reference to the symbol's linked list */
+                    address_str = int_to_str(word_address);
+                    if (sym->labelAddresses == NULL) {
+                        sym->labelAddresses = make_node(address_str);
+                    } else {
+                        add_node(&(sym->labelAddresses), address_str);
+                    }
+                    free(address_str);
+
+                    /* Move to next use */
+                    pending_use = pending_use->next;
+                }
+            }
+        }
+    }
 }

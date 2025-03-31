@@ -2,6 +2,7 @@
 #define TRANSLATE_H
 
 #include "./global.h"
+#include "./linked_list"
 
 #define INITIAL_TABLE_SIZE 10
 #define GROWTH_FACTOR 2
@@ -71,6 +72,7 @@ typedef struct{
   int address;
   labelType type;
   labelContext context;
+  node *labelAddresses; /* Addresses of all mentions of the label */
 } symbol;
 
 /* Structure to hold the symbol table and its metadata */

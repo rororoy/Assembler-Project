@@ -1,13 +1,10 @@
 #ifndef LINKED_LIST_H
 #define LINKED_LIST_H
 
-
 typedef struct node{
   char *data;
   struct node *next;
 } node;
-
-#include "./translate.h"
 
 struct wordNode {
   word data;

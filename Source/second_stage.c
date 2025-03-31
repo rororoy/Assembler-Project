@@ -266,67 +266,7 @@ int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC) 
  }
 
  int generate_ext_file(FILE *file, symbolTable *symbol_table) {
-    int i, j;
-    char **ext_names = NULL;
-    int *ext_addresses = NULL;
-    int num_external = 0;
-
-    /* First pass: count the number of external symbols */
-    for (i = 0; i < symbol_table->size; i++) {
-        if (symbol_table->symbols[i].context == CONTEXT_EXTERN) {
-            num_external++;
-        }
-    }
-
-    if (num_external == 0) {
-        return 1;  /* No external symbols, return success */
-    }
-
-    /* Allocate memory for external symbol names and addresses */
-    ext_names = (char **)malloc(num_external * sizeof(char *));
-    ext_addresses = (int *)malloc(num_external * sizeof(int));
-
-    if (!ext_names || !ext_addresses) {
-        if (ext_names) free(ext_names);
-        if (ext_addresses) free(ext_addresses);
-        return 0;
-    }
-
-    /* Second pass: record external symbols */
-    int index = 0;
-    for (i = 0; i < symbol_table->size; i++) {
-        if (symbol_table->symbols[i].context == CONTEXT_EXTERN) {
-            ext_names[index] = symbol_table->symbols[i].name;
-            ext_addresses[index] = symbol_table->symbols[i].address;
-            index++;
-        }
-    }
-
-    /* Sort external symbols by address */
-    for (i = 0; i < num_external - 1; i++) {
-        for (j = 0; j < num_external - i - 1; j++) {
-            if (ext_addresses[j] > ext_addresses[j + 1]) {
-                int temp_addr = ext_addresses[j];
-                ext_addresses[j] = ext_addresses[j + 1];
-                ext_addresses[j + 1] = temp_addr;
-
-                char *temp_name = ext_names[j];
-                ext_names[j] = ext_names[j + 1];
-                ext_names[j + 1] = temp_name;
-            }
-        }
-    }
-
-    /* Write sorted external symbols to file */
-    for (i = 0; i < num_external; i++) {
-        fprintf(file, "%-6s %07d\n", ext_names[i], ext_addresses[i]);
-    }
-
-    /* Clean up */
-    free(ext_names);
-    free(ext_addresses);
-
-    return 1;
+   return 1;
 }
 
 /**

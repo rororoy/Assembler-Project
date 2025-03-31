@@ -297,3 +297,16 @@ int calculate_word_position(int is_source, commandSem *cmnd, int operand_src_typ
         return 1; /* The only extra word is for the destination */
     }
 }
+
+char* int_to_str(int value) {
+    /* Allocate memory for the string (max 12 chars including sign and null terminator) */
+    char* buffer = (char*)malloc(12 * sizeof(char));
+
+    if (buffer == NULL) {
+        check_malloc(buffer);
+    }
+
+    sprintf(buffer, "%d", value);
+
+    return buffer;
+}
