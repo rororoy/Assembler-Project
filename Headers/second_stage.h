@@ -3,6 +3,12 @@
 #include "../Headers/translate.h"
 #include "../Headers/linked_list.h"
 
+/* Structure to hold external reference information */
+typedef struct {
+    char *label_name;
+    int address;
+} ExternalReference;
+
 /**
  * Performs the second pass of the assembler, resolving all pending labels.
  *
@@ -34,8 +40,8 @@ int resolve_word(hashBucket *pending_entry, transTable *translation_table, symbo
  * @param symbol_table The symbol table for resolving labels.
  * @return 1 if successful, 0 if an error occurred.
  */
-int create_output_files(char *filename, transTable *translation_table, symbolTable *symbol_table, int IC, int DC);
-
+ int create_output_files(char *filename, transTable *translation_table,
+                       symbolTable *symbol_table, hashTable *pending_labels, int IC, int DC);
 /**
  * Generates the object (.ob) file from the translation table.
  * The file format is: IC and DC on first line, followed by addresses and hex words.
@@ -53,8 +59,8 @@ int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC);
  * @param symbol_table The symbol table containing all defined symbols.
  * @return 1 if successful, 0 if an error occurred.
  */
-int generate_ext_file(FILE *file, symbolTable *symbol_table);
-
+ void generate_externals_file(char *filename, symbolTable *symbol_table, hashTable *pending_labels);
+ 
 /**
  * Generates the entries (.ent) file listing all entry symbols.
  *

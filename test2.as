@@ -9,7 +9,7 @@ LOOP: prn #48
  bne END
  cmp K, #-6
  bne &END
- dec W
+ dec TEST
 .entry MAIN
  jmp &LOOP
  add L3, L3

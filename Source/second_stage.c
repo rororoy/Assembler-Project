@@ -66,7 +66,7 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
   }
 
   if(!ERROR_ENCOUNTERED){
-    create_output_files(filename, translation_table, symbol_table, IC, DC);
+    create_output_files(filename, translation_table, symbol_table, pending_labels, IC, DC);
   }
 
   /* TODO FREE STUFF HERE */
@@ -95,10 +95,10 @@ int resolve_word(hashBucket *pending_entry, transTable *translation_table, symbo
   return 1;
 }
 
-int create_output_files(char *filename, transTable *translation_table, symbolTable *symbol_table, int IC, int DC) {
+int create_output_files(char *filename, transTable *translation_table,
+                      symbolTable *symbol_table, hashTable *pending_labels, int IC, int DC) {
     FILE *file;
     char *ob_file = append_extension(filename, ".ob");
-    char *ext_file = append_extension(filename, ".ext");
     char *ent_file = append_extension(filename, ".ent");
     int success = 1;
     int has_externals = 0;
@@ -119,7 +119,6 @@ int create_output_files(char *filename, transTable *translation_table, symbolTab
     if (file == NULL) {
         print_error("File write", filename, 0);
         free(ob_file);
-        free(ext_file);
         free(ent_file);
         return 0;
     }
@@ -128,21 +127,12 @@ int create_output_files(char *filename, transTable *translation_table, symbolTab
     if (!generate_ob_file(file, translation_table, IC, DC)) {
         success = 0;
     }
-
     fclose(file);
 
     /* Generate the ext file if there are external symbols */
     if (has_externals && success) {
-        file = fopen(ext_file, "w");
-        if (file == NULL) {
-            print_error("File write", ext_file, 0);
-            success = 0;
-        } else {
-            if (!generate_ext_file(file, symbol_table)) {
-                success = 0;
-            }
-            fclose(file);
-        }
+        /* Use our new function that handles both symbol table and pending labels */
+        generate_externals_file(filename, symbol_table, pending_labels);
     }
 
     /* Generate the ent file if there are entry symbols */
@@ -160,9 +150,7 @@ int create_output_files(char *filename, transTable *translation_table, symbolTab
     }
 
     free(ob_file);
-    free(ext_file);
     free(ent_file);
-
     return success;
 }
 
@@ -265,9 +253,121 @@ int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC) 
      return 1;
  }
 
- int generate_ext_file(FILE *file, symbolTable *symbol_table) {
-   return 1;
-}
+ /*
+  * Generate the externals file (.ext) containing all external label references
+  * Format: LABEL_NAME ADDRESS
+  * References are sorted by address, not grouped by label
+  */
+ void generate_externals_file(char *filename, symbolTable *symbol_table, hashTable *pending_labels) {
+     int i, j, ref_count = 0, capacity = 50;
+     FILE *ext_file;
+     char *ext_filename;
+     char address_str[8]; /* For formatted 7-digit address */
+     ExternalReference *all_refs;
+     int current_index = 0;
+
+     /* Create a dynamic array to hold all external references */
+     all_refs = (ExternalReference*)malloc(capacity * sizeof(ExternalReference));
+     if (all_refs == NULL) {
+         printf("ERROR: Memory allocation failed in generate_externals_file\n");
+         return;
+     }
+
+     /* First, collect external references from the symbol table */
+     for (i = 0; i < symbol_table->size; i++) {
+         symbol *sym = &symbol_table->symbols[i];
+
+         if (sym->context == CONTEXT_EXTERN && sym->ext_ref_count > 0) {
+             /* Add all references from this symbol's array */
+             for (j = 0; j < sym->ext_ref_count; j++) {
+                 /* Resize array if needed */
+                 if (current_index >= capacity) {
+                     capacity *= 2;
+                     all_refs = (ExternalReference*)realloc(all_refs, capacity * sizeof(ExternalReference));
+                     if (all_refs == NULL) {
+                         printf("ERROR: Memory allocation failed during resize\n");
+                         return;
+                     }
+                 }
+
+                 all_refs[current_index].label_name = strdup(sym->name);
+                 all_refs[current_index].address = sym->ext_references[j];
+                 current_index++;
+             }
+         }
+     }
+
+     /* Next, collect references from the pending labels table */
+     for (i = 0; i < pending_labels->size; i++) {
+         if (pending_labels->bucket[i].is_taken &&
+             pending_labels->bucket[i].type == BUCKET_PENDING_LABEL) {
+
+             /* Check if this label is external */
+             symbol *sym = find_symbol(symbol_table, pending_labels->bucket[i].label_name);
+             if (sym != NULL && sym->context == CONTEXT_EXTERN) {
+                 /* Resize array if needed */
+                 if (current_index >= capacity) {
+                     capacity *= 2;
+                     all_refs = (ExternalReference*)realloc(all_refs, capacity * sizeof(ExternalReference));
+                     if (all_refs == NULL) {
+                         printf("ERROR: Memory allocation failed during resize\n");
+                         return;
+                     }
+                 }
+
+                 all_refs[current_index].label_name = strdup(pending_labels->bucket[i].label_name);
+                 all_refs[current_index].address = pending_labels->bucket[i].addr;
+                 current_index++;
+             }
+         }
+     }
+
+     /* Sort the references by address (simple bubble sort) */
+     for (i = 0; i < current_index - 1; i++) {
+         for (j = 0; j < current_index - i - 1; j++) {
+             if (all_refs[j].address > all_refs[j + 1].address) {
+                 /* Swap */
+                 ExternalReference temp = all_refs[j];
+                 all_refs[j] = all_refs[j + 1];
+                 all_refs[j + 1] = temp;
+             }
+         }
+     }
+
+     /* Create the output file */
+     ext_filename = append_extension(filename, ".ext");
+     ext_file = fopen(ext_filename, "w");
+
+     if (ext_file == NULL) {
+         print_error("Failed to create externals file", filename, 0);
+
+         /* Clean up */
+         for (i = 0; i < current_index; i++) {
+             free(all_refs[i].label_name);
+         }
+         free(all_refs);
+         free(ext_filename);
+         return;
+     }
+
+     /* Write all references to the file in order of address */
+     for (i = 0; i < current_index; i++) {
+         /* Format address as 7-digit number with leading zeros */
+         sprintf(address_str, "%07d", all_refs[i].address);
+
+         fprintf(ext_file, "%s %s\n", all_refs[i].label_name, address_str);
+     }
+
+     /* Clean up */
+     fclose(ext_file);
+     for (i = 0; i < current_index; i++) {
+         free(all_refs[i].label_name);
+     }
+     free(all_refs);
+     free(ext_filename);
+
+     printf("Externals file created: %s (with %d references)\n", ext_filename, current_index);
+ }
 
 /**
  * Generates the entry (.ent) file from the symbol table.
