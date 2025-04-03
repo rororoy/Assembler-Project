@@ -28,6 +28,7 @@ typedef struct {
   char *label_name;    /* Name of the unresolved label */
   int command_index;   /* Index in the command table */
   int word_number;     /* Which word is missing (1, 2, or 3) */
+  int addr;
 } hashBucket;
 
 typedef struct {
@@ -53,7 +54,7 @@ void free_hash_table(hashTable *ht);
 hashBucket *search_table(hashTable *ht, char *name);
 
 /* New functions for pending label operations */
-hashBucket *insert_pending_label(hashTable *ht, char *label_name, int command_index, int word_number);
+hashBucket *insert_pending_label(hashTable *ht, char *label_name, int command_index, int word_number, int addr);
 
 void resolve_pending_labels(hashTable *ht, char *label_name, int resolved_address,
                            void (*update_command)(int cmd_idx, int word_num, int address));

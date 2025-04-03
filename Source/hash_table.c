@@ -166,8 +166,9 @@ hashTable *resize_table(hashTable *old_ht){
         char *label_name = old_ht->bucket[i].label_name;
         int cmd_idx = old_ht->bucket[i].command_index;
         int word_num = old_ht->bucket[i].word_number;
+        int addr = old_ht->bucket[i].addr;
 
-        if(insert_pending_label(new_ht, label_name, cmd_idx, word_num) == NULL){
+        if(insert_pending_label(new_ht, label_name, cmd_idx, word_num, addr) == NULL){
           /* Encountered problem in inserting pending label */
           print_error("Insert pending label", "(resize)", 0);
           return NULL;
@@ -230,7 +231,7 @@ void free_hash_table(hashTable *ht){
 }
 
 /* New function for inserting pending labels */
-hashBucket *insert_pending_label(hashTable *ht, char *label_name, int command_index, int word_number){
+hashBucket *insert_pending_label(hashTable *ht, char *label_name, int command_index, int word_number, int addr){
   double load_factor;
   int index;
   int original_index;
@@ -269,6 +270,7 @@ hashBucket *insert_pending_label(hashTable *ht, char *label_name, int command_in
 
   /* Initialize the bucket as a pending label */
   ht->bucket[index].type = BUCKET_PENDING_LABEL;
+  ht->bucket[index].addr = addr;
   ht->bucket[index].is_taken = 1;
   ht->bucket[index].label_name = strdup(label_name);
   if(ht->bucket[index].label_name == NULL){
@@ -342,27 +344,24 @@ int get_pending_labels_count(hashTable *ht){
 void print_pending_labels(hashTable *ht) {
     int i;
     int count = 0;
-
     if (ht == NULL) {
         printf("Error: NULL hash table provided to print_pending_labels\n");
         return;
     }
-
     printf("\n=== PENDING LABELS TABLE ===\n");
-    printf("%-20s | %-15s | %-10s\n", "LABEL", "COMMAND INDEX", "WORD POS");
-    printf("-----------------------------------------------\n");
-
+    printf("%-20s | %-15s | %-10s | %-10s\n", "LABEL", "COMMAND INDEX", "WORD POS", "ADDRESS");
+    printf("-------------------------------------------------------------------\n");
     for (i = 0; i < ht->size; i++) {
         if (ht->bucket[i].is_taken && ht->bucket[i].type == BUCKET_PENDING_LABEL) {
-            printf("%-20s | %-15d | %-10d\n",
+            printf("%-20s | %-15d | %-10d | %-10d\n",
                    ht->bucket[i].label_name,
                    ht->bucket[i].command_index,
-                   ht->bucket[i].word_number);
+                   ht->bucket[i].word_number,
+                   ht->bucket[i].addr);
             count++;
         }
     }
-
-    printf("-----------------------------------------------\n");
+    printf("-------------------------------------------------------------------\n");
     printf("Total pending labels: %d\n", count);
     printf("==============================\n\n");
 }

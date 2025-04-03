@@ -114,7 +114,14 @@ int insert_symbol(symbolTable *table, char *name, int address, labelType type, l
     table->symbols[table->size].type = type;
     table->symbols[table->size].context = context;
 
+    /* Initialize the external references fields */
+    table->symbols[table->size].ext_references = NULL;
+    table->symbols[table->size].ext_ref_count = 0;
+    table->symbols[table->size].ext_ref_capacity = 0;
+
+    /* Increment size */
     table->size++;
+
     return 1;  /* Success */
 }
 
@@ -506,17 +513,31 @@ void print_word_binary(word w) {
 
 /* Print the symbol table */
 void print_symbol_table(const symbolTable *table) {
-    int i;
+    int i, j;
     printf("\nSymbol Table Contents:\n");
     printf("---------------------\n");
     for (i = 0; i < table->size; i++) {
-        printf("[%d] Name: %-20s Address: %-6d Type: %-4s   Context: %s\n",
+        printf("[%d] Name: %-20s Address: %-6d Type: %-4s   Context: %-8s",
                i,
                table->symbols[i].name,
                table->symbols[i].address,
                table->symbols[i].type == LBL_CODE ? "CODE" : "DATA",
                table->symbols[i].context == CONTEXT_EXTERN ? "EXTERNAL" :
                (table->symbols[i].context == CONTEXT_ENTRY ? "ENTRY" : ""));
+
+        /* Print the array of external references if any exist */
+        if (table->symbols[i].ext_ref_count > 0) {
+            printf("   LABEL MENTIONS: [");
+            for (j = 0; j < table->symbols[i].ext_ref_count; j++) {
+                printf("%d", table->symbols[i].ext_references[j]);
+                if (j < table->symbols[i].ext_ref_count - 1) {
+                    printf(",");
+                }
+            }
+            printf("]\n");
+        } else {
+            printf("\n");
+        }
     }
     printf("---------------------\n");
     printf("Total symbols: %d (Capacity: %d)\n", table->size, table->capacity);
@@ -619,4 +640,63 @@ char* word_to_hex(word w, char* hex_str) {
     snprintf(hex_str, 7, "%06x", value);
 
     return hex_str;
+}
+
+/* Initialize external references array for a symbol */
+void init_ext_references(symbol *sym) {
+    sym->ext_references = NULL;
+    sym->ext_ref_count = 0;
+    sym->ext_ref_capacity = 0;
+}
+
+/* Add an external reference to a symbol */
+int add_ext_reference(symbol *sym, int address) {
+    int *new_array;
+    int new_capacity;
+
+    /* Validate input */
+    if (sym == NULL) {
+        printf("ERROR: NULL symbol passed to add_ext_reference\n");
+        return 0;
+    }
+
+    /* Initialize arrays if needed - this prevents segfaults */
+    if (sym->ext_references == NULL) {
+        sym->ext_ref_count = 0;
+        sym->ext_ref_capacity = 0;
+    }
+
+    /* Check if we need to allocate or resize the array */
+    if (sym->ext_ref_count >= sym->ext_ref_capacity) {
+        new_capacity = sym->ext_ref_capacity == 0 ? 4 : sym->ext_ref_capacity * 2;
+
+        /* First allocation or reallocation */
+        if (sym->ext_references == NULL) {
+            new_array = (int*)malloc(new_capacity * sizeof(int));
+        } else {
+            new_array = (int*)realloc(sym->ext_references, new_capacity * sizeof(int));
+        }
+
+        if (new_array == NULL) {
+            printf("ERROR: Memory allocation failed in add_ext_reference\n");
+            return 0; /* Allocation failed */
+        }
+
+        sym->ext_references = new_array;
+        sym->ext_ref_capacity = new_capacity;
+    }
+
+    /* Add the new reference */
+    sym->ext_references[sym->ext_ref_count++] = address;
+    return 1; /* Success */
+}
+
+/* Free the external references array */
+void free_ext_references(symbol *sym) {
+    if (sym->ext_references != NULL) {
+        free(sym->ext_references);
+        sym->ext_references = NULL;
+    }
+    sym->ext_ref_count = 0;
+    sym->ext_ref_capacity = 0;
 }

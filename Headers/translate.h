@@ -2,7 +2,6 @@
 #define TRANSLATE_H
 
 #include "./global.h"
-#include "./linked_list"
 
 #define INITIAL_TABLE_SIZE 10
 #define GROWTH_FACTOR 2
@@ -72,7 +71,11 @@ typedef struct{
   int address;
   labelType type;
   labelContext context;
-  node *labelAddresses; /* Addresses of all mentions of the label */
+
+  /* Dynamic array to track addresses where this label is mentioned */
+  int *ext_references;     /* Array of word addresses */
+  int ext_ref_count;       /* Number of references */
+  int ext_ref_capacity;    /* Current capacity of the array */
 } symbol;
 
 /* Structure to hold the symbol table and its metadata */
@@ -94,6 +97,7 @@ extern commandSem command_table[];
 
 extern char *registers[];
 
+/* Function prototypes - rest of the file remains the same */
 commandSem *command_lookup(char *cmd_name);
 
 symbolTable* create_symbol_table();
@@ -108,28 +112,21 @@ int update_symbol_address(symbolTable *symbol_table, char *symbol_name, int new_
 
 int is_missing_symbols(symbolTable *table);
 
-/* Initialize a single transTable entry */
 void initialize_transTable_entry(transTable *entry, int address, char *source_code);
 
-/* Create and initialize a dynamic array of transTable entries */
 transTable *create_transTable(int initial_size);
 
-/* Free a single transTable entry */
 void free_transTable_entry(transTable *entry);
 
-/* Free the entire transTable */
 void free_transTable(transTable *table, int size);
 
-/* Insert a command entry in the transTable */
 void insert_command_entry(transTable *table, int index, int address, char *source_code,
                          int opcode, int src_mode, int src_reg, int dst_mode, int dst_reg, int funct);
 
 void print_word_binary(word w);
 
-/* Insert extra word for a number or address - takes int value directly */
 int insert_extra_word(transTable *table, int index, int address, char *source_code, int op_type, int value, commandARE are_fields);
 
-/* Print the complete transTable */
 void print_complete_transTable(transTable *table, int size);
 
 int is_valid_command();
@@ -138,16 +135,12 @@ void print_symbol_table(const symbolTable *table);
 
 void update_word(wordNode *node_ptr, int value, commandARE are_flags);
 
-/**
- * Converts a word to a 6-character hexadecimal string
- *
- * @param w The word to convert
- * @param hex_str The output string buffer (must be at least 7 bytes long)
- * @return Pointer to the hex string (same as hex_str)
- *
- * This function takes a word union and returns a representation
- * as a 6-character hex string (24 bits = 6 hex digits).
- */
 char* word_to_hex(word w, char* hex_str);
 
-#endif
+void init_ext_references(symbol *sym);
+
+int add_ext_reference(symbol *sym, int address);
+
+void free_ext_references(symbol *sym);
+
+#endif /* TRANSLATE_H */
