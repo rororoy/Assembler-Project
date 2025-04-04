@@ -74,6 +74,10 @@ int first_pass(char *filename, hashTable *macro_table) {
     command_start = tokens_mode == 2 ? 1 : 0;
     addressing_mode = is_valid_command(command_start, tokens, &operands_adress);
 
+    /* If the line wasn't valid continue without logging */
+    if(addressing_mode == 0)
+      continue;
+
     process_assembly_command(pending_labels, translation_table, &tablepointer, tokens, IC+DC, operands_adress.source_op, operands_adress.destination_op, command_start, symbol_table);
 
     /* Get command semantics to avoid repetitive string comparisons */
@@ -92,7 +96,6 @@ int first_pass(char *filename, hashTable *macro_table) {
         }else{
           print_error("Label already seen", "", LINE_NUMBER);
         }
-
       }
 
       /* Check if the label is a macro name */
@@ -171,14 +174,18 @@ int first_pass(char *filename, hashTable *macro_table) {
 
   /***************        Second assembler stage            *******************/
   printf("[*] Starting the second assembler stage on %s\n", filename);
-  second_pass(filename, pending_labels, translation_table, symbol_table, IC, DC);
+  int success = second_pass(filename, pending_labels, translation_table, symbol_table, IC, DC);
+
+  if(!success){
+    print_error("Failed second pass", filename, 0);
+  }
 
   /* Print the table */
   printf("\n\nTransTable contents:\n");
   print_complete_transTable(translation_table, tablepointer); /* Print just the first entry */
 
   free_transTable(translation_table, tablepointer);
-  return 1;
+  return success;
 }
 
 /* Main function to process assembly commands */

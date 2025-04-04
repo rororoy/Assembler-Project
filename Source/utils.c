@@ -47,6 +47,23 @@ int empty_line(char *line){
   return 1;
 }
 
+/*
+ * Check if a line is a comment (first non-whitespace character is ';')
+ * Returns 1 if the line is a comment, 0 otherwise
+ */
+int is_comment_line(const char *line) {
+    /* Skip leading whitespace */
+    while (*line != '\0' && isspace((unsigned char)*line)) {
+        line++;
+    }
+
+    /* Check if first non-whitespace character is a semicolon */
+    if (*line == ';') {
+        return 1;  /* Line is a comment */
+    }
+
+    return 0;  /* Line is not a comment */
+}
 
 char *strdup(char *s){
     char *dup = malloc(strlen(s) + 1);

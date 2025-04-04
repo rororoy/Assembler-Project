@@ -66,7 +66,9 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
   }
 
   if(!ERROR_ENCOUNTERED){
-    create_output_files(filename, translation_table, symbol_table, pending_labels, IC, DC);
+    if(!create_output_files(filename, translation_table, symbol_table, pending_labels, IC, DC)){
+      ERROR_ENCOUNTERED = 1;
+    }
   }
 
   /* TODO FREE STUFF HERE */

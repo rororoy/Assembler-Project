@@ -11,6 +11,7 @@ error errors[] = {
   {INTERNAL, "Insert hash", "Encountered error inserting entry into the hash table"},
   {INTERNAL, "Failed writing", "Failed writing to file"},
   {INTERNAL, "Create hashtable", "Failed creating a new hashtable"},
+  {INTERNAL, "Failed second pass", "Failed on the second assembler stage of"},
   {EXTERNAL, "Usage", "Program usage: ./assembler <filename1.as> <filename2.as>..."},
   {EXTERNAL, "Saved word", "Can't use saved words as arguments"},
   {EXTERNAL, "Extranous text", "Extranous text at the end of a command"},

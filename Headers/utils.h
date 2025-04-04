@@ -8,6 +8,8 @@ void check_malloc(void *ptr);
 
 int empty_line(char *line);
 
+int is_comment_line(const char *line);
+
 char *strdup(char *s);
 
 char* append_extension(char *filename, const char *extension);

@@ -66,7 +66,7 @@ int pre_assembler(char *filename, hashTable *macro_table) {
       }
 
       /* Filter out empty lines */
-      if (empty_line(line))
+      if (empty_line(line) || is_comment_line(line))
         continue;
 
       token_mode = tokanize_line(line, tokens, 1);
@@ -146,7 +146,7 @@ int process_macro_definition(FILE *file, hashBucket *ht_bucket) {
       return 0;
     }
 
-    if (empty_line(line)) {
+    if (empty_line(line) || is_comment_line(line)) {
       continue;
     }
 
