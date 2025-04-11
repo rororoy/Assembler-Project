@@ -7,6 +7,7 @@
 #include "../Headers/linked_list.h"
 #include "../Headers/hash_table.h"
 #include "../Headers/global.h"
+#include "../Headers/utils.h"
 
 /*
   TODO ADD WRAPPER FUNCTION TO FGETS WHEN READING NEW LINES - TO HANDLE STUFF LIKE SKIPPING NEW LINES AND CHECKING FOR ERRORS
@@ -15,6 +16,7 @@
 */
 
 int main(int argc, char *argv[]){
+  hashTable *macro_table;
   int f_count = 1;
 
   printf("[*] Started assembler program\n\n");
@@ -26,8 +28,10 @@ int main(int argc, char *argv[]){
   }
 
   while(f_count < argc){
+    clean_output_files(argv[f_count]);
+
     /***************        Pre assembler stage       *************************/
-    hashTable *macro_table = make_hash_table(HASH_TABLE_INITIAL_SIZE);
+    macro_table = make_hash_table(HASH_TABLE_INITIAL_SIZE);
     printf("[*] Starting the pre assembler stage on %s\n", argv[f_count]);
 
 

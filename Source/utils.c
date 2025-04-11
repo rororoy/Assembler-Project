@@ -114,6 +114,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     int label_encountered = 0;  /* Flag if a label was defined in the line */
     int in_string = 0;
     char *string_start = NULL;  /* Added to track start of string content */
+    int comma_seen = 0;         /* Track if we've just seen a comma */
 
     /* Duplicate the original line so we can modify it */
     char *line = strdup(original_line);
@@ -139,6 +140,13 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
 
     while (*p != '\0') {
         if (!in_string) {
+            /* Check for empty operand between commas */
+            if (comma_seen && *p == ',' && !macro_scan) {
+                print_error("Missing operand between commas", "", LINE_NUMBER);
+                free(line);
+                return 0;
+            }
+
             token_start = p;
 
             while (*p != '\0' && *p != ' ' && *p != '\t' && *p != ',' && *p != ':' && *p != '"') {
@@ -150,7 +158,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
             while (*p != '\0' && *p != '"') {
               p++;
             }
-            if (*p == '\0') {
+            if (*p == '\0' && !macro_scan) {
                 print_error("Unterminated string", "", LINE_NUMBER);
                 free(line);
                 return 0;
@@ -164,20 +172,22 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
                     in_string = 1;
                     p++;
                     string_start = p;
+                    comma_seen = 0;  /* Reset comma flag after a quote start */
                     continue;
                 } else {
                     in_string = 0;
                     *p = '\0';
                     tokens[token_count++] = strdup(string_start);
                     p++;
+                    comma_seen = 0;  /* Reset comma flag after a string token */
                 }
             } else if (*p == ':' && !in_string) {
-                if (token_count > 0) {
+                if (token_count > 0 && !macro_scan) {
                     print_error("Label not first", "", LINE_NUMBER);
                     free(line);
                     return 0;
                 }
-                if (label_encountered) {
+                if (label_encountered && !macro_scan) {
                     print_error("Multiple ':' encountered in line", ":", LINE_NUMBER);
                     free(line);
                     return 0;
@@ -186,23 +196,52 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
                 *p = '\0';
                 tokens[token_count++] = strdup(token_start);
                 p++;
+                comma_seen = 0;  /* Reset comma flag after a label */
 
             } else if (*p == '\0' || (!in_string && (*p == ' ' || *p == '\t' || *p == ','))) {
                 /* Normal token termination */
                 char saved = *p;
                 *p = '\0';
-                tokens[token_count++] = strdup(token_start);
+
+                /* Only add token if there's content (handles spaces before comma) */
+                if (strlen(token_start) > 0) {
+                    tokens[token_count++] = strdup(token_start);
+                    comma_seen = 0;  /* Reset since we found a token */
+                }
+
                 *p = saved;
+
+                /* Set comma flag if we've hit a comma */
+                if (*p == ',') {
+                    comma_seen = 1;
+                }
+
                 if (*p != '\0') p++;
             }
         }
 
-        /* Skip delimiters (but only if we're not in a string) */
-        if (!in_string) {
-            while (*p == ' ' || *p == '\t' || *p == ',') {
-                p++;
-            }
+        /* Skip whitespace (but not commas) */
+        while (*p == ' ' || *p == '\t') {
+            p++;
         }
+
+        /* Handle comma separately to detect missing operands */
+        if (*p == ',') {
+            if (comma_seen && !macro_scan) {
+                print_error("Missing operand between commas", "", LINE_NUMBER);
+                free(line);
+                return 0;
+            }
+            comma_seen = 1;
+            p++;
+        }
+    }
+
+    /* Check for trailing comma at end of line */
+    if (comma_seen && !macro_scan) {
+        print_error("Missing operand after comma", "", LINE_NUMBER);
+        free(line);
+        return 0;
     }
 
     /* Free the duplicated line since each token has been separately duplicated */
@@ -226,7 +265,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
         }
     }
 
-    if (label_encountered) {
+    if (label_encountered && !macro_scan) {
         if (!valid_label(tokens[0])) {
             print_error("Label definition", tokens[0], LINE_NUMBER);
             return 0;
@@ -295,7 +334,6 @@ int get_register_number(char *reg_token) {
 }
 
 int calculate_word_position(int is_source, commandSem *cmnd, int operand_src_type) {
-    int word_pos = 0; /* Start counting from 0 as requested */
 
     /* If we're handling a source operand */
     if (is_source) {
@@ -326,4 +364,33 @@ char* int_to_str(int value) {
     sprintf(buffer, "%d", value);
 
     return buffer;
+}
+
+/**
+ * Deletes output files with common extensions (.ob, .am, .ent, .ext) for a given filename
+ * Uses the append_extension function to create full filenames
+ *
+ * @param filename The base filename without extension
+ */
+void clean_output_files(char *filename) {
+  char *full_filename;
+  int i;
+  char *extensions[] = {".ob", ".am", ".ent", ".ext"};
+
+    /* Check each possible output file extension */
+    for (i = 0; i < 4; i++) {
+        /* Create the full filename with extension */
+        full_filename = append_extension(filename, extensions[i]);
+
+        if (full_filename != NULL) {
+            /* Try to remove the file if it exists */
+            if (remove(full_filename) == 0) {
+                /* File was successfully removed */
+            }
+            /* Note: We don't report errors if file doesn't exist - that's expected */
+
+            /* Free the memory allocated by append_extension */
+            free(full_filename);
+        }
+    }
 }

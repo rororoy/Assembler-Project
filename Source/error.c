@@ -28,6 +28,8 @@ error errors[] = {
   {EXTERNAL, "Label macro name", "Defined label can't share the same name with an already defined macro"},
   {EXTERNAL, "Unterminated string", "A decleration of a string wasn't closed with parentheses"},
   {EXTERNAL, "Too many operands", "Too many operands for the command"},
+  {EXTERNAL, "Multiple ':' encountered in line", "A ':' can only be used once per line to define a label"},
+  {EXTERNAL, "Missing operand between commas", "No operand was mentioned between two commas"},
   {EXTERNAL, "Invalid dig op", "Digits in a command should be preceded by a '#'"},
   {EXTERNAL, "Too few operands", "More operands expected for the command"},
   {EXTERNAL, "No number after #", "Expected a number as an operand after usage of # in"},

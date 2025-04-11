@@ -11,10 +11,11 @@ LOOP: prn #48
  bne &END
  dec W
 .entry MAIN
+HELLO: add r1, r2
  jmp &LOOP
  add L3, L3
 END: stop
-STR: .string “abcd”
+STR: .string "abcd"
 LIST: .data 6, -9
  .data -100
 K: .data 31

@@ -18,6 +18,7 @@ int first_pass(char *filename, hashTable *macro_table) {
   char line[MAX_LINE_LENGTH + 2]; /* Buffer for a line: MAX_LINE_LENGTH + '\n' + '\0' */
   char *tokens[MAX_LINE_LENGTH];
   int tokens_mode;
+  int success;
   addressModes operands_adress;
   commandSem *cmnd;
   hashBucket *ht_bucket;
@@ -57,7 +58,7 @@ int first_pass(char *filename, hashTable *macro_table) {
   while (fgets(line, sizeof(line), file) != NULL) {
     LINE_NUMBER++;
     if (!(tokens_mode = tokanize_line(line, tokens, 0))){
-      return 0;
+      continue;
     }
 
     /* Printing of tokanization */
@@ -174,7 +175,7 @@ int first_pass(char *filename, hashTable *macro_table) {
 
   /***************        Second assembler stage            *******************/
   printf("[*] Starting the second assembler stage on %s\n", filename);
-  int success = second_pass(filename, pending_labels, translation_table, symbol_table, IC, DC);
+  success = second_pass(filename, pending_labels, translation_table, symbol_table, IC, DC);
 
   if(!success){
     print_error("Failed second pass", filename, 0);

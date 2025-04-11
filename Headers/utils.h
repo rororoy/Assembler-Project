@@ -24,4 +24,6 @@ int get_register_number(char *reg_token);
 
 int calculate_word_position(int is_source, commandSem *cmnd, int operand_src_type);
 
+void clean_output_files(char *filename);
+
 #endif
