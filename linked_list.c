@@ -50,14 +50,14 @@ void print_list(node *head){
 int write_list_to_file(FILE *file, node *head, char *filename){
   node *current;
   if(filename == NULL){
-    print_error("Missing argument", "", 0);
+    print_error("Missing argument", filename, 0);
     return 0; /* Failed */
   }
 
   current = head;
   while(current != NULL){
     if(fprintf(file, "%s", current->data) < 0){
-      print_error("Failed writing", "", 0);
+      print_error("Failed writing", filename, 0);
       return 0;
     }
     current = current->next;

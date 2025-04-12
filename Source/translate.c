@@ -408,29 +408,18 @@ void insert_command_entry(transTable *table, int index, int address, char *sourc
   src_mode = src_mode == -1 ? 0 : src_mode;
   dst_mode = dst_mode == -1 ? 0 : dst_mode;
 
-  printf("@[PUTTING src_mode:%d, dst_mode:%d, funct: %d]\n", src_mode, dst_mode, funct);
+  /* printf("@[PUTTING src_mode:%d, dst_mode:%d, funct: %d]\n", src_mode, dst_mode, funct); */
 
   /* Set up the instruction word */
   new_word.instruction.opcode = opcode;
-  print_word_binary(new_word);
-
   new_word.instruction.src_mode = src_mode;
-  print_word_binary(new_word);
-
   new_word.instruction.src_reg = src_reg;
-  print_word_binary(new_word);
-
   new_word.instruction.dst_mode = dst_mode;
-  print_word_binary(new_word);
-
   new_word.instruction.dst_reg = dst_reg;
   new_word.instruction.funct = funct;
-  print_word_binary(new_word);
-
-  new_word.instruction.a = 1; /* Typically absolute for instructions */
+  new_word.instruction.a = 1;
   new_word.instruction.r = 0;
   new_word.instruction.e = 0;
-  print_word_binary(new_word);
 
   /* Add the new word to the linked list */
   add_word_node(&(table[index].node), new_word);
@@ -560,14 +549,10 @@ int insert_extra_word(transTable *table, int index, int address, char *source_co
 
 
   if (op_type == 0) { /* For a number */
-    printf(">>>>>>>GOT IMM NUMBER:%d\n", value);
     /* Set addressing flags */
     new_word.extra_word.value = (unsigned)value & 0x1FFFFF; /* 0x1FFFFF = 21 bits of 1s */
   }
   else if (op_type == 4) { /* For a commands of data (.string .data) */
-    /* Store the value in the full 24-bit data_word */
-    printf(">>>>>>>GOT DATA VALUE:%d\n", (unsigned)value);
-
     /* Directly assign the value */
     new_word.data_word.data = (unsigned)value;
   }

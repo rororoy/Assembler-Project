@@ -12,7 +12,8 @@
 /*
   TODO ADD WRAPPER FUNCTION TO FGETS WHEN READING NEW LINES - TO HANDLE STUFF LIKE SKIPPING NEW LINES AND CHECKING FOR ERRORS
   TODO CHECK WHY test2 doesnt unpack correctly and fails pre proc stage
-  TODO CHANGE THE WAY ERRORS ARE PRINTED SO THAT THE LINE IS FIRST TO MAKE ERROR MSG CLEARER
+  TODO CHECK ALL HANDLING OF DATA TO VERIFY MEMORY IS ALWAYS FREED
+
 */
 
 int main(int argc, char *argv[]){
@@ -24,7 +25,7 @@ int main(int argc, char *argv[]){
   /* Check if a file name is provided as an argument */
   if (argc < 2) {
       print_error("Usage", "", 0); /* ERROR: BAD USAGE */
-      return 1;
+      return 0;
   }
 
   while(f_count < argc){
@@ -42,17 +43,17 @@ int main(int argc, char *argv[]){
       break;
     }
 
-    /***************    First ans Second assembler stage    *******************/
+    /***************    First and Second assembler stage    *******************/
     printf("[*] Starting the first assembler stage on %s\n", argv[f_count]);
 
     if(first_pass(argv[f_count], macro_table)){
-      printf("[*] Finished the assembler stage on %s\n\n", argv[f_count]);
+      printf("[*] Finished the assembler stage on %s\n\n\n", argv[f_count]);
     }else{
-      printf("[!] Failed the assembler stage on %s\n\n", argv[f_count]);
+      printf("[!] Failed the assembler stage on %s\n\n\n", argv[f_count]);
     }
 
     if(ERROR_ENCOUNTERED){
-      printf("[!] No output files were generated for %s\n\n", argv[f_count]);
+      printf("[!] No output files were generated for %s\n\n\n", argv[f_count]);
       ERROR_ENCOUNTERED = 0;
     }
 

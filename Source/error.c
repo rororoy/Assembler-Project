@@ -12,6 +12,8 @@ error errors[] = {
   {INTERNAL, "Failed writing", "Failed writing to file"},
   {INTERNAL, "Create hashtable", "Failed creating a new hashtable"},
   {INTERNAL, "Failed second pass", "Failed on the second assembler stage of"},
+  {INTERNAL, "Failed creating structure", "Failed internally creating a strcture of type"},
+  {INTERNAL, "Failed inserting", "Failed internally inserting data into a data structure"},
   {EXTERNAL, "Usage", "Program usage: ./assembler <filename1.as> <filename2.as>..."},
   {EXTERNAL, "Saved word", "Can't use saved words as arguments"},
   {EXTERNAL, "Extranous text", "Extranous text at the end of a command"},

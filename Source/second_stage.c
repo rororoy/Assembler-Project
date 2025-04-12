@@ -31,9 +31,9 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
       IS_RELATIVE_LABEL = 0;
     }
 
-    printf("Looking at: %s\n\n", label);
+    /*printf("Looking at: %s\n\n", label);
     printf("| %07d  | %-30s | \n\n\n", translation_table[pending_entry->command_index].address, translation_table[pending_entry->command_index].source_code ? translation_table[pending_entry->command_index].source_code : "");
-
+    */
     symbol_entry = find_symbol(symbol_table, label);
 
     if(!symbol_entry){
@@ -43,12 +43,9 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
       /* Get the pointer to the word we need to resolbe first */
       wordNode *node_ptr = get_word_at_index(translation_table[pending_entry->command_index].node, pending_entry->word_number);
 
-      if(!node_ptr) {
-        printf("DIDNT FIND WORD\n");
-      } else {
+      if(node_ptr){
         /* Access the data field through the pointer */
-        printf("FOUND WORD:\n");
-        print_word_binary(node_ptr->data);
+        /*print_word_binary(node_ptr->data);*/
 
         /* RESOLVING PENDING PLACEHOLDER WORDS: */
         /* If the ARE = ARE_NONE (000) THEN CHECK SYMBOL TABLE FOR THE CONTEXT */
@@ -80,6 +77,7 @@ int resolve_word(hashBucket *pending_entry, transTable *translation_table, symbo
   int symbol_IC = symbol_entry->address;
   int command_IC = translation_table[pending_entry->command_index].address;
   labelContext context = symbol_entry->context;
+
 
   if(IS_RELATIVE_LABEL){ /* Is the addressing type - relative (type 2) unrelated to R bit */
     update_word(node_ptr, symbol_IC - command_IC , A);
@@ -271,8 +269,8 @@ int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC) 
      /* Create a dynamic array to hold all external references */
      all_refs = (ExternalReference*)malloc(capacity * sizeof(ExternalReference));
      if (all_refs == NULL) {
-         printf("ERROR: Memory allocation failed in generate_externals_file\n");
-         return;
+      check_malloc(all_refs);
+      return;
      }
 
      /* First, collect external references from the symbol table */
@@ -287,8 +285,8 @@ int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC) 
                      capacity *= 2;
                      all_refs = (ExternalReference*)realloc(all_refs, capacity * sizeof(ExternalReference));
                      if (all_refs == NULL) {
-                         printf("ERROR: Memory allocation failed during resize\n");
-                         return;
+                       check_malloc(all_refs);
+                       return;
                      }
                  }
 
@@ -312,8 +310,8 @@ int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC) 
                      capacity *= 2;
                      all_refs = (ExternalReference*)realloc(all_refs, capacity * sizeof(ExternalReference));
                      if (all_refs == NULL) {
-                         printf("ERROR: Memory allocation failed during resize\n");
-                         return;
+                       check_malloc(all_refs);
+                       return;
                      }
                  }
 
@@ -341,7 +339,7 @@ int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC) 
      ext_file = fopen(ext_filename, "w");
 
      if (ext_file == NULL) {
-         print_error("Failed to create externals file", filename, 0);
+         print_error("Failed writing", filename, 0);
 
          /* Clean up */
          for (i = 0; i < current_index; i++) {
@@ -368,7 +366,6 @@ int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC) 
      free(all_refs);
      free(ext_filename);
 
-     printf("Externals file created: %s (with %d references)\n", ext_filename, current_index);
  }
 
 /**

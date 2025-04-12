@@ -124,11 +124,10 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
             }
             i++;
         }
-        printf("DATA COMMAND: TOTAL %d ITEMS\n", i - (command_start));
+        /* printf("DATA COMMAND: TOTAL %d ITEMS\n", i - (command_start)); */
         return i - (command_start);
     }
     else if (cmd_info->name == CMD_STRING) {
-        printf("STRING COMMAND\n");
         return 1;
     }
 
@@ -209,10 +208,10 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
         /* Success message */
         label_msg = (cmd_info->name == CMD_EXTERN || cmd_info->name == CMD_ENTRY) ?
             " FOUND LABEL IN EXTERN/ENTRY" : "";
-        printf("ADDRESSING SUCCESS MODES: target%d source%d%s\n",
+        /* printf("ADDRESSING SUCCESS MODES: target%d source%d%s\n",
                operands_adress->destination_op,
                operands_adress->source_op,
-               label_msg);
+               label_msg); */
     }
 
     return success;

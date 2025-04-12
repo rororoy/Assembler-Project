@@ -14,7 +14,6 @@
 
 int first_pass(char *filename, hashTable *macro_table) {
   FILE *file;
-  int i;
   char line[MAX_LINE_LENGTH + 2]; /* Buffer for a line: MAX_LINE_LENGTH + '\n' + '\0' */
   char *tokens[MAX_LINE_LENGTH];
   int tokens_mode;
@@ -24,7 +23,7 @@ int first_pass(char *filename, hashTable *macro_table) {
   hashBucket *ht_bucket;
   /* Define the addressing type - 0 IMM, 1 DIRECT, 2 RELATIVE, 3 IMM REG, -1 ERR */
   int addressing_mode;
-  char *am_file = append_extension(filename, ".am");
+  char *am_filename = append_extension(filename, ".am");
   int DC = 0, IC = 100, prev_DC = 0;
   int command_start = 0;
   int tablepointer = 0;
@@ -37,18 +36,18 @@ int first_pass(char *filename, hashTable *macro_table) {
   LINE_NUMBER = 0; /* Zero the global variable */
 
   if (symbol_table == NULL) {
-    printf("Failed to create symbol table\n");
+    print_error("Failed creating structure", "symbol table", 0);
     return 0;
   }
 
   /* Create a hash table for pending labels */
   if (pending_labels == NULL) {
-    printf("Failed to create pending hash table\n");
+    print_error("Failed creating structure", "hash table", 0);
     return 0;
   }
 
   /* Open the am file */
-  file = fopen(am_file, "r");
+  file = fopen(am_filename, "r");
   if (file == NULL) {
     print_error("File read", filename, 0);
     return 0;
@@ -56,20 +55,23 @@ int first_pass(char *filename, hashTable *macro_table) {
 
   /* Loop through the line checking for different cases */
   while (fgets(line, sizeof(line), file) != NULL) {
+
     LINE_NUMBER++;
     if (!(tokens_mode = tokanize_line(line, tokens, 0))){
+      /* Error encountered - continue to the next line */
       continue;
     }
 
-    /* Printing of tokanization */
+    /* Printing of tokanization
     printf("Tokanized-->");
+    int i = 0;
     for (i = 0; i < MAX_LINE_LENGTH; i++) {
         if (tokens[i] == NULL) {
             break;
         }
         printf("%s|", tokens[i]);
     }
-    printf("\n");
+    printf("\n"); */
 
     /* If encountered a decleration of a label in the line */
     command_start = tokens_mode == 2 ? 1 : 0;
@@ -109,12 +111,12 @@ int first_pass(char *filename, hashTable *macro_table) {
       if (cmnd->name == CMD_DATA || cmnd->name == CMD_STRING) {
         /* Case of .data and .string - special DC treatment is needed */
         if (!IGNORE_LABEL && !insert_symbol(symbol_table, tokens[0], IC+DC, LBL_DATA, CONTEXT_NORMAL)) {
-          printf("ERROR INSERTING %s", tokens[0]);
+          print_error("Failed inserting", "symbol table", 0);
           return 0;
         }
       } else {
         if (!IGNORE_LABEL && !insert_symbol(symbol_table, tokens[0], IC+DC, LBL_CODE, CONTEXT_NORMAL)) {
-          printf("ERROR INSERTING %s", tokens[0]);
+          print_error("Failed inserting", "symbol table", 0);
           return 0;
         }
         IC++;
@@ -145,17 +147,19 @@ int first_pass(char *filename, hashTable *macro_table) {
     prev_DC = 0;
     IGNORE_LABEL = 0;
 
+    /*
+
     printf("[[[[[[[[CHECK: DEST:%d, SRC:%d IC:%d, DC:%d}}}}}}}}}}\n", operands_adress.destination_op, operands_adress.source_op, IC, DC);
-    print_complete_transTable(translation_table, tablepointer); /* Print the table so far */
+    print_complete_transTable(translation_table, tablepointer);
 
     printf("\n");
+    */
   }
 
-  /* Print the table */
+  /* Print the table
   printf("TransTable contents:\n");
-  print_complete_transTable(translation_table, tablepointer); /* Print just the first entry */
+  print_complete_transTable(translation_table, tablepointer);
 
-  /* Free the allocated memory */
   printf("\n\nSYMBOL TABLE \n\n\n");
   print_symbol_table(symbol_table);
 
@@ -164,26 +168,28 @@ int first_pass(char *filename, hashTable *macro_table) {
   print_pending_labels(pending_labels);
 
   printf("\n\n ERRORS IN LABEL DEFINITONS: \n\n");
+  */
 
   if(is_missing_symbols(symbol_table)){
     print_error("Label missing", "", 0);
-  }else{
-    printf("No undefined labels found\n");
   }
 
+  /*
   printf("\nDC:%d\nICF:%d\n\n", DC, IC-100);
+  */
 
   /***************        Second assembler stage            *******************/
-  printf("[*] Starting the second assembler stage on %s\n", filename);
+  printf("[*] Starting the second assembler stage on %s\n\n", filename);
   success = second_pass(filename, pending_labels, translation_table, symbol_table, IC, DC);
 
   if(!success){
     print_error("Failed second pass", filename, 0);
   }
 
-  /* Print the table */
+  /* Print the table
   printf("\n\nTransTable contents:\n");
-  print_complete_transTable(translation_table, tablepointer); /* Print just the first entry */
+  print_complete_transTable(translation_table, tablepointer);
+  */
 
   free_transTable(translation_table, tablepointer);
   return success;
@@ -208,7 +214,7 @@ void process_assembly_command(hashTable *pending_labels, transTable *translation
     /* Join tokens to create the source line */
     source_line = join_tokens(tokens);
     if (source_line == NULL) {
-        fprintf(stderr, "Memory allocation failed for source line\n");
+        check_malloc(source_line);
         return;
     }
 
@@ -233,7 +239,7 @@ void process_assembly_command(hashTable *pending_labels, transTable *translation
         }
     }
 
-    printf("PUTTING THE COMMAND IN THE TABLE AT INDEX [%d]\n", *tablepointer);
+    /* printf("PUTTING THE COMMAND IN THE TABLE AT INDEX [%d]\n", *tablepointer); */
 
     /* Insert the main instruction word */
     insert_command_entry(translation_table, *tablepointer, IC, source_line,
@@ -303,13 +309,13 @@ void process_assembly_command(hashTable *pending_labels, transTable *translation
         if (symbol_entry == NULL) { /* Not logged yet in the symbol table */
             if (strcmp(tokens[command_start], ".extern") == 0) {
                 if (!insert_symbol(symbol_table, lbl, 0, LBL_CODE, CONTEXT_EXTERN)) {
-                    printf("ERROR INSERTING EXTERN %s", lbl);
+                  print_error("Failed inserting", "symbol table", 0);
                 }
             }
             else { /* .entry */
                 /* insert with -1 as flag because label was not yet seen */
                 if (!insert_symbol(symbol_table, lbl, -1, LBL_CODE, CONTEXT_ENTRY)) {
-                    printf("ERROR INSERTING ENTRY %s", lbl);
+                  print_error("Failed inserting", "symbol table", 0);
                 }
             }
         }
@@ -458,11 +464,9 @@ int handle_undefined_label(hashTable *pending_labels, char *label_name, int curr
     /* Add the pending label to our hash table without modifying the label */
     result = insert_pending_label(pending_labels, label_name, current_command_index, word_position, IC+word_position);
 
-    if (result == NULL) {
-      print_error("Failed to insert pending label", label_name, LINE_NUMBER);
+    if (result == NULL) { /* Failed insertion */
+      print_error("Failed inserting", "pending table", 0);
       return 0;
-    }else{
-      printf("ADDED %s to pending table\n", label_name);
     }
 
     return 1; /* Success */

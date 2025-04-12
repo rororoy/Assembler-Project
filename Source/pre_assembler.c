@@ -10,125 +10,116 @@
 #include "../Headers/validate.h"
 #include "../Headers/pre_assembler.h"
 
-/*
-  TODO ADD A TOKANIZE FUNCTION THAT RUNS THROUGH A LINE AND RETURN AN ARRAY OF MAX 5-4 TOKENS
-*/
-
-void handle_exit(FILE *in_file, FILE *temp_file, char *filename1, char *filename2){
+void handle_exit(FILE *in_file, FILE *am_file, char *filename1, char *filename2){
   if(in_file) { fclose(in_file); }
-  if(temp_file) { fclose(temp_file); }
+  if(am_file) { fclose(am_file); }
   free(filename1);
   free(filename2);
 }
 
-/*
-  @param
-  @return 0 if encountered error 1 if ok
-*/
 int pre_assembler(char *filename, hashTable *macro_table) {
-    FILE *file, *temp_file;
-    char line[MAX_LINE_LENGTH + 2]; /* Buffer for a line: MAX_LINE_LENGTH + '\n' + '\0' */
-    char *macro_name;
-    char *as_file, *am_file;
-    hashBucket *ht_bucket;
-    char *tokens[MAX_LINE_LENGTH];
-    int token_mode;
+  FILE *file, *am_file;
+  char line[MAX_LINE_LENGTH + 2]; /* buffer for a line: MAX_LINE_LENGTH + '\n' + '\0' */
+  char *macro_name;
+  char *as_filename, *am_filename;
+  hashBucket *ht_bucket;
+  char *tokens[MAX_LINE_LENGTH];
+  int token_mode;
 
-    LINE_NUMBER = 0; /* Make sure to zero the line count */
+  LINE_NUMBER = 0; /* line count */
 
-    as_file = append_extension(filename, ".as");
-    am_file = append_extension(filename, ".am");
+  as_filename = append_extension(filename, ".as");
+  am_filename = append_extension(filename, ".am");
 
-    /* Open the original file */
-    file = fopen(as_file, "r");
-    if (file == NULL) {
-      print_error("File read", filename, LINE_NUMBER);
-      handle_exit(NULL, NULL, as_file, am_file);
+  /* open the original file */
+  file = fopen(as_filename, "r");
+  if (file == NULL) {
+    print_error("File read", filename, LINE_NUMBER);
+    handle_exit(NULL, NULL, as_filename, am_filename);
+    return 0;
+  }
+
+  /* open the temporary output file */
+  am_file = fopen(am_filename, "w");
+  if (am_file == NULL) {
+    print_error("File write", am_filename, LINE_NUMBER);
+    handle_exit(file, NULL, as_filename, am_filename);
+    return 0;
+  }
+
+
+  while (fgets(line, sizeof(line), file) != NULL) {
+    LINE_NUMBER++;
+
+    if (!valid_length_line(line)) {
+      print_error("Line length", "", LINE_NUMBER);
+      handle_exit(file, am_file, as_filename, am_filename);
       return 0;
     }
 
-    /* Open the temporary output file */
-    temp_file = fopen(am_file, "w");
-    if (temp_file == NULL) {
-      print_error("File write", "temp.as", LINE_NUMBER);
-      handle_exit(file, NULL, as_file, am_file);
+    /* Filter out empty lines */
+    if (empty_line(line) || is_comment_line(line))
+      continue;
+
+    token_mode = tokanize_line(line, tokens, 1);
+
+    if (!token_mode) {
+      /* Encountered an error in the pre-proc stage - terminate */
+      handle_exit(file, am_file, as_filename, am_filename);
       return 0;
     }
 
+    /* Check for a start of a macro definition */
+    if (strcmp(tokens[0], "mcro") == 0) {
+      macro_name = tokens[1];
 
-    while (fgets(line, sizeof(line), file) != NULL) {
-      LINE_NUMBER++;
+      if (macro_name == NULL){ /* No macro name provided */
+        print_error("No macro", "", LINE_NUMBER);
+        handle_exit(file, am_file, as_filename, am_filename);
+        return 0;
 
-      if (!valid_length_line(line)) {
-        print_error("Line length", "", LINE_NUMBER);
-        handle_exit(file, temp_file, as_file, am_file);
+      }else if(is_saved_word(macro_name)) { /* Macro is a saved word */
+        print_error("Saved word", "", LINE_NUMBER);
+        handle_exit(file, am_file, as_filename, am_filename);
         return 0;
       }
 
-      /* Filter out empty lines */
-      if (empty_line(line) || is_comment_line(line))
-        continue;
-
-      token_mode = tokanize_line(line, tokens, 1);
-
-      if (!token_mode) {
-        /* Encountered an error in the pre-proc stage - terminate */
-        handle_exit(file, temp_file, as_file, am_file);
+      ht_bucket = insert_entry(macro_table, macro_name); /* Log the macro */
+      if(ht_bucket == NULL){ /* If failed inserting */
+        handle_exit(file, am_file, as_filename, am_filename);
         return 0;
       }
 
-      /* Check for a start of a macro definition */
-      if (strcmp(tokens[0], "mcro") == 0) {
-        macro_name = tokens[1];
-
-        if (macro_name == NULL){ /* No macro name provided */
-          print_error("No macro", "", LINE_NUMBER);
-          handle_exit(file, temp_file, as_file, am_file);
-          return 0;
-
-        }else if(is_saved_word(macro_name)) { /* Macro is a saved word */
-          print_error("Saved word", "", LINE_NUMBER);
-          handle_exit(file, temp_file, as_file, am_file);
-          return 0;
-        }
-
-        ht_bucket = insert_entry(macro_table, macro_name); /* Log the macro */
-        if(ht_bucket == NULL){ /* If failed inserting */
-          handle_exit(file, temp_file, as_file, am_file);
-          return 0;
-        }
-        /* insert_entry now sets type to BUCKET_MACRO internally */
-
-        /* Run through the macro and log all of it */
-        if(!process_macro_definition(file, ht_bucket)){
-          handle_exit(file, temp_file, as_file, am_file);
-          return 0;
-        }
-        continue;
+      /* Run through the macro and log all of it */
+      if(!process_macro_definition(file, ht_bucket)){
+        handle_exit(file, am_file, as_filename, am_filename);
+        return 0;
       }
-
-      /* Check for a macro call: if the first token matches a defined macro */
-      ht_bucket = search_table(macro_table, tokens[0]);
-      if (ht_bucket != NULL && token_mode != 2) {
-        /* We also checked if the first token isnt a label - used for the first pass*/
-        /* search_table now only returns BUCKET_MACRO type buckets */
-        if (!write_list_to_file(temp_file, ht_bucket->code_nodes, "temp.as")) {
-          handle_exit(file, temp_file, as_file, am_file);
-          return 0;
-        }
-
-      } else {
-        /* A normal line: write it to the output file */
-        if (fprintf(temp_file, "%s", line) < 0) {
-          print_error("Failed writing", "temp.as", LINE_NUMBER);
-          handle_exit(file, temp_file, as_file, am_file);
-          return 0;
-        }
-      }
+      continue;
     }
 
-    handle_exit(file, temp_file, as_file, am_file);
-    return 1;
+    /* Check for a macro call: if the first token matches a defined macro */
+    ht_bucket = search_table(macro_table, tokens[0]);
+    if (ht_bucket != NULL && token_mode != 2) {
+      /* We also checked if the first token isnt a label - used for the first pass*/
+      /* search_table now only returns BUCKET_MACRO type buckets */
+      if (!write_list_to_file(am_file, ht_bucket->code_nodes, as_filename)) {
+        handle_exit(file, am_file, as_filename, am_filename);
+        return 0;
+      }
+
+    } else {
+      /* A normal line: write it to the output file */
+      if (fprintf(am_file, "%s", line) < 0) {
+        print_error("Failed writing", as_filename, LINE_NUMBER);
+        handle_exit(file, am_file, as_filename, am_filename);
+        return 0;
+      }
+    }
+  }
+
+  handle_exit(file, am_file, as_filename, am_filename);
+  return 1;
 }
 
 int process_macro_definition(FILE *file, hashBucket *ht_bucket) {
@@ -136,25 +127,24 @@ int process_macro_definition(FILE *file, hashBucket *ht_bucket) {
   char *tokens[MAX_LINE_LENGTH];
   int found_macro_end = 0;  /* Flag to indicate that "mcroend" was encountered */
 
-  /* No changes needed here - backward compatibility macros handle the field access */
 
   while (fgets(line, sizeof(line), file) != NULL) {
     LINE_NUMBER++;
 
-    if (!valid_length_line(line)) {
+    if(!valid_length_line(line)){
       print_error("Line length", "", LINE_NUMBER);
       return 0;
     }
 
-    if (empty_line(line) || is_comment_line(line)) {
+    if(empty_line(line) || is_comment_line(line)){
       continue;
     }
 
-    if (!tokanize_line(line, tokens, 1)) {
+    if(!tokanize_line(line, tokens, 1)){
       return 0;
     }
 
-    if (strcmp(tokens[0], "mcroend") == 0) {
+    if(strcmp(tokens[0], "mcroend") == 0){
       found_macro_end = 1;
       break;  /* End of macro definition */
     }
@@ -163,7 +153,7 @@ int process_macro_definition(FILE *file, hashBucket *ht_bucket) {
     add_node(&ht_bucket->code_nodes, line);
   }
 
-  if (!found_macro_end) {
+  if(!found_macro_end){
     print_error("Macro reached EOF", "", LINE_NUMBER);
     return 0;
   }
