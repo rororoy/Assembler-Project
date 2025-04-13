@@ -251,12 +251,12 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     if (macro_scan) {
         if (strcmp(tokens[0], "mcroend") == 0) {
             if (token_count > 1) {
-                print_error("Extraneous text after mcroend", "mcroend", LINE_NUMBER);
+                print_error("Extranous text", "mcroend", LINE_NUMBER);
                 return 0;
             }
         } else if (strcmp(tokens[0], "mcro") == 0) {
             if (token_count > 2) {
-                print_error("Extraneous text after mcro", "mcro", LINE_NUMBER);
+                print_error("Extranous text", "mcro", LINE_NUMBER);
                 return 0;
             } else if (token_count < 2) {
                 print_error("No macro name specified after mcro", "", LINE_NUMBER);
@@ -267,7 +267,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
 
     if (label_encountered && !macro_scan) {
         if (!valid_label(tokens[0])) {
-            print_error("Label definition", tokens[0], LINE_NUMBER);
+            /* No need to print an error here, valid_label already prints a specific error */
             return 0;
         }
     }
@@ -364,4 +364,48 @@ char* int_to_str(int value) {
     sprintf(buffer, "%d", value);
 
     return buffer;
+}
+
+/**
+ * Converts a word to a hexadecimal string based on its type
+ * (determined by position in the linked list and source code).
+ *
+ * @param word_data The word to convert
+ * @param is_first_word Flag indicating if this is the first word in a linked list
+ * @param is_data_entry Flag indicating if this is a data entry
+ * @param hex_str The output buffer for the hex string (at least 7 bytes)
+ */
+void word_to_hex_by_type(word word_data, int is_first_word, int is_data_entry, char *hex_str) {
+     unsigned int value = 0;
+     int i;
+
+     if (is_data_entry) {
+         /* For data entries, all words use the data_word format */
+         value = word_data.data_word.data & 0xFFFFFF; /* Mask to 24 bits */
+     } else if (is_first_word) {
+         /* For first word in a non-data entry, use instruction format */
+         value = (word_data.instruction.opcode << 18) |
+                 (word_data.instruction.src_mode << 16) |
+                 (word_data.instruction.src_reg << 13) |
+                 (word_data.instruction.dst_mode << 11) |
+                 (word_data.instruction.dst_reg << 8) |
+                 (word_data.instruction.funct << 3) |
+                 (word_data.instruction.a << 2) |
+                 (word_data.instruction.r << 1) |
+                 (word_data.instruction.e);
+     } else {
+         /* For subsequent words in a non-data entry, use extra_word format */
+         value = (word_data.extra_word.value << 3) |
+                 (word_data.extra_word.a << 2) |
+                 (word_data.extra_word.r << 1) |
+                 (word_data.extra_word.e);
+     }
+
+     /* Convert to lowercase hex string */
+     snprintf(hex_str, 7, "%06x", value);
+
+     /* Ensure all characters are lowercase */
+     for (i = 0; hex_str[i]; i++) {
+         hex_str[i] = tolower(hex_str[i]);
+     }
 }

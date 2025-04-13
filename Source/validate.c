@@ -33,7 +33,13 @@ char *RESERVED_WORDS[] = {
   ".entry",
   "entry",
   "mcro",
-  "mcroend"
+  "mcroend",
+  "r1",
+  "r2",
+  "r3,",
+  "r4",
+  "r5",
+  "r6"
 };
 
 /*
@@ -67,20 +73,28 @@ int valid_label(char *label) {
 
     /* The first character must be a letter */
     if (!isalpha(label[0])) {
+        print_error("Invalid label start", "Label must start with a letter", LINE_NUMBER);
+        return 0;
+    }
+
+    /* Check the label length first (maximum 32 characters) */
+    if (strlen(label) > 32) {
+        print_error("Label too long", "Label cannot exceed 32 characters", LINE_NUMBER);
         return 0;
     }
 
     /* Check that every character is alphanumeric */
     for (i = 0; label[i] != '\0'; i++) {
         if (!isalnum(label[i])) {
+            print_error("Label definition", "Label can only contain alphanumeric characters", LINE_NUMBER);
             return 0;
         }
     }
 
     /* Use is_saved_word to reject reserved words */
     if (is_saved_word(label)) {
-      print_error("Saved word", label, 0); /* Saved word */
-      return 0;
+        print_error("Reserved label", label, LINE_NUMBER); /* Reserved word as label */
+        return 0;
     }
 
     /* Passed all checks: the label is valid */
@@ -97,6 +111,16 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
     if (tokens[command_start] == NULL) {
         printf("[EMPTY COMMAND]\n");
         return 0;
+    }
+
+    /* Check for tokens with embedded commas (like 'r1,') */
+    for (i = 0; tokens[i] != NULL; i++) {
+        int len = strlen(tokens[i]);
+        if (len > 0 && tokens[i][len-1] == ',') {
+            /* Found token ending with comma - this is a syntax error */
+            print_error("Missing operand after comma", "", LINE_NUMBER);
+            return 0;
+        }
     }
 
     /* Get command info using the command_lookup function */
@@ -185,6 +209,11 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
                     print_error("Unexpected operand", error_msg, LINE_NUMBER);
                     return 0;
                 }
+
+                /* Use valid_label function to validate the label */
+                if (!valid_label(tokens[command_start+1])) {
+                    return 0;
+                }
                 break;
 
             default:
@@ -220,6 +249,18 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct_operands, addressModes *operands, int command_type){
   int i; /* Position of the current operand */
   int current_operator = 0; /* 0 for target op, 1 for source op */
+  int actual_operands = 0;
+
+  /* First, count available operands */
+  for (i = command_start + 1; tokens[i] != NULL; i++) {
+    actual_operands++;
+  }
+
+  /* Check if we have the required number of operands */
+  if (correct_operands > 0 && actual_operands < correct_operands) {
+    print_error("Too few operands", tokens[command_start], LINE_NUMBER);
+    return 0;
+  }
 
   /* Adjust the loop so that it checks exactly the expected number of operands.
      If there's a label definition at the beginning, the operands start at command_start+1. */
@@ -276,28 +317,34 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
 
     else {
       /* Assume operand is intended to be a label.
-         Check that every character is alphanumeric (letters and digits only) */
-      int j = 0;
-      while (tokens[i][j] != '\0') {
-        if (!isalnum(tokens[i][j])){
-          print_error("Invalid label (non-alphanumeric character)", tokens[command_start], LINE_NUMBER);
-          return 0;
+         Use the valid_label function to check validity */
+      if(valid_label(tokens[i])) {
+        /* If the command is of type 2 (one operand) - only dest operator is used */
+        if(command_type == 2){
+          current_operator ? (operands->source_op = 1) : (operands->destination_op = 1);
+        }else{ /*If the command is of type 1 or 3 */
+          current_operator ? (operands->destination_op = 1) : (operands->source_op = 1);
         }
-        j++;
+        current_operator++;
+      } else {
+        return 0; /* Label validation failed */
       }
-      /* If the command is of type 2 (one operand) - only dest operator is used */
-      if(command_type == 2){
-        current_operator ? (operands->source_op = 1) : (operands->destination_op = 1);
-      }else{ /*If the command is of type 1 or 3 */
-        current_operator ? (operands->destination_op = 1) : (operands->source_op = 1);
-      }
-      current_operator++;
     }
   }
 
   /* If there is an extra operand beyond the allowed number, signal an error */
   if(tokens[i] != NULL){
     print_error("Too many operands", tokens[command_start], LINE_NUMBER);
+    return 0;
+  }
+
+  /* A final check to make sure we have the correct number of operands */
+  if (current_operator != correct_operands) {
+    if (current_operator < correct_operands) {
+      print_error("Too few operands", tokens[command_start], LINE_NUMBER);
+    } else {
+      print_error("Too many operands", tokens[command_start], LINE_NUMBER);
+    }
     return 0;
   }
 

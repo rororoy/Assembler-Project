@@ -552,7 +552,7 @@ int insert_extra_word(transTable *table, int index, int address, char *source_co
     /* Set addressing flags */
     new_word.extra_word.value = (unsigned)value & 0x1FFFFF; /* 0x1FFFFF = 21 bits of 1s */
   }
-  else if (op_type == 4) { /* For a commands of data (.string .data) */
+  else if (op_type == 1 || op_type == 4) { /* For a commands of data (.string .data) */
     /* Directly assign the value */
     new_word.data_word.data = (unsigned)value;
   }

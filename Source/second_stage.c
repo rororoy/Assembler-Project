@@ -38,7 +38,7 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
     symbol_entry = find_symbol(symbol_table, label);
 
     if(!symbol_entry){
-      print_error("Label didnt reolve", label, translation_table[pending_entry->command_index].address);
+      print_error("Label didnt reolve", label, translation_table[pending_entry->command_index].address - 99); /* IC - 100 = LINE */
 
     } else {
       /* Get the pointer to the word we need to resolbe first */
@@ -55,7 +55,7 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
         /* IF THE ARE = ARE_A ()  */
 
         if(!resolve_word(pending_entry, translation_table, symbol_entry, node_ptr, IS_RELATIVE_LABEL)){
-          print_error("Label didnt reolve", label, translation_table[pending_entry->command_index].address);
+          print_error("Label didnt reolve", label, translation_table[pending_entry->command_index].address - 99); /* IC - 100 = LINE*/
           return 0;
         }
 
@@ -95,47 +95,3 @@ int resolve_word(hashBucket *pending_entry, transTable *translation_table, symbo
 
   return 1;
 }
-
-  /**
-  * Converts a word to a hexadecimal string based on its type
-  * (determined by position in the linked list and source code).
-  *
-  * @param word_data The word to convert
-  * @param is_first_word Flag indicating if this is the first word in a linked list
-  * @param is_data_entry Flag indicating if this is a data entry
-  * @param hex_str The output buffer for the hex string (at least 7 bytes)
-  */
-void word_to_hex_by_type(word word_data, int is_first_word, int is_data_entry, char *hex_str) {
-     unsigned int value = 0;
-     int i;
-
-     if (is_data_entry) {
-         /* For data entries, all words use the data_word format */
-         value = word_data.data_word.data & 0xFFFFFF; /* Mask to 24 bits */
-     } else if (is_first_word) {
-         /* For first word in a non-data entry, use instruction format */
-         value = (word_data.instruction.opcode << 18) |
-                 (word_data.instruction.src_mode << 16) |
-                 (word_data.instruction.src_reg << 13) |
-                 (word_data.instruction.dst_mode << 11) |
-                 (word_data.instruction.dst_reg << 8) |
-                 (word_data.instruction.funct << 3) |
-                 (word_data.instruction.a << 2) |
-                 (word_data.instruction.r << 1) |
-                 (word_data.instruction.e);
-     } else {
-         /* For subsequent words in a non-data entry, use extra_word format */
-         value = (word_data.extra_word.value << 3) |
-                 (word_data.extra_word.a << 2) |
-                 (word_data.extra_word.r << 1) |
-                 (word_data.extra_word.e);
-     }
-
-     /* Convert to lowercase hex string */
-     snprintf(hex_str, 7, "%06x", value);
-
-     /* Ensure all characters are lowercase */
-     for (i = 0; hex_str[i]; i++) {
-         hex_str[i] = tolower(hex_str[i]);
-     }
- }

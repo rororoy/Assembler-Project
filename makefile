@@ -9,8 +9,8 @@ TARGET = assembler
 all: $(TARGET)
 
 # Link object files to create the executable
-$(TARGET): assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o global.o second_stage.o
-	$(CC) $(CFLAGS) -o $(TARGET) assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o global.o second_stage.o
+$(TARGET): assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o global.o second_stage.o files.o
+	$(CC) $(CFLAGS) -o $(TARGET) assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o global.o second_stage.o files.o
 
 assembler.o: ./Source/assembler.c ./Headers/assembler.h ./Headers/pre_assembler.h ./Headers/utils.h ./Headers/error.h ./Headers/first_stage.h ./Headers/translate.h ./Headers/linked_list.h ./Headers/hash_table.h ./Headers/global.h ./Headers/utils.h ./Headers/files.h
 	$(CC) $(CFLAGS) -c ./Source/assembler.c

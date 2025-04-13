@@ -136,7 +136,7 @@ int generate_ob_file(FILE *file, transTable *translation_table, int IC, int DC) 
 }
 
 void generate_externals_file(char *filename, symbolTable *symbol_table, hashTable *pending_labels) {
-  int i, j, ref_count = 0, capacity = 50;
+  int i, j, capacity = 50;
   FILE *ext_file;
   char *ext_filename;
   char address_str[8]; /* For formatted 7-digit address */

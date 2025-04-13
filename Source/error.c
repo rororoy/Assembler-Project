@@ -18,6 +18,8 @@ error errors[] = {
   {EXTERNAL, "Saved word", "Can't use saved words as arguments"},
   {EXTERNAL, "Extranous text", "Extranous text at the end of a command"},
   {EXTERNAL, "Label definition", "Faulty label definition - can only contain alphanumeric characters"},
+  {EXTERNAL, "Invalid label start", "Faulty label definition - "},
+  {EXTERNAL, "Label too long", "Faulty label definition - "},
   {EXTERNAL, "Unkown command", "Encountered an unkown command"},
   {EXTERNAL, "Line length", "Lines should be at a maximum length of 80"},
   {EXTERNAL, "No macro", "No macro provided after macro definition"},
@@ -61,5 +63,6 @@ void print_error(char *name, char *additional_arg, int line_number){
     }
     i++;
   }
-  printf("[!] ERROR: Unkown error encountered on line %d\n", line_number);
+  printf("[!] ERROR: Unkown error encountered on line %d (Error name: '%s', Arg: '%s')\n",
+         line_number, name ? name : "NULL", additional_arg ? additional_arg : "NULL");
 }

@@ -57,6 +57,31 @@ int first_pass(char *filename, hashTable *macro_table) {
   while (fgets(line, sizeof(line), file) != NULL) {
 
     LINE_NUMBER++;
+
+    /* Pre-check for trailing comma before tokenization */
+    {
+        char *line_copy = strdup(line);
+        if (line_copy) {
+            /* Remove trailing newline and spaces */
+            line_copy[strcspn(line_copy, "\n")] = '\0';
+
+            /* Find the last non-whitespace character */
+            int len = strlen(line_copy);
+            int i;
+            for (i = len - 1; i >= 0 && isspace(line_copy[i]); i--) {
+                /* Continue looking for non-whitespace */
+            }
+
+            /* If the last non-whitespace character is a comma, report error */
+            if (i >= 0 && line_copy[i] == ',') {
+                print_error("Missing operand after comma", "", LINE_NUMBER);
+                free(line_copy);
+                continue;
+            }
+            free(line_copy);
+        }
+    }
+
     if (!(tokens_mode = tokanize_line(line, tokens, 0))){
       /* Error encountered - continue to the next line */
       continue;
@@ -156,7 +181,7 @@ int first_pass(char *filename, hashTable *macro_table) {
     */
   }
 
-  /* Print the table
+  /* Print the tablem
   printf("TransTable contents:\n");
   print_complete_transTable(translation_table, tablepointer);
 
