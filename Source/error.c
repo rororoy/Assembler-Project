@@ -21,6 +21,7 @@ error errors[] = {
   {EXTERNAL, "Unkown command", "Encountered an unkown command"},
   {EXTERNAL, "Line length", "Lines should be at a maximum length of 80"},
   {EXTERNAL, "No macro", "No macro provided after macro definition"},
+  {EXTERNAL, "Reserved label", "Can't define or mention a label with a saved word for label:"},
   {EXTERNAL, "Macro reached EOF", "Reached the end of the file without closing the macro block"},
   {EXTERNAL, "Label not first", "A decleration of a label must be only at the begining of a line"},
   {EXTERNAL, "Label already seen", "The label was already declared previously"},

@@ -365,32 +365,3 @@ char* int_to_str(int value) {
 
     return buffer;
 }
-
-/**
- * Deletes output files with common extensions (.ob, .am, .ent, .ext) for a given filename
- * Uses the append_extension function to create full filenames
- *
- * @param filename The base filename without extension
- */
-void clean_output_files(char *filename) {
-  char *full_filename;
-  int i;
-  char *extensions[] = {".ob", ".am", ".ent", ".ext"};
-
-    /* Check each possible output file extension */
-    for (i = 0; i < 4; i++) {
-        /* Create the full filename with extension */
-        full_filename = append_extension(filename, extensions[i]);
-
-        if (full_filename != NULL) {
-            /* Try to remove the file if it exists */
-            if (remove(full_filename) == 0) {
-                /* File was successfully removed */
-            }
-            /* Note: We don't report errors if file doesn't exist - that's expected */
-
-            /* Free the memory allocated by append_extension */
-            free(full_filename);
-        }
-    }
-}

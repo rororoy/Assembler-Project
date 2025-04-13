@@ -278,33 +278,49 @@ void process_assembly_command(hashTable *pending_labels, transTable *translation
 }
 
 /* Helper function to process directive commands (.data, .string, .extern, .entry) */
- void process_directive(hashTable *pending_labels, transTable *translation_table, int *tablepointer,
+void process_directive(hashTable *pending_labels, transTable *translation_table, int *tablepointer,
                              char **tokens, int IC, int command_start, symbolTable *symbol_table,
                              char *source_line) {
-    /* Handle .data directive */
-    if (strcmp(tokens[command_start], ".data") == 0) {
-        int i = command_start + 1;
+    char *lbl;
+    symbol *symbol_entry;
+    int i, start;
 
-        while (tokens[i] != NULL) {
-            insert_extra_word(translation_table, *tablepointer, IC, source_line, 4, atoi(tokens[i]), ARE_NONE);
-            i++;
+    /* Handle string and data directives - they store data values */
+    if (strcmp(tokens[command_start], ".string") == 0) {
+        /* Insert each character plus a null terminator */
+        if (tokens[command_start + 1] != NULL) {
+            for (i = 0; tokens[command_start + 1][i] != '\0'; i++) {
+                insert_extra_word(translation_table, *tablepointer, IC + i, source_line, 1,
+                                 tokens[command_start + 1][i], A);
+            }
+            /* Add null terminator */
+            insert_extra_word(translation_table, *tablepointer, IC + i, source_line, 1, 0, A);
         }
     }
-    /* Handle .string directive */
-    else if (strcmp(tokens[command_start], ".string") == 0) {
-        int i = 0;
-
-        while (tokens[command_start+1][i] != '\0') {
-            insert_extra_word(translation_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE);
-            i++;
+    else if (strcmp(tokens[command_start], ".data") == 0) {
+        /* Extract numbers and add to data section */
+        start = 0;
+        for (i = command_start + 1; tokens[i] != NULL; i++) {
+            insert_extra_word(translation_table, *tablepointer, IC + start, source_line, 1,
+                             atoi(tokens[i]), A);
+            start++;
         }
-        /* For '\0' */
-        insert_extra_word(translation_table, *tablepointer, IC, source_line, 4, tokens[command_start+1][i], ARE_NONE);
     }
-    /* Handle .extern or .entry directive */
-    else {
-        char *lbl = tokens[command_start+1];
-        symbol *symbol_entry = find_symbol(symbol_table, lbl);
+    /* External or entry directive - update symbol table */
+    else if (strcmp(tokens[command_start], ".extern") == 0 || strcmp(tokens[command_start], ".entry") == 0) {
+        lbl = tokens[command_start + 1];
+
+        if (lbl == NULL) { /* Missing label argument */
+            print_error("Missing arguments", "", LINE_NUMBER);
+            return;
+        }
+
+        if (is_saved_word(lbl)) {
+            print_error("Reserved word label", lbl, LINE_NUMBER);
+            return;
+        }
+
+        symbol_entry = find_symbol(symbol_table, lbl);
 
         if (symbol_entry == NULL) { /* Not logged yet in the symbol table */
             if (strcmp(tokens[command_start], ".extern") == 0) {

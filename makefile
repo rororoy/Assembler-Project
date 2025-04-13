@@ -12,7 +12,7 @@ all: $(TARGET)
 $(TARGET): assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o global.o second_stage.o
 	$(CC) $(CFLAGS) -o $(TARGET) assembler.o pre_assembler.o error.o hash_table.o linked_list.o utils.o validate.o first_stage.o translate.o global.o second_stage.o
 
-assembler.o: ./Source/assembler.c ./Headers/assembler.h ./Headers/pre_assembler.h ./Headers/utils.h ./Headers/error.h ./Headers/first_stage.h ./Headers/translate.h ./Headers/linked_list.h ./Headers/hash_table.h ./Headers/global.h ./Headers/utils.h
+assembler.o: ./Source/assembler.c ./Headers/assembler.h ./Headers/pre_assembler.h ./Headers/utils.h ./Headers/error.h ./Headers/first_stage.h ./Headers/translate.h ./Headers/linked_list.h ./Headers/hash_table.h ./Headers/global.h ./Headers/utils.h ./Headers/files.h
 	$(CC) $(CFLAGS) -c ./Source/assembler.c
 
 # Compile mycomp.o
@@ -48,6 +48,9 @@ translate.o: ./Source/translate.c ./Headers/translate.h ./Headers/global.h ./Hea
 
 global.o: ./Source/global.c ./Headers/global.h
 	$(CC) $(CFLAGS) -c ./Source/global.c
+
+files.o: ./Source/files.c ./Headers/files.h ./Headers/error.h ./Headers/global.h ./Headers/utils.h ./Headers/translate.h ./Headers/second_stage.h
+	$(CC) $(CFLAGS) -c ./Source/files.c
 
 # Clean up generated files
 clean:

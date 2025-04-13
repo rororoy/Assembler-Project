@@ -8,6 +8,7 @@
 #include "../Headers/hash_table.h"
 #include "../Headers/global.h"
 #include "../Headers/utils.h"
+#include "../Headers/files.h"
 
 /*
   TODO ADD WRAPPER FUNCTION TO FGETS WHEN READING NEW LINES - TO HANDLE STUFF LIKE SKIPPING NEW LINES AND CHECKING FOR ERRORS
