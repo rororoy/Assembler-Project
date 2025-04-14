@@ -7,6 +7,7 @@ typedef struct node{
   struct node *next;
 } node;
 
+#include "./global.h"
 #include "./translate.h"
 
 struct wordNode {

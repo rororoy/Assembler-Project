@@ -90,11 +90,13 @@ int first_pass(char *filename, hashTable *macro_table) {
         char *line_copy = strdup(line);
         if (line_copy) {
             /* Remove trailing newline and spaces */
+            int len;
+            int i;
+
             line_copy[strcspn(line_copy, "\n")] = '\0';
 
             /* Find the last non-whitespace character */
-            int len = strlen(line_copy);
-            int i;
+            len = strlen(line_copy);
             for (i = len - 1; i >= 0 && isspace(line_copy[i]); i--) {
                 /* Continue looking for non-whitespace */
             }

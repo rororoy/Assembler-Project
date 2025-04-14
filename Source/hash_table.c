@@ -10,11 +10,17 @@ hashTable *make_hash_table(int size){
   int i;
 
   hashTable *ht = malloc(sizeof(hashTable));
-  check_malloc(ht);
+  if(!check_malloc(ht)) {
+    return NULL;
+  }
 
   ht->size = size;
   ht->count = 0;
   ht->bucket = calloc(ht->size, sizeof(hashBucket));
+  if(!check_malloc(ht->bucket)) {
+    free(ht);
+    return NULL;
+  }
 
   /* Initialize all buckets to NULL */
   for(i = 0; i < ht->size; i++){
@@ -199,7 +205,7 @@ hashBucket *get_entry(hashTable *ht, char *name){
     }
     index = (index+1)%ht->size;
     if(index == original_index){
-      fprintf(stderr, "ERROR DIDNT FIND ENTRY");
+      print_error("Failed inserting", "hash table entry not found", 0);
       return NULL;
     }
   }
@@ -345,7 +351,7 @@ void print_pending_labels(hashTable *ht) {
     int i;
     int count = 0;
     if (ht == NULL) {
-        printf("Error: NULL hash table provided to print_pending_labels\n");
+        print_error("Missing argument", "hash table", 0);
         return;
     }
     printf("\n=== PENDING LABELS TABLE ===\n");

@@ -40,7 +40,9 @@ int create_output_files(char *filename, transTable *translation_table,
   int success = 1;
   int has_externals = 0;
   int has_entries = 0;
+  int has_code = 0;
   int i;
+  int entry_count = 0;
 
   /* Check if there are any external or entry symbols */
   for (i = 0; i < symbol_table->size; i++) {
@@ -48,23 +50,35 @@ int create_output_files(char *filename, transTable *translation_table,
       has_externals = 1;
     } else if (symbol_table->symbols[i].context == CONTEXT_ENTRY) {
       has_entries = 1;
+      entry_count++;
     }
   }
 
-  /* Open the ob file for writing */
-  file = fopen(ob_file, "w");
-  if (file == NULL) {
-    print_error("File write", filename, 0);
-    free(ob_file);
-    free(ent_file);
-    return 0;
+  /* Check if there's any code in the translation table */
+  for (i = 0; translation_table[i].node != NULL; i++) {
+    if (translation_table[i].node != NULL) {
+      has_code = 1;
+      break;
+    }
   }
 
-  /* Generate the object file */
-  if (!generate_ob_file(file, translation_table, IC, DC)) {
-    success = 0;
+  /* Only create the .ob file if there's actual code to write */
+  if (has_code) {
+    /* Open the ob file for writing */
+    file = fopen(ob_file, "w");
+    if (file == NULL) {
+      print_error("File write", filename, 0);
+      free(ob_file);
+      free(ent_file);
+      return 0;
+    }
+
+    /* Generate the object file */
+    if (!generate_ob_file(file, translation_table, IC, DC)) {
+      success = 0;
+    }
+    fclose(file);
   }
-  fclose(file);
 
   /* Generate the ext file if there are external symbols */
   if (has_externals && success) {
@@ -73,7 +87,7 @@ int create_output_files(char *filename, transTable *translation_table,
   }
 
   /* Generate the ent file if there are entry symbols */
-  if (has_entries && success) {
+  if (has_entries && success && entry_count > 0) {
     file = fopen(ent_file, "w");
     if (file == NULL) {
       print_error("File write", ent_file, 0);
@@ -145,8 +159,8 @@ void generate_externals_file(char *filename, symbolTable *symbol_table, hashTabl
 
   /* Create a dynamic array to hold all external references */
   all_refs = (ExternalReference*)malloc(capacity * sizeof(ExternalReference));
-  if (all_refs == NULL) {
-    check_malloc(all_refs);
+  if (!check_malloc(all_refs)) {
+    print_error("Failed creating structure", "ExternalReference", 0);
     return;
   }
 
@@ -161,8 +175,8 @@ void generate_externals_file(char *filename, symbolTable *symbol_table, hashTabl
         if (current_index >= capacity) {
           capacity *= 2;
           all_refs = (ExternalReference*)realloc(all_refs, capacity * sizeof(ExternalReference));
-          if (all_refs == NULL) {
-            check_malloc(all_refs);
+          if (!check_malloc(all_refs)) {
+            print_error("Failed creating structure", "ExternalReference", 0);
             return;
           }
         }
@@ -186,8 +200,8 @@ void generate_externals_file(char *filename, symbolTable *symbol_table, hashTabl
         if (current_index >= capacity) {
           capacity *= 2;
           all_refs = (ExternalReference*)realloc(all_refs, capacity * sizeof(ExternalReference));
-          if (all_refs == NULL) {
-            check_malloc(all_refs);
+          if (!check_malloc(all_refs)) {
+            print_error("Failed creating structure", "ExternalReference", 0);
             return;
           }
         }
@@ -197,6 +211,12 @@ void generate_externals_file(char *filename, symbolTable *symbol_table, hashTabl
         current_index++;
       }
     }
+  }
+
+  /* If no external references were found, don't create the file */
+  if (current_index == 0) {
+    free(all_refs);
+    return;
   }
 
   /* Sort the references by address (simple bubble sort) */

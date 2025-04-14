@@ -45,17 +45,6 @@ typedef union {
   } instruction;  /* Used when storing the main instruction word */
 } word;
 
-
-/* Command symantics */
-typedef struct{
-  commands name;
-  int funct;
-  int op_code;
-  int type;
-  int allowed_src_add_mode;
-  int allowed_dest_add_mode;
-} commandSem;
-
 /* Define an enum for the supported assembly commands */
 typedef enum {LBL_CODE, LBL_DATA} labelType;
 
@@ -90,12 +79,6 @@ typedef struct{
   char *source_code;
   wordNode *node;
 } transTable;
-
-extern char *allowed_commands[];
-
-extern commandSem command_table[];
-
-extern char *registers[];
 
 /* Function prototypes - rest of the file remains the same */
 commandSem *command_lookup(char *cmd_name);

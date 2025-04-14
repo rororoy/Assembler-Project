@@ -1,3 +1,4 @@
+#include "./global.h"
 #include "./translate.h"
 #include "./linked_list.h"
 #include "./hash_table.h"

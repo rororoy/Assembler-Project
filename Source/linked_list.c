@@ -7,9 +7,15 @@
 
 node *make_node(char *data){
   node *new_node = malloc(sizeof(node));
-  check_malloc(new_node);
+  if (!check_malloc(new_node)) {
+    return NULL;
+  }
 
   new_node->data = strdup(data);
+  if (new_node->data == NULL) {
+    free(new_node);
+    return NULL;
+  }
   new_node->next = NULL;
 
   return new_node;
@@ -18,11 +24,15 @@ node *make_node(char *data){
 void add_node(node **head, char *data){
   node *new_node;
   if(head == NULL){ /* Verify that the head pointer is valid at all */
-    fprintf(stderr, "[!] Head pointer is NULL\n");
+    print_error("Missing argument", "head pointer", 0);
     return;
   }
 
   new_node = make_node(data);
+  if (new_node == NULL) {
+    print_error("Failed creating structure", "node", 0);
+    return;
+  }
 
   if(*head == NULL){ /* Check if head pointer is empty */
     *head = new_node;
@@ -90,7 +100,9 @@ void free_list(node *head){
 /* Create a new word node */
 wordNode *make_word_node(word data) {
   wordNode *new_node = malloc(sizeof(wordNode));
-  check_malloc(new_node);
+  if (!check_malloc(new_node)) {
+    return NULL;
+  }
   new_node->data = data; /* Direct assignment of word struct */
   new_node->next = NULL;
   return new_node;
@@ -100,10 +112,15 @@ wordNode *make_word_node(word data) {
 void add_word_node(wordNode **head, word data) {
   wordNode *new_node;
   if(head == NULL) { /* Verify that the head pointer is valid at all */
-    fprintf(stderr, "[!] Head pointer is NULL\n");
+    print_error("Missing argument", "head pointer", 0);
     return;
   }
   new_node = make_word_node(data);
+  if (new_node == NULL) {
+    print_error("Failed creating structure", "wordNode", 0);
+    return;
+  }
+
   if(*head == NULL) { /* Check if head pointer is empty */
     *head = new_node;
   } else {

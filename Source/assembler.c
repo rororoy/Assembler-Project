@@ -10,13 +10,6 @@
 #include "../Headers/utils.h"
 #include "../Headers/files.h"
 
-/*
-  TODO ADD WRAPPER FUNCTION TO FGETS WHEN READING NEW LINES - TO HANDLE STUFF LIKE SKIPPING NEW LINES AND CHECKING FOR ERRORS
-  TODO CHECK WHY test2 doesnt unpack correctly and fails pre proc stage
-  TODO CHECK ALL HANDLING OF DATA TO VERIFY MEMORY IS ALWAYS FREED
-
-*/
-
 int main(int argc, char *argv[]){
   hashTable *macro_table;
   int f_count = 1;

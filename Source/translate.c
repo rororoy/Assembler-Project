@@ -5,60 +5,7 @@
 #include "../Headers/translate.h"
 #include "../Headers/utils.h"
 #include "../Headers/global.h"
-
-/* TODO MOVE THIS TO GLOBAL VVV */
-
-/* Command table with addressing modes as bit flags */
-commandSem command_table[] = {
-    /* CMD     |funct|op|type|                    src_modes                   |                     dest_modes                */
-    {CMD_MOV,  -1,   0, 1,     ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER,     ADDR_DIRECT | ADDR_REGISTER                  },
-    {CMD_CMP,  -1,   1, 1,     ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER,     ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER },
-    {CMD_ADD,   1,   2, 1,     ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER,     ADDR_DIRECT | ADDR_REGISTER                  },
-    {CMD_SUB,   2,   2, 1,     ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER,     ADDR_DIRECT | ADDR_REGISTER                  },
-    {CMD_LEA,  -1,   4, 1,     ADDR_DIRECT,                                      ADDR_DIRECT | ADDR_REGISTER                  },
-    {CMD_CLR,   1,   5, 2,     ADDR_NONE,                                        ADDR_DIRECT | ADDR_REGISTER                  },
-    {CMD_NOT,   2,   5, 2,     ADDR_NONE,                                        ADDR_DIRECT | ADDR_REGISTER                  },
-    {CMD_INC,   3,   5, 2,     ADDR_NONE,                                        ADDR_DIRECT | ADDR_REGISTER                  },
-    {CMD_DEC,   4,   5, 2,     ADDR_NONE,                                        ADDR_DIRECT | ADDR_REGISTER                  },
-    {CMD_JMP,   1,   9, 2,     ADDR_NONE,                                        ADDR_DIRECT | ADDR_RELATIVE                  },
-    {CMD_BNE,   2,   9, 2,     ADDR_NONE,                                        ADDR_DIRECT | ADDR_RELATIVE                  },
-    {CMD_JSR,   3,   9, 2,     ADDR_NONE,                                        ADDR_DIRECT | ADDR_RELATIVE                  },
-    {CMD_RED,  -1,  12, 2,     ADDR_NONE,                                        ADDR_DIRECT | ADDR_REGISTER                  },
-    {CMD_PRN,  -1,  13, 2,     ADDR_NONE,                                        ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER },
-    {CMD_RTS,  -1,  14, 3,     ADDR_NONE,                                        ADDR_NONE                                    },
-    {CMD_STOP, -1,  15, 3,     ADDR_NONE,                                        ADDR_NONE                                    },
-    {CMD_EXTERN, -1, -1, 4,    ADDR_NONE,                                        ADDR_NONE                                    },
-    {CMD_ENTRY, -1, -1, 4,     ADDR_NONE,                                        ADDR_NONE                                    },
-    {CMD_DATA, -1, -1, 4,      ADDR_NONE,                                        ADDR_NONE                                    },
-    {CMD_STRING, -1, -1, 4,    ADDR_NONE,                                        ADDR_NONE                                    }
-};
-
-/* This array must match the order of the enum exactly. */
-char *allowed_commands[] = {
-    "mov",
-    "cmp",
-    "add",
-    "sub",
-    "lea",
-    "clr",
-    "not",
-    "inc",
-    "dec",
-    "jmp",
-    "bne",
-    "jsr",
-    "red",
-    "prn",
-    "rts",
-    "stop",
-    ".extern",
-    ".entry",
-    ".data",
-    ".string"
-};
-
-char *registers[] = {"r1", "r2", "r3", "r4", "r5", "r6"};
-
+#include "../Headers/error.h"
 
 commandSem *command_lookup(char *cmd_name) {
   int i;
@@ -73,10 +20,16 @@ commandSem *command_lookup(char *cmd_name) {
 /* Create a new symbol table */
 symbolTable* create_symbol_table() {
     symbolTable *table = (symbolTable*)malloc(sizeof(symbolTable));
-    check_malloc(table);
+    if (!check_malloc(table)) {
+        print_error("Failed creating structure", "symbolTable", 0);
+        return NULL;
+    }
 
     table->symbols = (symbol*)malloc(INITIAL_TABLE_SIZE * sizeof(symbol));
-    check_malloc(table->symbols);
+    if (!check_malloc(table->symbols)) {
+        free(table);
+        return NULL;
+    }
 
     table->size = 0;
     table->capacity = INITIAL_TABLE_SIZE;
@@ -88,7 +41,9 @@ int resize_symbol_table(symbolTable *table) {
     int new_capacity = table->capacity * GROWTH_FACTOR;
     symbol *new_symbols = (symbol*)realloc(table->symbols, new_capacity * sizeof(symbol));
 
-    check_malloc(new_symbols);
+    if (!check_malloc(new_symbols)) {
+        return 0; /* Failed to resize */
+    }
 
     table->symbols = new_symbols;
     table->capacity = new_capacity;
@@ -106,7 +61,9 @@ int insert_symbol(symbolTable *table, char *name, int address, labelType type, l
 
     /* Allocate memory for the name */
     table->symbols[table->size].name = (char*)malloc(strlen(name) + 1);
-    check_malloc(table->symbols[table->size].name);
+    if (!check_malloc(table->symbols[table->size].name)) {
+        return 0; /* Failed to allocate memory for name */
+    }
 
     /* Copy the data */
     strcpy(table->symbols[table->size].name, name);
@@ -621,8 +578,8 @@ char* word_to_hex(word w, char* hex_str) {
         value = w.data_word.data;
     }
 
-    /* Convert to lowercase hex string */
-    snprintf(hex_str, 7, "%06x", value);
+    /* Convert to lowercase hex string using ANSI C90 compatible function */
+    sprintf(hex_str, "%06x", value);
 
     return hex_str;
 }
@@ -641,7 +598,7 @@ int add_ext_reference(symbol *sym, int address) {
 
     /* Validate input */
     if (sym == NULL) {
-        printf("ERROR: NULL symbol passed to add_ext_reference\n");
+        print_error("Missing argument", "symbol", 0);
         return 0;
     }
 
@@ -663,7 +620,7 @@ int add_ext_reference(symbol *sym, int address) {
         }
 
         if (new_array == NULL) {
-            printf("ERROR: Memory allocation failed in add_ext_reference\n");
+            print_error("Malloc", "in add_ext_reference", 0);
             return 0; /* Allocation failed */
         }
 

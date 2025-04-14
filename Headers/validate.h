@@ -1,6 +1,7 @@
 #ifndef VALIDATE_H
 #define VALIDATE_H
 
+#include "../Headers/global.h"
 #include "../Headers/translate.h"
 
 typedef struct{

@@ -4,7 +4,7 @@
 #include "../Headers/global.h"
 #include "../Headers/translate.h"
 
-void check_malloc(void *ptr);
+int check_malloc(void *ptr);
 
 int empty_line(char *line);
 

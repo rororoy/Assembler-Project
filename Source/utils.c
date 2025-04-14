@@ -22,17 +22,14 @@ char *skip_ws(char *s)
     return s;
 }
 
-/* TODO RESTRUCTURE PROGRAM SO THAT A FUNCTION THAT CALLS CHECK_MALLOC EXITS IF MALOC PROBLEM
-RIGHT NOW IT ONLY PRINTS AN ERROR AND DOESNT SIGNAL TO THE FUNCTION THAT CALLED IT THAT THE MALLOC DIDNT WORK*/
-void check_malloc(void *ptr){
+int check_malloc(void *ptr){
   if(ptr == NULL){
     print_error("Malloc", "", 0);
+    return 0;
   }
+  return 1;
 }
 
-/*
-  @return 0 if non-empty line, return 1 if empty line
-*/
 int empty_line(char *line){
   int i;
   if(line == NULL){
@@ -47,10 +44,6 @@ int empty_line(char *line){
   return 1;
 }
 
-/*
- * Check if a line is a comment (first non-whitespace character is ';')
- * Returns 1 if the line is a comment, 0 otherwise
- */
 int is_comment_line(const char *line) {
     /* Skip leading whitespace */
     while (*line != '\0' && isspace((unsigned char)*line)) {
@@ -84,8 +77,8 @@ char* append_extension(char *filename, const char *extension) {
   total_length = strlen(filename) + strlen(extension) + 1;
   new_filename = malloc(total_length);
   if (new_filename == NULL) {
-    perror("malloc failed");
-    exit(EXIT_FAILURE);
+    check_malloc(new_filename);
+    return NULL;
   }
 
   /* Copy the original filename and append the extension */
@@ -119,7 +112,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     /* Duplicate the original line so we can modify it */
     char *line = strdup(original_line);
     if (!line) {
-        perror("strdup failed");
+        print_error("Malloc", "function: tokanize_line", 0);
         return 0;
     }
 
