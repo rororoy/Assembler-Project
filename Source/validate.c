@@ -7,46 +7,6 @@
 #include "../Headers/error.h"
 #include "../Headers/translate.h"
 
-char *RESERVED_WORDS[] = {
-  "mov",
-  "add",
-  "cmp",
-  "sub",
-  "lea",
-  "clr",
-  "not",
-  "inc",
-  "dec",
-  "jmp",
-  "bne",
-  "jsr",
-  "red",
-  "prn",
-  "rts",
-  "stop",
-  ".string",
-  "string",
-  ".extern",
-  "extern",
-  ".data",
-  "data",
-  ".entry",
-  "entry",
-  "mcro",
-  "mcroend",
-  "r1",
-  "r2",
-  "r3",
-  "r4",
-  "r5",
-  "r6"
-};
-
-/*
-  Recieves a line from the assembly file and checks if it falls withing the 80
-  chars length limit
-  @return 0 if the line length is too long return 1 if valid
-*/
 int valid_length_line(char *line){
   return(strlen(line) <= MAX_LINE_LENGTH);
 }

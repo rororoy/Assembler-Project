@@ -4,6 +4,43 @@ int LINE_NUMBER = 0;  /* Definition and initialization of the global variable */
 
 int ERROR_ENCOUNTERED = 0;
 
+char *RESERVED_WORDS[] = {
+  "mov",
+  "add",
+  "cmp",
+  "sub",
+  "lea",
+  "clr",
+  "not",
+  "inc",
+  "dec",
+  "jmp",
+  "bne",
+  "jsr",
+  "red",
+  "prn",
+  "rts",
+  "stop",
+  ".string",
+  "string",
+  ".extern",
+  "extern",
+  ".data",
+  "data",
+  ".entry",
+  "entry",
+  "mcro",
+  "mcroend",
+  "r0",
+  "r1",
+  "r2",
+  "r3",
+  "r4",
+  "r5",
+  "r6",
+  "r7"
+};
+
 /* Command table with addressing modes as bit flags */
 commandSem command_table[] = {
     /* CMD     |funct|op|type|                    src_modes                   |                     dest_modes                */
@@ -53,4 +90,4 @@ char *allowed_commands[] = {
     ".string"
 };
 
-char *registers[] = {"r1", "r2", "r3", "r4", "r5", "r6"};
+char *registers[] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
