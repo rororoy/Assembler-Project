@@ -33,13 +33,7 @@ char *RESERVED_WORDS[] = {
   ".entry",
   "entry",
   "mcro",
-  "mcroend",
-  "r1",
-  "r2",
-  "r3,",
-  "r4",
-  "r5",
-  "r6"
+  "mcroend"
 };
 
 /*
@@ -118,7 +112,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
         int len = strlen(tokens[i]);
         if (len > 0 && tokens[i][len-1] == ',') {
             /* Found token ending with comma - this is a syntax error */
-            print_error("Missing operand after comma", "", LINE_NUMBER);
+            print_error("Missing operand between commas", "", LINE_NUMBER);
             return 0;
         }
     }
@@ -353,9 +347,9 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
 
 int is_reg(char *word) {
     int i;
-    /* Loop through all registers */
-    for (i = 0; registers[i] != NULL; i++) {
-        if (strcmp(registers[i], word) == 0) {
+    /* Use REGISTERS_AMOUNT constant instead of hardcoded value */
+    for (i = 0; i < REGISTERS_AMOUNT; i++) {
+        if (registers[i] != NULL && strcmp(registers[i], word) == 0) {
             return 1;  /* Found a match */
         }
     }

@@ -12,6 +12,29 @@
 #include "../Headers/linked_list.h"
 #include "../Headers/hash_table.h"
 
+/* Function to clean up resources allocated during first_pass */
+void cleanup_first_pass(FILE *file, char *am_filename,
+                        symbolTable *symbol_table,
+                        hashTable *pending_labels,
+                        transTable *translation_table,
+                        int tablepointer) {
+  if (file) {
+    fclose(file);
+  }
+  if (am_filename) {
+    free(am_filename);
+  }
+  if (symbol_table) {
+    free_symbol_table(symbol_table);
+  }
+  if (pending_labels) {
+    free_hash_table(pending_labels);
+  }
+  if (translation_table) {
+    free_transTable(translation_table, tablepointer);
+  }
+}
+
 int first_pass(char *filename, hashTable *macro_table) {
   FILE *file;
   char line[MAX_LINE_LENGTH + 2]; /* Buffer for a line: MAX_LINE_LENGTH + '\n' + '\0' */
@@ -37,12 +60,14 @@ int first_pass(char *filename, hashTable *macro_table) {
 
   if (symbol_table == NULL) {
     print_error("Failed creating structure", "symbol table", 0);
+    cleanup_first_pass(NULL, am_filename, NULL, NULL, NULL, 0);
     return 0;
   }
 
   /* Create a hash table for pending labels */
   if (pending_labels == NULL) {
     print_error("Failed creating structure", "hash table", 0);
+    cleanup_first_pass(NULL, am_filename, symbol_table, NULL, NULL, 0);
     return 0;
   }
 
@@ -50,8 +75,10 @@ int first_pass(char *filename, hashTable *macro_table) {
   file = fopen(am_filename, "r");
   if (file == NULL) {
     print_error("File read", filename, 0);
+    cleanup_first_pass(NULL, am_filename, symbol_table, pending_labels, translation_table, 0);
     return 0;
   }
+
 
   /* Loop through the line checking for different cases */
   while (fgets(line, sizeof(line), file) != NULL) {
@@ -74,7 +101,7 @@ int first_pass(char *filename, hashTable *macro_table) {
 
             /* If the last non-whitespace character is a comma, report error */
             if (i >= 0 && line_copy[i] == ',') {
-                print_error("Missing operand after comma", "", LINE_NUMBER);
+                print_error("Missing operand between commas", "", LINE_NUMBER);
                 free(line_copy);
                 continue;
             }
@@ -181,7 +208,7 @@ int first_pass(char *filename, hashTable *macro_table) {
     */
   }
 
-  /* Print the tablem
+  /* Print the table
   printf("TransTable contents:\n");
   print_complete_transTable(translation_table, tablepointer);
 
@@ -216,7 +243,7 @@ int first_pass(char *filename, hashTable *macro_table) {
   print_complete_transTable(translation_table, tablepointer);
   */
 
-  free_transTable(translation_table, tablepointer);
+  cleanup_first_pass(file, am_filename, symbol_table, pending_labels, translation_table, tablepointer);
   return success;
 }
 
@@ -239,7 +266,7 @@ void process_assembly_command(hashTable *pending_labels, transTable *translation
     /* Join tokens to create the source line */
     source_line = join_tokens(tokens);
     if (source_line == NULL) {
-        check_malloc(source_line);
+        print_error("Malloc", "", 0);
         return;
     }
 
@@ -336,12 +363,12 @@ void process_directive(hashTable *pending_labels, transTable *translation_table,
         lbl = tokens[command_start + 1];
 
         if (lbl == NULL) { /* Missing label argument */
-            print_error("Missing arguments", "", LINE_NUMBER);
+            print_error("Missing argument", "", LINE_NUMBER);
             return;
         }
 
         if (is_saved_word(lbl)) {
-            print_error("Reserved word label", lbl, LINE_NUMBER);
+            print_error("Reserved label", lbl, LINE_NUMBER);
             return;
         }
 
@@ -498,7 +525,7 @@ int handle_undefined_label(hashTable *pending_labels, char *label_name, int curr
 
     /* Validate parameters */
     if (pending_labels == NULL || label_name == NULL) {
-        print_error("Invalid parameters", "handle_undefined_label", LINE_NUMBER);
+        print_error("Missing argument", "handle_undefined_label", LINE_NUMBER);
         return 0;
     }
 

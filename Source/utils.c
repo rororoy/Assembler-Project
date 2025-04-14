@@ -76,7 +76,7 @@ char* append_extension(char *filename, const char *extension) {
   char *new_filename;
 
   if (filename == NULL || extension == NULL){
-    print_error("Missing arguments", "", 0);
+    print_error("Missing argument", "", 0);
     return NULL;
   }
 
@@ -239,7 +239,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
 
     /* Check for trailing comma at end of line */
     if (comma_seen && !macro_scan) {
-        print_error("Missing operand after comma", "", LINE_NUMBER);
+        print_error("Missing operand between commas", "", LINE_NUMBER);
         free(line);
         return 0;
     }
@@ -251,15 +251,15 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     if (macro_scan) {
         if (strcmp(tokens[0], "mcroend") == 0) {
             if (token_count > 1) {
-                print_error("Extranous text", "mcroend", LINE_NUMBER);
+                print_error("Extranous text", "after mcroend", LINE_NUMBER);
                 return 0;
             }
         } else if (strcmp(tokens[0], "mcro") == 0) {
             if (token_count > 2) {
-                print_error("Extranous text", "mcro", LINE_NUMBER);
+                print_error("Extranous text", "after mcro", LINE_NUMBER);
                 return 0;
             } else if (token_count < 2) {
-                print_error("No macro name specified after mcro", "", LINE_NUMBER);
+                print_error("No macro", "", LINE_NUMBER);
                 return 0;
             }
         }
@@ -401,8 +401,8 @@ void word_to_hex_by_type(word word_data, int is_first_word, int is_data_entry, c
                  (word_data.extra_word.e);
      }
 
-     /* Convert to lowercase hex string */
-     snprintf(hex_str, 7, "%06x", value);
+     /* Convert to lowercase hex string using C90-compliant approach */
+     sprintf(hex_str, "%06x", value);
 
      /* Ensure all characters are lowercase */
      for (i = 0; hex_str[i]; i++) {

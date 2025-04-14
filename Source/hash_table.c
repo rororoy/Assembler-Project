@@ -170,7 +170,7 @@ hashTable *resize_table(hashTable *old_ht){
 
         if(insert_pending_label(new_ht, label_name, cmd_idx, word_num, addr) == NULL){
           /* Encountered problem in inserting pending label */
-          print_error("Insert pending label", "(resize)", 0);
+          print_error("Insert hash", "(resize)", 0);
           return NULL;
         }
       }

@@ -685,3 +685,27 @@ void free_ext_references(symbol *sym) {
     sym->ext_ref_count = 0;
     sym->ext_ref_capacity = 0;
 }
+
+/* Free the entire symbol table */
+void free_symbol_table(symbolTable *table) {
+    int i;
+
+    if (table == NULL) {
+        return;
+    }
+
+    /* Free all symbols */
+    for (i = 0; i < table->size; i++) {
+        /* Free the symbol name */
+        free(table->symbols[i].name);
+
+        /* Free any external references array */
+        free_ext_references(&table->symbols[i]);
+    }
+
+    /* Free the symbols array */
+    free(table->symbols);
+
+    /* Free the table structure itself */
+    free(table);
+}

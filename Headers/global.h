@@ -5,7 +5,9 @@
 
 #define NUM_ALLOWED_COMMANDS 20
 
-#define NUM_RESERVED_WORDS 32
+#define NUM_RESERVED_WORDS 26
+
+#define REGISTERS_AMOUNT 6
 
 extern int LINE_NUMBER;
 

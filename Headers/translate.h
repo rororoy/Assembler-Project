@@ -143,4 +143,6 @@ int add_ext_reference(symbol *sym, int address);
 
 void free_ext_references(symbol *sym);
 
+void free_symbol_table(symbolTable *table);
+
 #endif /* TRANSLATE_H */

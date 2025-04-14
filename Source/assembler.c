@@ -20,6 +20,7 @@
 int main(int argc, char *argv[]){
   hashTable *macro_table;
   int f_count = 1;
+  int success;
 
   printf("[*] Started assembler program\n\n");
 
@@ -30,35 +31,54 @@ int main(int argc, char *argv[]){
   }
 
   while(f_count < argc){
+    /* Clean up any existing output files at the start of processing each file */
     clean_output_files(argv[f_count]);
 
     /***************        Pre assembler stage       *************************/
-    macro_table = make_hash_table(HASH_TABLE_INITIAL_SIZE);
     printf("[*] Starting the pre assembler stage on %s\n", argv[f_count]);
 
-
-    if(pre_assembler(argv[f_count], macro_table)){
-      printf("[*] Finished the pre assembler stage on %s\n\n", argv[f_count]);
-    }else{
-      printf("[!] Failed the pre assembler stage on %s\n\n", argv[f_count]);
-      break;
+    /* Create macro table for this file */
+    macro_table = make_hash_table(HASH_TABLE_INITIAL_SIZE);
+    if (macro_table == NULL) {
+      print_error("Failed creating structure", "macro table", 0);
+      f_count++;
+      continue;
     }
+
+    /* Run pre-assembler stage */
+    success = pre_assembler(argv[f_count], macro_table);
+
+    if(!success) {
+      printf("[!] Failed the pre assembler stage on %s\n\n", argv[f_count]);
+      free_hash_table(macro_table);
+      f_count++;
+      continue;
+    }
+
+    printf("[*] Finished the pre assembler stage on %s\n\n", argv[f_count]);
 
     /***************    First and Second assembler stage    *******************/
     printf("[*] Starting the first assembler stage on %s\n", argv[f_count]);
 
-    if(first_pass(argv[f_count], macro_table)){
+    /* Run first pass (which includes the second pass internally) */
+    success = first_pass(argv[f_count], macro_table);
+
+    if(success) {
       printf("[*] Finished the assembler stage on %s\n\n\n", argv[f_count]);
-    }else{
+    } else {
       printf("[!] Failed the assembler stage on %s\n\n\n", argv[f_count]);
     }
 
-    if(ERROR_ENCOUNTERED){
+    /* Check if error was encountered during processing */
+    if(ERROR_ENCOUNTERED) {
       printf("[!] No output files were generated for %s\n\n\n", argv[f_count]);
       ERROR_ENCOUNTERED = 0;
     }
 
+    /* Free the macro table for this file */
+    free_hash_table(macro_table);
     f_count++;
   }
-  return 1;
+
+  return 0;
 }
