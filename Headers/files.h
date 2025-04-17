@@ -57,4 +57,4 @@ int generate_ent_file(FILE *file, symbolTable *symbol_table);
 int create_output_files(char *filename, transTable *translation_table,
                       symbolTable *symbol_table, hashTable *pending_labels, int IC, int DC);
 
-#endif /* FILES_H */
+#endif

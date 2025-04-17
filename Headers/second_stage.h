@@ -5,8 +5,8 @@
 
 /* Structure to hold external reference information */
 typedef struct {
-    char *label_name;
-    int address;
+  char *label_name;
+  int address;
 } ExternalReference;
 
 /**
