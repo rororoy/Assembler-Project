@@ -116,6 +116,11 @@ int first_pass(char *filename, hashTable *macro_table) {
       continue;
     }
 
+    /* If line is a comment or empty, just increment line count and continue */
+    if (tokens_mode == 3 || tokens_mode == 4) {
+      continue;
+    }
+
     /* Printing of tokanization
     printf("Tokanized-->");
     int i = 0;

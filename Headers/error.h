@@ -5,8 +5,8 @@
  * and external errors (user input errors).
  */
 typedef enum {
-    INTERNAL, /**< Error is internal to the program (programming fault) */
-    EXTERNAL  /**< Error is external (user input error) */
+    INTERNAL, /* Error is internal to the program (programming fault) */
+    EXTERNAL  /* Error is external (user input error) */
 } error_scope;
 
 /**

@@ -25,7 +25,7 @@ void cleanup_first_pass(FILE *file, char *am_filename,
                         int tablepointer);
 
 /**
- * @brief Performs the first pass of the assembly process
+ *  Performs the first pass of the assembly process
  *
  * This function processes an expanded assembly file (.am) to:
  * 1. Process all labels and commands

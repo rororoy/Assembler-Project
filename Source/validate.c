@@ -66,10 +66,11 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
     char *label_msg;
     int i, success = 0;
     int num_operands = 0;
+    int actual_operands = 0;
 
     /* Check if the token at command_start is not NULL */
     if (tokens[command_start] == NULL) {
-        printf("[EMPTY COMMAND]\n");
+        print_error("Label without command", "", LINE_NUMBER);
         return 0;
     }
 
@@ -121,6 +122,23 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
         case 2: num_operands = 1; break; /* One-operand commands */
         case 3: num_operands = 0; break; /* Zero-operand commands */
         case 4: num_operands = 1; break; /* Directive commands .entry .extern */
+    }
+
+    /* Count actual operands provided */
+    for (i = command_start + 1; tokens[i] != NULL; i++) {
+        actual_operands++;
+    }
+
+    /* Check if we have the required number of operands - both minimum and maximum */
+    if (actual_operands < num_operands) {
+        print_error("Too few operands", tokens[command_start], LINE_NUMBER);
+        return 0;
+    }
+
+    /* Check if we have too many operands */
+    if (actual_operands > num_operands) {
+        print_error("Too many operands", tokens[command_start], LINE_NUMBER);
+        return 0;
     }
 
     /* Check if operands are syntactically valid */
@@ -209,18 +227,6 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct_operands, addressModes *operands, int command_type){
   int i; /* Position of the current operand */
   int current_operator = 0; /* 0 for target op, 1 for source op */
-  int actual_operands = 0;
-
-  /* First, count available operands */
-  for (i = command_start + 1; tokens[i] != NULL; i++) {
-    actual_operands++;
-  }
-
-  /* Check if we have the required number of operands */
-  if (correct_operands > 0 && actual_operands < correct_operands) {
-    print_error("Too few operands", tokens[command_start], LINE_NUMBER);
-    return 0;
-  }
 
   /* Adjust the loop so that it checks exactly the expected number of operands.
      If there's a label definition at the beginning, the operands start at command_start+1. */
@@ -248,24 +254,14 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
     }
 
     else if(tokens[i][0] == '#'){  /* Immediate operand */
-      int j = 1;
-      /* Check for optional sign */
-      if (tokens[i][1] == '+' || tokens[i][1] == '-') {
-        j = 2;  /* Move past the sign */
-      }
-      /* Check if there's at least one digit after '#' or the sign */
-      if (tokens[i][j] == '\0') {
+      /* Check if there's a valid number after the # */
+      char *endptr;
+      strtol(tokens[i] + 1, &endptr, 10);
+      if (*endptr != '\0') {
         print_error("No number after #", tokens[command_start], LINE_NUMBER);
         return 0;
       }
-      /* Check that all remaining characters are digits */
-      while (tokens[i][j] != '\0') {
-        if (!isdigit(tokens[i][j])) {
-          print_error("Invalid digit in immediate operand", tokens[command_start], LINE_NUMBER);
-          return 0;
-        }
-        j++;
-      }
+
       /* If the command is of type 2 (one operand) - only dest operator is used */
       if(command_type == 2){
         current_operator ? (operands->source_op = 0) : (operands->destination_op = 0);
@@ -274,11 +270,8 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
       }
       current_operator++;
     }
-
-    else {
-      /* Assume operand is intended to be a label.
-         Use the valid_label function to check validity */
-      if(valid_label(tokens[i])) {
+    else{  /* Only possibility left is a label */
+      if(valid_label(tokens[i])){
         /* If the command is of type 2 (one operand) - only dest operator is used */
         if(command_type == 2){
           current_operator ? (operands->source_op = 1) : (operands->destination_op = 1);
@@ -286,26 +279,8 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
           current_operator ? (operands->destination_op = 1) : (operands->source_op = 1);
         }
         current_operator++;
-      } else {
-        return 0; /* Label validation failed */
       }
     }
-  }
-
-  /* If there is an extra operand beyond the allowed number, signal an error */
-  if(tokens[i] != NULL){
-    print_error("Too many operands", tokens[command_start], LINE_NUMBER);
-    return 0;
-  }
-
-  /* A final check to make sure we have the correct number of operands */
-  if (current_operator != correct_operands) {
-    if (current_operator < correct_operands) {
-      print_error("Too few operands", tokens[command_start], LINE_NUMBER);
-    } else {
-      print_error("Too many operands", tokens[command_start], LINE_NUMBER);
-    }
-    return 0;
   }
 
   return 1;

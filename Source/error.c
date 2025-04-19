@@ -31,6 +31,7 @@ error errors[] = {
   {EXTERNAL, "Label didnt reolve", "A label mentioned was never declared - couldn't resolve translation of the label"},
   {EXTERNAL, "Label type error", "Error in label decleration, label was already declared"},
   {EXTERNAL, "Label macro name", "Defined label can't share the same name with an already defined macro"},
+  {EXTERNAL, "Label without command", "A label cannot be defined in an empty line without a command"},
   {EXTERNAL, "Unterminated string", "A decleration of a string wasn't closed with parentheses"},
   {EXTERNAL, "Too many operands", "Too many operands for the command"},
   {EXTERNAL, "Multiple ':' encountered in line", "A ':' can only be used once per line to define a label"},

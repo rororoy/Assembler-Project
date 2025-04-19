@@ -22,6 +22,7 @@ char *skip_ws(char *s)
     return s;
 }
 
+
 int check_malloc(void *ptr){
   if(ptr == NULL){
     print_error("Malloc", "", 0);
@@ -29,6 +30,7 @@ int check_malloc(void *ptr){
   }
   return 1;
 }
+
 
 int empty_line(char *line){
   int i;
@@ -44,6 +46,7 @@ int empty_line(char *line){
   return 1;
 }
 
+/* Checks if a line is a comment (first non-whitespace character is ';') */
 int is_comment_line(const char *line) {
     /* Skip leading whitespace */
     while (*line != '\0' && isspace((unsigned char)*line)) {
@@ -76,8 +79,7 @@ char* append_extension(char *filename, const char *extension) {
   /* Calculate the total length needed: original length + extension length + 1 for null terminator */
   total_length = strlen(filename) + strlen(extension) + 1;
   new_filename = malloc(total_length);
-  if (new_filename == NULL) {
-    check_malloc(new_filename);
+  if (!check_malloc(new_filename)) {
     return NULL;
   }
 
@@ -108,11 +110,29 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     int in_string = 0;
     char *string_start = NULL;  /* Added to track start of string content */
     int comma_seen = 0;         /* Track if we've just seen a comma */
+    char *line;
+
+    /* First check if the line is a comment or empty - but still process it */
+    if (is_comment_line(original_line)) {
+        /* Clear the tokens array */
+        for (i = 0; i < MAX_LINE_LENGTH; i++) {
+            tokens[i] = NULL;
+        }
+        return 3;  /* Comment line */
+    }
+
+    if (empty_line(original_line)) {
+        /* Clear the tokens array */
+        for (i = 0; i < MAX_LINE_LENGTH; i++) {
+            tokens[i] = NULL;
+        }
+        return 4;  /* Empty line */
+    }
 
     /* Duplicate the original line so we can modify it */
-    char *line = strdup(original_line);
+    line = strdup(original_line);
     if (!line) {
-        print_error("Malloc", "function: tokanize_line", 0);
+        print_error("Malloc", "strdup failed", LINE_NUMBER);
         return 0;
     }
 
@@ -128,7 +148,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     p = skip_ws(line);
     if (*p == '\0') {
         free(line);
-        return 0;  /* Empty or blank line */
+        return 4;  /* Empty or blank line - changed from 0 to 4 */
     }
 
     while (*p != '\0') {
@@ -232,7 +252,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
 
     /* Check for trailing comma at end of line */
     if (comma_seen && !macro_scan) {
-        print_error("Missing operand between commas", "", LINE_NUMBER);
+        print_error("Missing operand between commmas", "", LINE_NUMBER);
         free(line);
         return 0;
     }
@@ -347,27 +367,18 @@ int calculate_word_position(int is_source, commandSem *cmnd, int operand_src_typ
 }
 
 char* int_to_str(int value) {
-    /* Allocate memory for the string (max 12 chars including sign and null terminator) */
-    char* buffer = (char*)malloc(12 * sizeof(char));
-
-    if (buffer == NULL) {
-        check_malloc(buffer);
-    }
-
+    char buffer[20];
+    char* result;
     sprintf(buffer, "%d", value);
 
-    return buffer;
+    result = strdup(buffer);
+    if (!result) {
+        print_error("Memory allocation", "int_to_str", 0);
+    }
+
+    return result;
 }
 
-/**
- * Converts a word to a hexadecimal string based on its type
- * (determined by position in the linked list and source code).
- *
- * @param word_data The word to convert
- * @param is_first_word Flag indicating if this is the first word in a linked list
- * @param is_data_entry Flag indicating if this is a data entry
- * @param hex_str The output buffer for the hex string (at least 7 bytes)
- */
 void word_to_hex_by_type(word word_data, int is_first_word, int is_data_entry, char *hex_str) {
      unsigned int value = 0;
      int i;

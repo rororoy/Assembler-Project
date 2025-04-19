@@ -14,7 +14,7 @@ typedef struct{
 } addressModes;
 
 /**
- * @brief Validates if an assembly line is within the maximum length limit
+ *  Validates if an assembly line is within the maximum length limit
  *
  * Checks if the given line from the assembly file falls within the 80 character length limit.
  *
@@ -24,7 +24,7 @@ typedef struct{
 int valid_length_line(char *line);
 
 /**
- * @brief Checks if a string is a reserved word in the assembly language
+ *  Checks if a string is a reserved word in the assembly language
  *
  * Validates whether the given string is one of the predefined reserved words
  * that cannot be used as labels or other identifiers.
@@ -35,7 +35,7 @@ int valid_length_line(char *line);
 int is_saved_word(char *str);
 
 /**
- * @brief Validates if a string can be used as a label
+ *  Validates if a string can be used as a label
  *
  * Checks if the given string follows the rules for a valid label:
  * - Starts with a letter
@@ -49,7 +49,7 @@ int is_saved_word(char *str);
 int valid_label(char *tok);
 
 /**
- * @brief Validates if a command is valid and retrieves its addressing modes
+ *  Validates if a command is valid and retrieves its addressing modes
  *
  * Checks if the specified command is valid, and if its operands are correctly formed.
  * Determines the addressing modes for the operands and stores them in the operands parameter.
@@ -62,7 +62,7 @@ int valid_label(char *tok);
 int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressModes *operands);
 
 /**
- * @brief Validates operands for a given command
+ *  Validates operands for a given command
  *
  * Checks if the number and types of operands match what is expected for the command.
  * Determines the addressing modes for each operand and verifies they are valid.
@@ -77,7 +77,7 @@ int is_valid_command(int command_start, char *tokens[MAX_LINE_LENGTH], addressMo
 int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct_operands, addressModes *operands_adress, int command_type);
 
 /**
- * @brief Prints the contents of a translation table for debugging
+ *  Prints the contents of a translation table for debugging
  *
  * Displays the contents of the translation table, which contains the machine code
  * generated from the assembly code.
@@ -88,7 +88,7 @@ int check_operands(int command_start, char *tokens[MAX_LINE_LENGTH], int correct
 void print_transTable(transTable *table, int size);
 
 /**
- * @brief Checks if a word is a valid register name
+ *  Checks if a word is a valid register name
  *
  * Determines if the given word matches one of the valid register names
  * defined in the assembly language (e.g., r0, r1, etc.).

@@ -280,15 +280,6 @@ void print_symbol_table(const symbolTable *table);
 void update_word(wordNode *node_ptr, int value, commandARE are_flags);
 
 /**
- * Converts a machine word to hexadecimal representation
- *
- * @param w (in) Word to convert
- * @param hex_str (out) Buffer to store the hex string
- * @return Pointer to the hex string
- */
-char* word_to_hex(word w, char* hex_str);
-
-/**
  * Initializes the external references array in a symbol
  *
  * @param sym (in/out) Symbol to initialize

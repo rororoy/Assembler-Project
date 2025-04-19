@@ -540,50 +540,6 @@ void update_word(wordNode *node_ptr, int value, commandARE are_flags) {
     node_ptr->data = new_word;
 }
 
-/**
- * Converts a word to a 6-character hexadecimal string
- *
- * @param w The word to convert
- * @param hex_str The output string buffer (must be at least 7 bytes long)
- * @return Pointer to the hex string (same as hex_str)
- *
- * This function takes a word union and returns a representation
- * as a 6-character hex string (24 bits = 6 hex digits).
- */
-char* word_to_hex(word w, char* hex_str) {
-  unsigned int value = 0;
-
-    /* Extract the appropriate bits based on the word type */
-    /* For instruction words */
-    if (w.instruction.opcode != 0 || w.instruction.funct != 0) {
-        value = (w.instruction.opcode << 18) |
-                (w.instruction.src_mode << 16) |
-                (w.instruction.src_reg << 13) |
-                (w.instruction.dst_mode << 11) |
-                (w.instruction.dst_reg << 8) |
-                (w.instruction.funct << 3) |
-                (w.instruction.a << 2) |
-                (w.instruction.r << 1) |
-                (w.instruction.e);
-    }
-    /* For extra words */
-    else if (w.extra_word.value != 0 || w.extra_word.a || w.extra_word.r || w.extra_word.e) {
-        value = (w.extra_word.value << 3) |
-                (w.extra_word.a << 2) |
-                (w.extra_word.r << 1) |
-                (w.extra_word.e);
-    }
-    /* For data words */
-    else {
-        value = w.data_word.data;
-    }
-
-    /* Convert to lowercase hex string using ANSI C90 compatible function */
-    sprintf(hex_str, "%06x", value);
-
-    return hex_str;
-}
-
 /* Initialize external references array for a symbol */
 void init_ext_references(symbol *sym) {
     sym->ext_references = NULL;

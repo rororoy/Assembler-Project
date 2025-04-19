@@ -25,6 +25,7 @@ int pre_assembler(char *filename, hashTable *macro_table) {
   hashBucket *ht_bucket;
   char *tokens[MAX_LINE_LENGTH];
   int token_mode;
+  int result;
 
   LINE_NUMBER = 0; /* line count */
 
@@ -57,16 +58,23 @@ int pre_assembler(char *filename, hashTable *macro_table) {
       return 0;
     }
 
-    /* Filter out empty lines */
-    if (empty_line(line) || is_comment_line(line))
-      continue;
-
-    token_mode = tokanize_line(line, tokens, 1);
-
-    if (!token_mode) {
+    result = tokanize_line(line, tokens, 1);
+    token_mode = result; /* Initialize token_mode with the result */
+    if(!result){
       /* Encountered an error in the pre-proc stage - terminate */
       handle_exit(file, am_file, as_filename, am_filename);
       return 0;
+    }
+
+    /* Comment lines (3) or empty lines (4) should be written to the file but not processed further */
+    if (result == 3 || result == 4) {
+      /* Write the line to the output file */
+      if (fprintf(am_file, "%s", line) < 0) {
+        print_error("Failed writing", as_filename, LINE_NUMBER);
+        handle_exit(file, am_file, as_filename, am_filename);
+        return 0;
+      }
+      continue;
     }
 
     /* Check for a start of a macro definition */
@@ -126,6 +134,7 @@ int process_macro_definition(FILE *file, hashBucket *ht_bucket) {
   char line[MAX_LINE_LENGTH + 2];
   char *tokens[MAX_LINE_LENGTH];
   int found_macro_end = 0;  /* Flag to indicate that "mcroend" was encountered */
+  int result;
 
 
   while (fgets(line, sizeof(line), file) != NULL) {
@@ -136,12 +145,16 @@ int process_macro_definition(FILE *file, hashBucket *ht_bucket) {
       return 0;
     }
 
-    if(empty_line(line) || is_comment_line(line)){
-      continue;
+    result = tokanize_line(line, tokens, 1);
+    if(!result){
+      return 0;
     }
 
-    if(!tokanize_line(line, tokens, 1)){
-      return 0;
+    /* Comment lines (3) or empty lines (4) should be processed by just adding them to the macro */
+    if (result == 3 || result == 4) {
+      /* Add the comment or empty line to the macro definition */
+      add_node(&ht_bucket->code_nodes, line);
+      continue;
     }
 
     if(strcmp(tokens[0], "mcroend") == 0){

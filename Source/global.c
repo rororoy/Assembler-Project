@@ -44,10 +44,10 @@ char *RESERVED_WORDS[] = {
 /* Command table with addressing modes as bit flags */
 commandSem command_table[] = {
     /* CMD     |funct|op|type|                    src_modes                   |                     dest_modes                */
-    {CMD_MOV,  -1,   0, 1,     ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER,     ADDR_DIRECT | ADDR_REGISTER                  },
+    {CMD_MOV,  -1,   0, 1,     ADDR_DIRECT | ADDR_REGISTER,                      ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER },
     {CMD_CMP,  -1,   1, 1,     ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER,     ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER },
-    {CMD_ADD,   1,   2, 1,     ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER,     ADDR_DIRECT | ADDR_REGISTER                  },
-    {CMD_SUB,   2,   2, 1,     ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER,     ADDR_DIRECT | ADDR_REGISTER                  },
+    {CMD_ADD,   1,   2, 1,     ADDR_DIRECT | ADDR_REGISTER,                      ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER },
+    {CMD_SUB,   2,   2, 1,     ADDR_DIRECT | ADDR_REGISTER,                      ADDR_IMMEDIATE | ADDR_DIRECT | ADDR_REGISTER },
     {CMD_LEA,  -1,   4, 1,     ADDR_DIRECT,                                      ADDR_DIRECT | ADDR_REGISTER                  },
     {CMD_CLR,   1,   5, 2,     ADDR_NONE,                                        ADDR_DIRECT | ADDR_REGISTER                  },
     {CMD_NOT,   2,   5, 2,     ADDR_NONE,                                        ADDR_DIRECT | ADDR_REGISTER                  },
