@@ -19,109 +19,109 @@ commandSem *command_lookup(char *cmd_name) {
 
 /* Create a new symbol table */
 symbolTable* create_symbol_table() {
-    symbolTable *table = (symbolTable*)malloc(sizeof(symbolTable));
-    if (!check_malloc(table)) {
-        print_error("Failed creating structure", "symbolTable", 0);
-        return NULL;
-    }
+  symbolTable *table = (symbolTable*)malloc(sizeof(symbolTable));
+  if (!check_malloc(table)) {
+    print_error("Failed creating structure", "symbolTable", 0);
+    return NULL;
+  }
 
-    table->symbols = (symbol*)malloc(INITIAL_TABLE_SIZE * sizeof(symbol));
-    if (!check_malloc(table->symbols)) {
-        free(table);
-        return NULL;
-    }
+  table->symbols = (symbol*)malloc(INITIAL_TABLE_SIZE * sizeof(symbol));
+  if (!check_malloc(table->symbols)) {
+    free(table);
+    return NULL;
+  }
 
-    table->size = 0;
-    table->capacity = INITIAL_TABLE_SIZE;
-    return table;
+  table->size = 0;
+  table->capacity = INITIAL_TABLE_SIZE;
+  return table;
 }
 
 /* Resize the symbol table */
 int resize_symbol_table(symbolTable *table) {
-    int new_capacity = table->capacity * GROWTH_FACTOR;
-    symbol *new_symbols = (symbol*)realloc(table->symbols, new_capacity * sizeof(symbol));
+  int new_capacity = table->capacity * GROWTH_FACTOR;
+  symbol *new_symbols = (symbol*)realloc(table->symbols, new_capacity * sizeof(symbol));
 
-    if (!check_malloc(new_symbols)) {
-        return 0; /* Failed to resize */
-    }
+  if (!check_malloc(new_symbols)) {
+    return 0; /* Failed to resize */
+  }
 
-    table->symbols = new_symbols;
-    table->capacity = new_capacity;
-    return 1;  /* Success */
+  table->symbols = new_symbols;
+  table->capacity = new_capacity;
+  return 1;  /* Success */
 }
 
 /* Insert a symbol into the table */
 int insert_symbol(symbolTable *table, char *name, int address, labelType type, labelContext context) {
-    /* Check if we need to resize */
-    if (table->size >= table->capacity) {
-        if (!resize_symbol_table(table)) {
-            return 0;  /* Failed to resize */
-        }
+  /* Check if we need to resize */
+  if (table->size >= table->capacity) {
+    if (!resize_symbol_table(table)) {
+      return 0;  /* Failed to resize */
     }
+  }
 
-    /* Allocate memory for the name */
-    table->symbols[table->size].name = (char*)malloc(strlen(name) + 1);
-    if (!check_malloc(table->symbols[table->size].name)) {
-        return 0; /* Failed to allocate memory for name */
-    }
+  /* Allocate memory for the name */
+  table->symbols[table->size].name = (char*)malloc(strlen(name) + 1);
+  if (!check_malloc(table->symbols[table->size].name)) {
+    return 0; /* Failed to allocate memory for name */
+  }
 
-    /* Copy the data */
-    strcpy(table->symbols[table->size].name, name);
-    table->symbols[table->size].address = address;
-    table->symbols[table->size].type = type;
-    table->symbols[table->size].context = context;
+  /* Copy the data */
+  strcpy(table->symbols[table->size].name, name);
+  table->symbols[table->size].address = address;
+  table->symbols[table->size].type = type;
+  table->symbols[table->size].context = context;
 
-    /* Initialize the external references fields */
-    table->symbols[table->size].ext_references = NULL;
-    table->symbols[table->size].ext_ref_count = 0;
-    table->symbols[table->size].ext_ref_capacity = 0;
+  /* Initialize the external references fields */
+  table->symbols[table->size].ext_references = NULL;
+  table->symbols[table->size].ext_ref_count = 0;
+  table->symbols[table->size].ext_ref_capacity = 0;
 
-    /* Increment size */
-    table->size++;
+  /* Increment size */
+  table->size++;
 
-    return 1;  /* Success */
+  return 1;  /* Success */
 }
 
 /* Search for a symbol by name in the symbol table */
 symbol *find_symbol(symbolTable *table, char *name) {
-    int i;
+  int i;
 
-    /* Linear search through the table */
-    for (i = 0; i < table->size; i++) {
-        if (strcmp(table->symbols[i].name, name) == 0) {
-            /* Found the symbol */
-            return &(table->symbols[i]);
-        }
+  /* Linear search through the table */
+  for (i = 0; i < table->size; i++) {
+    if (strcmp(table->symbols[i].name, name) == 0) {
+      /* Found the symbol */
+      return &(table->symbols[i]);
     }
+  }
 
-    /* Symbol not found */
-    return NULL;
+  /* Symbol not found */
+  return NULL;
 }
 
 int update_symbol_address(symbolTable *symbol_table, char *symbol_name, int new_address, int new_context) {
-    symbol *symbol_entry;
+  symbol *symbol_entry;
 
-    if (symbol_table == NULL || symbol_name == NULL) {
-        return 0;
-    }
-
-    /* Use the existing find_symbol function to locate the symbol */
-    symbol_entry = find_symbol(symbol_table, symbol_name);
-
-    if (symbol_entry != NULL) {
-        /* Symbol found, update its address */
-        symbol_entry->address = new_address;
-
-        /* Update context if a new one was specified (not -1) */
-        if (new_context != -1) {
-            symbol_entry->context = new_context;
-        }
-
-        return 1; /* Success */
-    }
-
-    /* Symbol not found */
+  if (symbol_table == NULL || symbol_name == NULL) {
     return 0;
+  }
+
+  /* Use the existing find_symbol function to locate the symbol */
+  symbol_entry = find_symbol(symbol_table, symbol_name);
+
+  if (symbol_entry != NULL) {
+    /* Symbol found, update its address */
+    symbol_entry->address = new_address;
+
+    /* Update context if a new one was specified (not -1) */
+    if (new_context != -1) {
+      symbol_entry->context = new_context;
+    }
+
+    return 1; /* Success */
+  }
+
+  /* Symbol not found */
+  return 0;
 }
 
 int is_missing_symbols(symbolTable *table){
@@ -129,10 +129,10 @@ int is_missing_symbols(symbolTable *table){
 
   /* Linear search through the table */
   for (i = 0; i < table->size; i++) {
-      if (table->symbols[i].address == -1) {
-          /* Found the symbol */
-          return 1;
-      }
+    if (table->symbols[i].address == -1) {
+      /* Found the symbol */
+      return 1;
+    }
   }
 
   /* Symbol not found */
@@ -142,18 +142,18 @@ int is_missing_symbols(symbolTable *table){
 
 /* Initialize a single transTable entry */
 void initialize_transTable_entry(transTable *entry, int address, char *source_code) {
-    /* Set the address */
-    entry->address = address;
+  /* Set the address */
+  entry->address = address;
 
-    /* Allocate and copy the source code */
-    if (source_code) {
-        entry->source_code = strdup(source_code); /* Creates a duplicate of the string */
-    } else {
-        entry->source_code = NULL;
-    }
+  /* Allocate and copy the source code */
+  if (source_code) {
+    entry->source_code = strdup(source_code); /* Creates a duplicate of the string */
+  } else {
+    entry->source_code = NULL;
+  }
 
-    /* Initialize word node pointer to NULL */
-    entry->node = NULL;
+  /* Initialize word node pointer to NULL */
+  entry->node = NULL;
 }
 
 /* Create and initialize a dynamic array of transTable entries */
@@ -166,8 +166,8 @@ transTable* create_transTable(int initial_size) {
 
   /* Initialize all entries */
   for (i = 0; i < initial_size; i++) {
-      initialize_transTable_entry(&table[i], 0, NULL);
-      /* Now each entry has address=0, source_code=NULL, and node=NULL */
+    initialize_transTable_entry(&table[i], 0, NULL);
+    /* Now each entry has address=0, source_code=NULL, and node=NULL */
   }
 
   return table;
@@ -175,16 +175,16 @@ transTable* create_transTable(int initial_size) {
 
 /* Clean up a transTable entry when it's no longer needed */
 void free_transTable_entry(transTable *entry) {
-    if (entry->source_code) {
-        free(entry->source_code);
-        entry->source_code = NULL;
-    }
+  if (entry->source_code) {
+    free(entry->source_code);
+    entry->source_code = NULL;
+  }
 
-    /* Free the linked list of words if it exists */
-    if (entry->node) {
-        free_word_list(entry->node);
-        entry->node = NULL;
-    }
+  /* Free the linked list of words if it exists */
+  if (entry->node) {
+    free_word_list(entry->node);
+    entry->node = NULL;
+  }
 }
 
 /* Clean up the entire transTable array */
@@ -258,68 +258,68 @@ int insert_extra_word(transTable *table, int index, int address, char *source_co
 }
 
 void update_word(wordNode *node_ptr, int value, commandARE are_flags) {
-    /* Reset the word to all zeros first */
-    word new_word = {0};
+  /* Reset the word to all zeros first */
+  word new_word = {0};
 
-    /* Set the value in the extra_word structure */
-    new_word.extra_word.value = (unsigned)value & 0x1FFFFF; /* Mask to 21 bits */
+  /* Set the value in the extra_word structure */
+  new_word.extra_word.value = (unsigned)value & 0x1FFFFF; /* Mask to 21 bits */
 
-    /* Set the appropriate ARE flags based on the enum */
-    if (are_flags == A) {
-        new_word.extra_word.a = 1;
-    } else if (are_flags == R) {
-        new_word.extra_word.r = 1;
-    } else if (are_flags == E) {
-        new_word.extra_word.e = 1;
-    }
-    /* If are_flags is ARE_NONE, all flags remain 0 */
+  /* Set the appropriate ARE flags based on the enum */
+  if (are_flags == A) {
+      new_word.extra_word.a = 1;
+  } else if (are_flags == R) {
+      new_word.extra_word.r = 1;
+  } else if (are_flags == E) {
+      new_word.extra_word.e = 1;
+  }
+  /* If are_flags is ARE_NONE, all flags remain 0 */
 
-    /* Update the word in the node */
-    node_ptr->data = new_word;
+  /* Update the word in the node */
+  node_ptr->data = new_word;
 }
 
 /* Initialize external references array for a symbol */
 void init_ext_references(symbol *sym) {
-    sym->ext_references = NULL;
-    sym->ext_ref_count = 0;
-    sym->ext_ref_capacity = 0;
+  sym->ext_references = NULL;
+  sym->ext_ref_count = 0;
+  sym->ext_ref_capacity = 0;
 }
 
 /* Add an external reference to a symbol */
 int add_ext_reference(symbol *sym, int address) {
-    int *new_array;
-    int new_capacity;
+  int *new_array;
+  int new_capacity;
 
-    /* Validate input */
-    if (sym == NULL) {
-        print_error("Missing argument", "symbol", 0);
-        return 0;
-    }
+  /* Validate input */
+  if (sym == NULL) {
+      print_error("Missing argument", "symbol", 0);
+      return 0;
+  }
 
-    /* Initialize arrays if needed - this prevents segfaults */
+  /* Initialize arrays if needed - this prevents segfaults */
+  if (sym->ext_references == NULL) {
+    sym->ext_ref_count = 0;
+    sym->ext_ref_capacity = 0;
+  }
+
+  /* Check if we need to allocate or resize the array */
+  if (sym->ext_ref_count >= sym->ext_ref_capacity) {
+    new_capacity = sym->ext_ref_capacity == 0 ? 4 : sym->ext_ref_capacity * 2;
+
+    /* First allocation or reallocation */
     if (sym->ext_references == NULL) {
-        sym->ext_ref_count = 0;
-        sym->ext_ref_capacity = 0;
+      new_array = (int*)malloc(new_capacity * sizeof(int));
+    } else {
+      new_array = (int*)realloc(sym->ext_references, new_capacity * sizeof(int));
     }
 
-    /* Check if we need to allocate or resize the array */
-    if (sym->ext_ref_count >= sym->ext_ref_capacity) {
-        new_capacity = sym->ext_ref_capacity == 0 ? 4 : sym->ext_ref_capacity * 2;
+    if (new_array == NULL) {
+      print_error("Malloc", "in add_ext_reference", 0);
+      return 0; /* Allocation failed */
+    }
 
-        /* First allocation or reallocation */
-        if (sym->ext_references == NULL) {
-            new_array = (int*)malloc(new_capacity * sizeof(int));
-        } else {
-            new_array = (int*)realloc(sym->ext_references, new_capacity * sizeof(int));
-        }
-
-        if (new_array == NULL) {
-            print_error("Malloc", "in add_ext_reference", 0);
-            return 0; /* Allocation failed */
-        }
-
-        sym->ext_references = new_array;
-        sym->ext_ref_capacity = new_capacity;
+    sym->ext_references = new_array;
+    sym->ext_ref_capacity = new_capacity;
     }
 
     /* Add the new reference */
@@ -329,34 +329,34 @@ int add_ext_reference(symbol *sym, int address) {
 
 /* Free the external references array */
 void free_ext_references(symbol *sym) {
-    if (sym->ext_references != NULL) {
-        free(sym->ext_references);
-        sym->ext_references = NULL;
-    }
-    sym->ext_ref_count = 0;
-    sym->ext_ref_capacity = 0;
+  if (sym->ext_references != NULL) {
+      free(sym->ext_references);
+      sym->ext_references = NULL;
+  }
+  sym->ext_ref_count = 0;
+  sym->ext_ref_capacity = 0;
 }
 
 /* Free the entire symbol table */
 void free_symbol_table(symbolTable *table) {
-    int i;
+  int i;
 
-    if (table == NULL) {
-        return;
-    }
+  if (table == NULL) {
+      return;
+  }
 
-    /* Free all symbols */
-    for (i = 0; i < table->size; i++) {
-        /* Free the symbol name */
-        free(table->symbols[i].name);
+  /* Free all symbols */
+  for (i = 0; i < table->size; i++) {
+    /* Free the symbol name */
+    free(table->symbols[i].name);
 
-        /* Free any external references array */
-        free_ext_references(&table->symbols[i]);
-    }
+    /* Free any external references array */
+    free_ext_references(&table->symbols[i]);
+  }
 
-    /* Free the symbols array */
-    free(table->symbols);
+  /* Free the symbols array */
+  free(table->symbols);
 
-    /* Free the table structure itself */
-    free(table);
+  /* Free the table structure itself */
+  free(table);
 }

@@ -1,0 +1,6 @@
+[*] Started assembler program
+
+[*] Starting the pre assembler stage on Tests/macro_tests.as
+[!] ERROR Error opening file for reading on Tests/macro_tests.as
+[!] Failed the pre assembler stage on Tests/macro_tests.as
+

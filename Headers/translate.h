@@ -249,13 +249,6 @@ int insert_extra_word(transTable *table, int index, int address, char *source_co
 int is_valid_command();
 
 /**
- * Prints the symbol table (for debugging)
- *
- * @param table (in) Symbol table to print
- */
-void print_symbol_table(const symbolTable *table);
-
-/**
  * Updates a machine word with a new value and ARE flags
  *
  * @param node_ptr (in/out) Pointer to the word node to update

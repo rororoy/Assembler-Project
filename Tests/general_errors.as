@@ -32,7 +32,7 @@ dec &Label2
 add r1 , , r2
 add r1,
 add r1 r2
-
+add r1, -1
 
 
 ; ###### MACRO TESTING ######
@@ -45,7 +45,6 @@ add r1 r2
   add r3, r3
 
 
-
 ; ###### DATA TESTING ######
 ; Valid inputs:
 STR: .string "abcde"
@@ -55,4 +54,5 @@ K: .data 31
 
 ; Invalid inputs:
 .string "abcde
-.data 4, 5, 6 7
+.data 1, 2, 3, 4 5
+.data

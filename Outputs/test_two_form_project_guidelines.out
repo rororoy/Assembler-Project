@@ -1,0 +1,6 @@
+[*] Started assembler program
+
+[*] Starting the pre assembler stage on Tests/test_two_from_project_guidelines.as
+[!] ERROR Error opening file for reading on Tests/test_two_from_project_guidelines.as
+[!] Failed the pre assembler stage on Tests/test_two_from_project_guidelines.as
+

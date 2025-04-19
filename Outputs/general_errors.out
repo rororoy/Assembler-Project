@@ -1,0 +1,35 @@
+[*] Started assembler program
+
+[*] Starting the pre assembler stage on Tests/general_errors
+[*] Finished the pre assembler stage on Tests/general_errors
+
+[*] Starting the first assembler stage on Tests/general_errors
+[!] ERROR [on line 3] - Encountered an unkown command T;his
+[!] ERROR [on line 12] - Faulty label definition -  Label must start with a letter
+[!] ERROR [on line 13] - Faulty label definition - can only contain alphanumeric characters Label can only contain alphanumeric characters
+[!] ERROR [on line 14] - Faulty label definition -  Label cannot exceed 32 characters
+[!] ERROR [on line 15] - A decleration of a label must be only at the begining of a line 
+[!] ERROR [on line 16] - A label cannot be defined in an empty line without a command 
+[!] ERROR [on line 24] - The specified addressing modes are not allowed for this command 
+[!] ERROR [on line 25] - The specified addressing modes are not allowed for this command 
+[!] ERROR [on line 26] - More operands expected for the command lea
+[!] ERROR [on line 27] - Encountered an unexpected operand for a command: operand should be of label
+[!] ERROR [on line 28] - Too many operands for the command stop
+[!] ERROR [on line 29] - The specified addressing modes are not allowed for this command 
+[!] ERROR [on line 32] - No operand was mentioned between two commas 
+[!] ERROR [on line 33] - No operand was mentioned between two commas 
+[!] ERROR [on line 34] - Missing comma between suspected operands 
+[!] ERROR [on line 35] - Faulty label definition -  Label must start with a letter
+[!] ERROR [on line 35] - The specified addressing modes are not allowed for this command 
+[!] ERROR [on line 57] - A decleration of a string wasn't closed with parentheses 
+[!] ERROR [on line 58] - Missing comma between suspected operands 
+[!] ERROR [on line 59] - More operands expected for the command .data
+[*] Starting the second assembler stage on Tests/general_errors
+
+[!] ERROR Failed on the second assembler stage of Tests/general_errors
+[!] Failed the assembler stage on Tests/general_errors
+
+
+[!] No output files were generated for Tests/general_errors
+
+

@@ -1,0 +1,3 @@
+; MACRO TESTS:
+
+; This should return an error due to extranous text at the end
