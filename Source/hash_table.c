@@ -236,7 +236,6 @@ void free_hash_table(hashTable *ht){
   free(ht);
 }
 
-/* New function for inserting pending labels */
 hashBucket *insert_pending_label(hashTable *ht, char *label_name, int command_index, int word_number, int addr){
   double load_factor;
   int index;
@@ -296,7 +295,6 @@ hashBucket *insert_pending_label(hashTable *ht, char *label_name, int command_in
   return &(ht->bucket[index]);
 }
 
-/* Function to resolve pending labels */
 void resolve_pending_labels(hashTable *ht, char *label_name, int resolved_address,
                           void (*update_command)(int cmd_idx, int word_num, int address)){
   int i;
@@ -328,7 +326,6 @@ void resolve_pending_labels(hashTable *ht, char *label_name, int resolved_addres
   }
 }
 
-/* Function to count pending labels */
 int get_pending_labels_count(hashTable *ht){
   int i;
   int count = 0;
@@ -344,30 +341,4 @@ int get_pending_labels_count(hashTable *ht){
   }
 
   return count;
-}
-
-/* Function to print all pending labels in a hash table */
-void print_pending_labels(hashTable *ht) {
-    int i;
-    int count = 0;
-    if (ht == NULL) {
-        print_error("Missing argument", "hash table", 0);
-        return;
-    }
-    printf("\n=== PENDING LABELS TABLE ===\n");
-    printf("%-20s | %-15s | %-10s | %-10s\n", "LABEL", "COMMAND INDEX", "WORD POS", "ADDRESS");
-    printf("-------------------------------------------------------------------\n");
-    for (i = 0; i < ht->size; i++) {
-        if (ht->bucket[i].is_taken && ht->bucket[i].type == BUCKET_PENDING_LABEL) {
-            printf("%-20s | %-15d | %-10d | %-10d\n",
-                   ht->bucket[i].label_name,
-                   ht->bucket[i].command_index,
-                   ht->bucket[i].word_number,
-                   ht->bucket[i].addr);
-            count++;
-        }
-    }
-    printf("-------------------------------------------------------------------\n");
-    printf("Total pending labels: %d\n", count);
-    printf("==============================\n\n");
 }

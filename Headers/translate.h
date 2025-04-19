@@ -228,13 +228,6 @@ void insert_command_entry(transTable *table, int index, int address, char *sourc
                          int opcode, int src_mode, int src_reg, int dst_mode, int dst_reg, int funct);
 
 /**
- * Prints a machine word in binary format (for debugging)
- *
- * @param w (in) Word to print
- */
-void print_word_binary(word w);
-
-/**
  * Inserts an extra word (operand) into the translation table
  *
  * @param table (in/out) Translation table to insert into
@@ -247,14 +240,6 @@ void print_word_binary(word w);
  * @return 1 if successful, 0 if an error occurred
  */
 int insert_extra_word(transTable *table, int index, int address, char *source_code, int op_type, int value, commandARE are_fields);
-
-/**
- * Prints the entire translation table (for debugging)
- *
- * @param table (in) Translation table to print
- * @param size (in) Size of the translation table
- */
-void print_complete_transTable(transTable *table, int size);
 
 /**
  * Validates if a command is valid

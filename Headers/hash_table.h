@@ -137,11 +137,5 @@ void resolve_pending_labels(hashTable *ht, char *label_name, int resolved_addres
  */
 int get_pending_labels_count(hashTable *ht);
 
-/**
- * Prints all pending labels for debugging
- *
- * @param ht (in) Pointer to the hash table
- */
-void print_pending_labels(hashTable *ht);
 
 #endif

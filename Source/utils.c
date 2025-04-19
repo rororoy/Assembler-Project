@@ -110,6 +110,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
     int in_string = 0;
     char *string_start = NULL;  /* Added to track start of string content */
     int comma_seen = 0;         /* Track if we've just seen a comma */
+    int has_comma_between_operands = 0;  /* Flag to track if comma was seen between operands */
     char *line;
 
     /* First check if the line is a comment or empty - but still process it */
@@ -227,6 +228,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
                 /* Set comma flag if we've hit a comma */
                 if (*p == ',') {
                     comma_seen = 1;
+                    has_comma_between_operands = 1;  /* Mark that we've seen a comma between tokens */
                 }
 
                 if (*p != '\0') p++;
@@ -246,6 +248,7 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
                 return 0;
             }
             comma_seen = 1;
+            has_comma_between_operands = 1;  /* Mark that we've seen a comma between tokens */
             p++;
         }
     }
@@ -255,6 +258,24 @@ int tokanize_line(char *original_line, char *tokens[MAX_LINE_LENGTH], int macro_
         print_error("Missing operand between commmas", "", LINE_NUMBER);
         free(line);
         return 0;
+    }
+
+    /* Store the comma_between_operands flag in the global LINE_HAS_COMMA variable */
+    if (token_count > 2 && !macro_scan) {
+        /* Get command info */
+        commandSem *cmd_info = NULL;
+        int cmd_index = (label_encountered) ? 1 : 0;
+        if (tokens[cmd_index] != NULL) {
+            cmd_info = command_lookup(tokens[cmd_index]);
+            if (cmd_info != NULL && cmd_info->type == 1) {
+                /* For type 1 commands, if no comma was seen, flag the error */
+                if (!has_comma_between_operands) {
+                    print_error("Missing comma between operands", "", LINE_NUMBER);
+                    free(line);
+                    return 0;
+                }
+            }
+        }
     }
 
     /* Free the duplicated line since each token has been separately duplicated */

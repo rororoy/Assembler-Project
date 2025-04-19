@@ -58,4 +58,4 @@ K: .data 31
 
 ; Invalid inputs:
 .string "abcde
-.data
+.data 4, 5, 6 7

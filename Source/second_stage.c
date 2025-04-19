@@ -32,9 +32,6 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
       IS_RELATIVE_LABEL = 0;
     }
 
-    /*printf("Looking at: %s\n\n", label);
-    printf("| %07d  | %-30s | \n\n\n", translation_table[pending_entry->command_index].address, translation_table[pending_entry->command_index].source_code ? translation_table[pending_entry->command_index].source_code : "");
-    */
     symbol_entry = find_symbol(symbol_table, label);
 
     if(!symbol_entry){
@@ -46,7 +43,6 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
 
       if(node_ptr){
         /* Access the data field through the pointer */
-        /*print_word_binary(node_ptr->data);*/
 
         /* RESOLVING PENDING PLACEHOLDER WORDS: */
         /* If the ARE = ARE_NONE (000) THEN CHECK SYMBOL TABLE FOR THE CONTEXT */
@@ -69,7 +65,6 @@ int second_pass(char *filename, hashTable *pending_labels, transTable *translati
     }
   }
 
-  /* TODO FREE STUFF HERE */
   return !ERROR_ENCOUNTERED;
 }
 

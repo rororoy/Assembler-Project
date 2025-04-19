@@ -121,17 +121,6 @@ int first_pass(char *filename, hashTable *macro_table) {
       continue;
     }
 
-    /* Printing of tokanization
-    printf("Tokanized-->");
-    int i = 0;
-    for (i = 0; i < MAX_LINE_LENGTH; i++) {
-        if (tokens[i] == NULL) {
-            break;
-        }
-        printf("%s|", tokens[i]);
-    }
-    printf("\n"); */
-
     /* If encountered a decleration of a label in the line */
     command_start = tokens_mode == 2 ? 1 : 0;
     addressing_mode = is_valid_command(command_start, tokens, &operands_adress);
@@ -205,37 +194,11 @@ int first_pass(char *filename, hashTable *macro_table) {
     }
     prev_DC = 0;
     IGNORE_LABEL = 0;
-
-    /*
-
-    printf("[[[[[[[[CHECK: DEST:%d, SRC:%d IC:%d, DC:%d}}}}}}}}}}\n", operands_adress.destination_op, operands_adress.source_op, IC, DC);
-    print_complete_transTable(translation_table, tablepointer);
-
-    printf("\n");
-    */
   }
-
-  /* Print the table
-  printf("TransTable contents:\n");
-  print_complete_transTable(translation_table, tablepointer);
-
-  printf("\n\nSYMBOL TABLE \n\n\n");
-  print_symbol_table(symbol_table);
-
-
-  printf("\n\n\nPENDING TABLE \n");
-  print_pending_labels(pending_labels);
-
-  printf("\n\n ERRORS IN LABEL DEFINITONS: \n\n");
-  */
 
   if(is_missing_symbols(symbol_table)){
     print_error("Label missing", "", 0);
   }
-
-  /*
-  printf("\nDC:%d\nICF:%d\n\n", DC, IC-100);
-  */
 
   /***************        Second assembler stage            *******************/
   printf("[*] Starting the second assembler stage on %s\n\n", filename);
@@ -244,11 +207,6 @@ int first_pass(char *filename, hashTable *macro_table) {
   if(!success){
     print_error("Failed second pass", filename, 0);
   }
-
-  /* Print the table
-  printf("\n\nTransTable contents:\n");
-  print_complete_transTable(translation_table, tablepointer);
-  */
 
   cleanup_first_pass(file, am_filename, symbol_table, pending_labels, translation_table, tablepointer);
   return success;
